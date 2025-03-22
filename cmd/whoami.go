@@ -26,11 +26,11 @@ var whoamiCmd = &cobra.Command{
 			Token_name string `json:"token_name"`
 		}
 
-		response := []whoamiResponse{
-			{Org: "Dhan", Org_id: 666, Token_name: "test"},
-			{Org: "Teachmint", Org_id: 999, Token_name: "demo"},
-		}
-		// response := whoamiResponse{Org: "Dhan", Org_id: 666, Token_name: "test"}
+		// response := []whoamiResponse{
+		// 	{Org: "Dhan", Org_id: 666, Token_name: "test"},
+		// 	{Org: "Dhan", Org_id: 999, Token_name: "demo"},
+		// }
+		response := whoamiResponse{Org: "Dhan", Org_id: 666, Token_name: "test"}
 		outputType, _ = cmd.Flags().GetString("output")
 		util.OutputData(response, outputType)
 	},

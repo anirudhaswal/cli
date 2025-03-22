@@ -25,6 +25,7 @@ import (
 	_ "fmt"
 	"os"
 
+	"github.com/MakeNowJust/heredoc/v2"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
@@ -42,9 +43,9 @@ var (
 var rootCmd = &cobra.Command{
 	Use:   "suprsend",
 	Short: "CLI to interact with SuprSend, a Notification Infrastructure",
-	Long: `SuprSend is a robust notification infrastructure that helps you deploy multi-channel product notifications effortlessly and take care of user experience.
+	Long: heredoc.Doc(`SuprSend is a robust notification infrastructure that helps you deploy multi-channel product notifications effortlessly and take care of user experience.
 
-This CLI lets you interact with your SuprSend workspace and do actions like fetching/modifying template, workflows etc.`,
+	This CLI lets you interact with your SuprSend workspace and do actions like fetching/modifying template, workflows etc.`),
 	Version: "0.0.1",
 	// Uncomment the following line if your bare application
 	// has an action associated with it:
