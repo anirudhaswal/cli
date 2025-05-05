@@ -1,0 +1,306 @@
+/*
+Copyright © 2025 NAME HERE <EMAIL ADDRESS>
+*/
+package cmd
+
+import (
+	"bytes"
+	"context"
+	"encoding/json"
+	"fmt"
+	"reflect"
+	"strings"
+	"time"
+
+	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgtype"
+	"github.com/mark3labs/mcp-go/mcp"
+	"github.com/mark3labs/mcp-go/server"
+	"github.com/spf13/cobra"
+)
+
+// QueryToText executes a SQL query using pgx and returns the results as formatted text
+// suitable for passing to an LLM
+func QueryToText(ctx context.Context, conn *pgx.Conn, query string, args ...interface{}) (string, error) {
+	// Execute the query
+	rows, err := conn.Query(ctx, query, args...)
+	if err != nil {
+		return "", fmt.Errorf("query execution error: %v", err)
+	}
+	defer rows.Close()
+
+	// Get field descriptions
+	fieldDescriptions := rows.FieldDescriptions()
+	if len(fieldDescriptions) == 0 {
+		return "Query executed successfully. No result columns returned.", nil
+	}
+
+	// Build the text output
+	var result strings.Builder
+
+	// Write header row
+	result.WriteString("| ")
+	for i, field := range fieldDescriptions {
+		colName := string(field.Name)
+		result.WriteString(colName)
+		if i < len(fieldDescriptions)-1 {
+			result.WriteString(" | ")
+		}
+	}
+	result.WriteString(" |\n")
+
+	// Write separator row
+	result.WriteString("| ")
+	for i, field := range fieldDescriptions {
+		result.WriteString(strings.Repeat("-", len(string(field.Name))))
+		if i < len(fieldDescriptions)-1 {
+			result.WriteString(" | ")
+		}
+	}
+	result.WriteString(" |\n")
+
+	// Process rows
+	rowCount := 0
+	maxRows := 100 // Limit the number of rows to prevent overwhelming the LLM
+
+	// Iterate through rows
+	for rows.Next() {
+		if rowCount >= maxRows {
+			result.WriteString("... (more rows exist but were truncated for brevity)\n")
+			break
+		}
+
+		// Get values
+		values, err := rows.Values()
+		if err != nil {
+			return "", fmt.Errorf("error scanning row: %v", err)
+		}
+
+		result.WriteString("| ")
+		for i, val := range values {
+			// Format the value based on its type
+			formattedVal := formatPgxValue(val, fieldDescriptions[i].DataTypeOID)
+			result.WriteString(formattedVal)
+			if i < len(values)-1 {
+				result.WriteString(" | ")
+			}
+		}
+		result.WriteString(" |\n")
+		rowCount++
+	}
+
+	if err := rows.Err(); err != nil {
+		return "", fmt.Errorf("error iterating rows: %v", err)
+	}
+
+	if rowCount == 0 {
+		result.WriteString("(No rows returned)\n")
+	} else {
+		result.WriteString(fmt.Sprintf("\nTotal rows: %d", rowCount))
+		if rowCount >= maxRows {
+			result.WriteString(" (truncated)")
+		}
+		result.WriteString("\n")
+	}
+
+	return result.String(), nil
+}
+
+// formatPgxValue converts a pgx value to a string representation based on its type
+func formatPgxValue(val interface{}, dataTypeOID uint32) string {
+	if val == nil {
+		return "NULL"
+	}
+
+	// Handle common pgx types
+	switch v := val.(type) {
+	case []byte:
+		// Try to detect if it's JSON
+		var js json.RawMessage
+		if err := json.Unmarshal(v, &js); err == nil {
+			// It's valid JSON, pretty print if not too large
+			if len(v) <= 1000 {
+				var prettyJSON bytes.Buffer
+				if err := json.Indent(&prettyJSON, v, "", "  "); err == nil {
+					return prettyJSON.String()
+				}
+			}
+			return string(v)
+		}
+
+		// If it looks like JSON but isn't valid
+		if len(v) > 0 && (v[0] == '{' || v[0] == '[') {
+			return string(v)
+		}
+
+		// For text types
+		switch dataTypeOID {
+		case pgtype.TextOID, pgtype.VarcharOID, pgtype.BPCharOID:
+			return string(v)
+		}
+
+		// For binary data, return a placeholder
+		if len(v) > 20 {
+			return "[binary data]"
+		}
+		return fmt.Sprintf("%v", v)
+
+	case time.Time:
+		return v.Format("2006-01-02 15:04:05")
+
+	case pgtype.JSONCodec, pgtype.JSONBCodec:
+		jsonBytes, err := json.Marshal(v)
+		if err == nil {
+			var prettyJSON bytes.Buffer
+			if err := json.Indent(&prettyJSON, jsonBytes, "", "  "); err == nil {
+				if prettyJSON.Len() <= 1000 {
+					return prettyJSON.String()
+				}
+			}
+			return string(jsonBytes)
+		}
+		return fmt.Sprintf("%v", v)
+	}
+
+	// Handle reflection for other types
+	rv := reflect.ValueOf(val)
+	switch rv.Kind() {
+	case reflect.Map, reflect.Struct, reflect.Slice, reflect.Array:
+		jsonbytes, err := json.Marshal(val)
+		if err == nil {
+			if len(jsonbytes) <= 1000 {
+				var prettyJSON bytes.Buffer
+				if err := json.Indent(&prettyJSON, jsonbytes, "", "  "); err == nil {
+					return prettyJSON.String()
+				}
+			}
+			return string(jsonbytes)
+		}
+	}
+
+	// Default string conversion
+	return fmt.Sprintf("%v", val)
+}
+
+// startMcpServerCmd represents the startMcpServer command
+var startMcpServerCmd = &cobra.Command{
+	Use:   "start-mcp-server",
+	Short: "Starts MCP server for SuprSend",
+	Long: `Starts the MCP server for SuprSend.
+This server will handle all the requests from user about SuprSend capabilities and data.`,
+	Run: func(cmd *cobra.Command, args []string) {
+		s := server.NewMCPServer(
+			"SuprSend",
+			"0.1",
+			server.WithResourceCapabilities(true, true),
+			server.WithPromptCapabilities(true),
+			server.WithToolCapabilities(true),
+			server.WithLogging(),
+		)
+
+		// create a pg connections for future queries
+		pgConn, err := pgx.Connect(context.Background(), "postgres://admin:1234@localhost:50053/suprsend")
+		if err != nil {
+			fmt.Printf("Error connecting to database: %v\n", err)
+			return
+		}
+		defer pgConn.Close(context.Background())
+
+		// Add a list tables tool
+		listTablesTool := mcp.NewTool("list_tables",
+			mcp.WithDescription("List available tables in SuprSend"),
+		)
+
+		// Add a list functions tool
+		listFunctionsTool := mcp.NewTool("list_functions",
+			mcp.WithDescription("List available functions in SuprSend"),
+		)
+
+		// Add a describe tables tool
+		describeTablesTool := mcp.NewTool("describe_tables",
+			mcp.WithDescription("Describe available tables in SuprSend"),
+			mcp.WithString("table",
+				mcp.Required(),
+				mcp.Description("The name of the table to describe"),
+			),
+		)
+
+		executeQueryTool := mcp.NewTool("execute_query",
+			mcp.WithDescription("Execute a query in SuprSend"),
+		)
+
+		// Add the list tables handler
+		s.AddTool(listTablesTool, func(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+			// tables := `{
+			// 	"tables": [
+			// 		{
+			// 		"name": "users",
+			// 		"columns": [
+			// 			{ "name": "id", "type": "uuid", "nullable": false },
+			// 			{ "name": "username", "type": "character varying", "nullable": false },
+			// 			{ "name": "properties", "type": "jsonb", "nullable": true }
+			// 		]
+			// 		}
+			// 	]}`
+			tables := `[objects,]`
+			return mcp.NewToolResultText(tables), nil
+		})
+
+		s.AddTool(describeTablesTool, func(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+			// Get the table name from the request
+			tableName := request.Params.Arguments["table"].(string)
+			fmt.Printf("Table: %s\n", tableName)
+			columns := `
+			column name | data type | nullable | description
+			--------------------------------
+			id | TEXT | false | object id
+			object_type | TEXT | false | object type
+			subscriptions_count | Integer | false | how many subscriptions are there
+			properties | JSONB | true | object properties
+			created_at | TIMESTAMP | false | creation timestamp
+			updated_at | TIMESTAMP | false | updation timestamp`
+			return mcp.NewToolResultText(columns), nil
+		})
+
+		// Add the list functions handler
+		s.AddTool(listFunctionsTool, func(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+			functions := `get_object_subscriptions
+				- inputs: obj_type(text), obj_name(text), depth(integer) 
+				- outputs: pk(ulid),depth(integer),properties(jsonb),sub_type(char),user(jsonb),object(jsonb) 
+				- description: Returns subscription objects filtered by type, name, and hierarchy depth, sub_type return either 's' for users or 'o' for objects`
+			return mcp.NewToolResultText(functions), nil
+		})
+
+		// Add the execute query handler
+		s.AddTool(executeQueryTool, func(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+			// Get the query from the request
+			query := request.Params.Arguments["query"].(string)
+			fmt.Printf("Query: %s\n", query)
+			// execute query on the PG connection
+			rows, err := QueryToText(ctx, pgConn, query)
+			if err != nil {
+				return nil, err
+			}
+			return mcp.NewToolResultText(rows), nil
+		})
+
+		// Start the server
+		if err := server.ServeStdio(s); err != nil {
+			fmt.Printf("Server error: %v\n", err)
+		}
+	},
+}
+
+func init() {
+	rootCmd.AddCommand(startMcpServerCmd)
+
+	// Here you will define your flags and configuration settings.
+
+	// Cobra supports Persistent Flags which will work for this command
+	// and all subcommands, e.g.:
+	// startMcpServerCmd.PersistentFlags().String("foo", "", "A help for foo")
+
+	// Cobra supports local flags which will only run when this command
+	// is called directly, e.g.:
+	// startMcpServerCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
+}

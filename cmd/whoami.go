@@ -37,7 +37,7 @@ var whoamiCmd = &cobra.Command{
 }
 
 func init() {
-	rootCmd.AddCommand(whoamiCmd)
+	// rootCmd.AddCommand(whoamiCmd)
 
 	// Here you will define your flags and configuration settings.
 

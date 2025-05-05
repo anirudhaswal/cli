@@ -21,7 +21,9 @@ THE SOFTWARE.
 */
 package main
 
-import "suprsend-cli/cmd"
+import (
+	"suprsend-cli/cmd"
+)
 
 func main() {
 	cmd.Execute()

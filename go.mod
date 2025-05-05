@@ -4,11 +4,12 @@ go 1.23
 
 require (
 	github.com/MakeNowJust/heredoc/v2 v2.0.1
+	github.com/mark3labs/mcp-go v0.25.1-0.20250504153840-a999079f3650
 	github.com/olekukonko/tablewriter v0.0.5
 	github.com/pkg/errors v0.9.1
 	github.com/sirupsen/logrus v1.9.3
 	github.com/spf13/cobra v1.9.1
-	github.com/spf13/viper v1.20.0
+	github.com/spf13/viper v1.20.1
 	go.szostok.io/version v1.2.0
 	gopkg.in/yaml.v3 v3.0.1
 )
@@ -46,6 +47,7 @@ require (
 	github.com/spf13/cast v1.7.1 // indirect
 	github.com/spf13/pflag v1.0.6 // indirect
 	github.com/subosito/gotenv v1.6.0 // indirect
+	github.com/yosida95/uritemplate/v3 v3.0.2 // indirect
 	go.uber.org/multierr v1.11.0 // indirect
 	golang.org/x/crypto v0.32.0 // indirect
 	golang.org/x/sys v0.29.0 // indirect
