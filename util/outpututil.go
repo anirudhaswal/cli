@@ -1,3 +1,6 @@
+/*
+Copyright © 2025 SuprSend
+*/
 package util
 
 import (
