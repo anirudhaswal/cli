@@ -5,9 +5,9 @@ import (
 	"encoding/json"
 	"errors"
 
-	"suprsend-cli/util"
-
 	"github.com/mark3labs/mcp-go/mcp"
+	"github.com/suprsend/cli/internal/utils"
+
 	log "github.com/sirupsen/logrus"
 )
 
@@ -20,7 +20,7 @@ func getUserHandler(ctx context.Context, request mcp.CallToolRequest) (*mcp.Call
 	if !ok {
 		return nil, errors.New("workspace must be a string")
 	}
-	suprsend_client, err := util.GetSuprSendWorkspaceClient(workspace)
+	suprsend_client, err := utils.GetSuprSendWorkspaceClient(workspace)
 	if err != nil {
 		return nil, err
 	}
@@ -56,7 +56,7 @@ func upsertUserHandler(ctx context.Context, request mcp.CallToolRequest) (*mcp.C
 	if !ok {
 		return nil, errors.New("value must be a string")
 	}
-	suprsend_client, err := util.GetSuprSendWorkspaceClient(workspace)
+	suprsend_client, err := utils.GetSuprSendWorkspaceClient(workspace)
 	if err != nil {
 		return nil, err
 	}

@@ -8,7 +8,6 @@ import (
 	"os"
 
 	log "github.com/sirupsen/logrus"
-
 	suprsend "github.com/suprsend/suprsend-go"
 )
 

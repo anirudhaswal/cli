@@ -1,9 +1,8 @@
-package util
+package utils
 
 import (
 	log "github.com/sirupsen/logrus"
-	"suprsend-cli/mgmnt"
-
+	"github.com/suprsend/cli/mgmnt"
 	suprsend "github.com/suprsend/suprsend-go"
 )
 

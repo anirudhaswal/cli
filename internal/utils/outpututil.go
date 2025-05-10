@@ -1,7 +1,7 @@
 /*
 Copyright © 2025 SuprSend
 */
-package util
+package utils
 
 import (
 	"encoding/json"
@@ -10,11 +10,9 @@ import (
 	"reflect"
 	"strconv"
 
-	"github.com/spf13/viper"
-
 	"github.com/olekukonko/tablewriter"
-
 	log "github.com/sirupsen/logrus"
+	"github.com/spf13/viper"
 	"github.com/tidwall/pretty"
 	"gopkg.in/yaml.v3"
 )
