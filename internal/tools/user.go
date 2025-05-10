@@ -56,7 +56,7 @@ func upsertUserHandler(ctx context.Context, request mcp.CallToolRequest) (*mcp.C
 	if !ok {
 		return nil, errors.New("value must be a string")
 	}
-	suprsend_client, err := util.GetSuprSendWorkspaceClient(workspace)
+	suprsend_client, err := utils.GetSuprSendWorkspaceClient(workspace)
 	if err != nil {
 		return nil, err
 	}
