@@ -35,7 +35,7 @@ func NewClient(serviceToken string, debug bool) *SS_MgmntClient {
 		debug:        debug,
 	}
 	client.workspaceClients = make(map[string]*suprsend.Client)
-	log.Debugf("New management client created with base URL: %s and service token: %s", baseURL, serviceToken)
+	log.Debugf("New management client created with base URL: %s and service token: %s and debug: %t", baseURL, serviceToken, debug)
 	return client
 }
 
@@ -51,7 +51,7 @@ func (c *SS_MgmntClient) GetWorkspaceClient(workspace string) (*suprsend.Client,
 		if err != nil {
 			return nil, err
 		}
-		log.Debug("New workspace client created for workspace: ", workspace)
+		log.Debugf("New workspace client created for workspace: %s and debug: %t", workspace, c.debug)
 		c.workspaceClients[workspace] = client
 	}
 
