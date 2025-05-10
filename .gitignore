@@ -19,3 +19,4 @@
 .vscode/
 dist/
 bin/
+.DS_Store

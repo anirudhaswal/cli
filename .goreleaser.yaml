@@ -13,7 +13,8 @@ before:
     # - go generate ./...
 
 builds:
-  - env:
+  - main: ./cmd/suprsend
+    env:
       - CGO_ENABLED=0
     ldflags:
       - -s -w
