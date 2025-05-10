@@ -1,4 +1,4 @@
-module suprsend-cli
+module github.com/suprsend/cli
 
 go 1.23.0
 

@@ -1,14 +1,13 @@
 // setup user subcommand
 
-package cmd
+package commands
 
 import (
 	"context"
 
-	"suprsend-cli/util"
-
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
+	"github.com/suprsend/cli/internal/utils"
 )
 
 var userCmd = &cobra.Command{
@@ -35,7 +34,7 @@ var getUserCmd = &cobra.Command{
 		// Get flag values of distinct id and workspace
 		workspace, _ := cmd.Flags().GetString("workspace")
 		log.Debug("Getting user details for distinct ID: ", distinctId, " in workspace: ", workspace)
-		mgmnt_client := util.GetSuprSendMgmntClient()
+		mgmnt_client := utils.GetSuprSendMgmntClient()
 		client, err := mgmnt_client.GetWorkspaceClient(workspace)
 		if err != nil {
 			log.Fatal(err)
@@ -44,8 +43,8 @@ var getUserCmd = &cobra.Command{
 		if err != nil {
 			log.Fatal(err)
 		}
-		outputType, _ = cmd.Flags().GetString("output")
-		util.OutputData(user, outputType)
+		outputType, _ := cmd.Flags().GetString("output")
+		utils.OutputData(user, outputType)
 	},
 }
 

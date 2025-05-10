@@ -1,7 +1,7 @@
 /*
 Copyright © 2025 SuprSend
 */
-package util
+package utils
 
 import (
 	log "github.com/sirupsen/logrus"

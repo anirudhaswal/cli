@@ -1,7 +1,7 @@
 /*
 Copyright © 2025 SuprSend
 */
-package cmd
+package commands
 
 import (
 	"strings"
@@ -9,9 +9,8 @@ import (
 	"github.com/mark3labs/mcp-go/server"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
-
-	toolset "suprsend-cli/cmd/tools"
-	"suprsend-cli/util"
+	toolset "github.com/suprsend/cli/internal/tools"
+	"github.com/suprsend/cli/internal/utils"
 )
 
 var (
@@ -82,7 +81,7 @@ This server will handle all the requests from user about SuprSend capabilities a
 		}
 
 		if transport == "sse" {
-			util.Banner()
+			utils.Banner()
 			sseServer := server.NewSSEServer(mcpServer, server.WithBaseURL("http://localhost:8080"))
 			log.Printf("SSE server listening on :8080")
 			if err := sseServer.Start(":8080"); err != nil {
@@ -111,7 +110,7 @@ var listToolsCmd = &cobra.Command{
 			resp = append(resp, toolListResponse{Tool_Type: t.Type, Tool_Name: t.Name, Tool_Description: t.Description})
 		}
 		outputType, _ := cmd.Flags().GetString("output")
-		util.OutputData(resp, outputType)
+		utils.OutputData(resp, outputType)
 	},
 }
 

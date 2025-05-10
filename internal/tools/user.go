@@ -6,7 +6,7 @@ import (
 	"errors"
 
 	"github.com/mark3labs/mcp-go/mcp"
-	"suprsend-cli/util"
+	"github.com/suprsend/cli/internal/utils"
 )
 
 func getUserHandler(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
@@ -18,7 +18,7 @@ func getUserHandler(ctx context.Context, request mcp.CallToolRequest) (*mcp.Call
 	if !ok {
 		return nil, errors.New("workspace must be a string")
 	}
-	suprsend_client, err := util.GetSuprSendWorkspaceClient(workspace)
+	suprsend_client, err := utils.GetSuprSendWorkspaceClient(workspace)
 	if err != nil {
 		return nil, err
 	}
