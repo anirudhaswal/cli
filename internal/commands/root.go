@@ -19,7 +19,7 @@ var rootCmd = &cobra.Command{
 	Long: heredoc.Doc(`SuprSend is a robust notification infrastructure that helps you deploy multi-channel product notifications effortlessly and take care of user experience.
 
 	This CLI lets you interact with your SuprSend workspace and do actions like fetching/modifying template, workflows etc.`),
-	Version: "0.0.1",
+	// Version: "0.0.1",
 	// Uncomment the following line if your bare application
 	// has an action associated with it:
 	// Run: func(cmd *cobra.Command, args []string) { },
@@ -40,7 +40,7 @@ func init() {
 	rootCmd.PersistentFlags().StringVarP(&conf.OutputType, "output", "o", "pretty", "Output Tyle (pretty, yaml, json)")
 	rootCmd.PersistentFlags().StringVarP(&conf.Verbosity, "verbosity", "v", "info", "Log level (debug, info, warn, error, fatal, panic)")
 	rootCmd.PersistentFlags().StringVarP(&conf.ServiceToken, "service-token", "s", "", "Service token (default: $SUPRSEND_SERVICE_TOKEN)")
-	rootCmd.PersistentFlags().BoolVarP(&conf.NoColorOutput, "no-color", "n", false, "Disable color output")
+	rootCmd.PersistentFlags().BoolVarP(&conf.NoColorOutput, "no-color", "n", false, "Disable color output (default: $NO_COLOR)")
 
 	viper.BindPFlag("service_token", rootCmd.PersistentFlags().Lookup("service-token"))
 	viper.BindPFlag("NO_COLOR", rootCmd.PersistentFlags().Lookup("no-color"))

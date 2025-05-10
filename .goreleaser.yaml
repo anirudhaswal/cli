@@ -17,10 +17,9 @@ builds:
     env:
       - CGO_ENABLED=0
     ldflags:
-      - -s -w
+      - -s -w -X main.build={{.Version}}
       - -X go.szostok.io/version.version={{.Version}}
       - -X go.szostok.io/version.buildDate={{.Date}}
-      - -X util.version={{.Version}}
     goos:
       - linux
       - windows

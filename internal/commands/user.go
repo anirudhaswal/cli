@@ -19,7 +19,7 @@ var userCmd = &cobra.Command{
 }
 
 func init() {
-	rootCmd.AddCommand(userCmd)
+	// rootCmd.AddCommand(userCmd)
 }
 
 // get user details
