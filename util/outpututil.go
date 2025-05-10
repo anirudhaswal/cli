@@ -19,6 +19,21 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
+func supportsColor() bool {
+	// check if output is redirected to a file
+	fileInfo, _ := os.Stdout.Stat()
+	if (fileInfo.Mode() & os.ModeCharDevice) == 0 {
+		return false
+	}
+
+	// check if stdout is a tty
+	if viper.GetBool("NO_COLOR") {
+		return false
+	}
+
+	return true
+}
+
 // OutputData chooses the output format based on the flag
 func OutputData(data interface{}, format string) {
 	switch format {
@@ -40,7 +55,7 @@ func outputJSON(data interface{}) {
 		return
 	}
 	// fmt.Println(string(jsonData))
-	if !viper.GetBool("NO_COLOR") {
+	if supportsColor() {
 		fmt.Println(string(pretty.Color(jsonData, nil)))
 	} else {
 		fmt.Println(string(jsonData))
