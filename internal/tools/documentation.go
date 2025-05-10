@@ -61,9 +61,26 @@ func newDocumentationTools() []*Tool {
 		Name:        "documentation.search",
 		Description: "Enables querying SuprSend documentation",
 		MCPTool: mcp.NewTool("search_suprsend_documentation",
-			mcp.WithDescription(`Use this tool whenever you need technical guidance or answers related to SuprSend. It is particularly useful when:\n- A user asks about SuprSend's capabilities, features, or integrations (e.g., Workflows, Templates, Tenants, Lists, Vendors, Connectors, etc.)\n- You're unsure how a specific SuprSend functionality or API works\n- You're writing or debugging an integration with SuprSend\nHow to use:\n- Frame your queries using precise technical terms (avoid vague phrasing)\n- This tool returns a JSON array in text format — each item contains:\n  - uri: the documentation path\n  - snippet: a short excerpt relevant to the query\nAnswering process:\n1. Review all snippets in order to try to answer the question.\n2. If by using all the snippets, you still don't have enough information to confidently answer:\n  - Use the corresponding uri to fetch full documentation content vy using the fetch_suprsend_documentation tool.\n3. Process each resource one-by-one in the order returned.\n4. Use information from both snippets and full documentation to construct the final answer.`),
+			mcp.WithDescription(`Use this tool to get technical guidance or answers related to SuprSend. It is especially helpful when:
+				- You have questions about SuprSend's capabilities, features, or integrations (e.g., Workflows, Templates, Tenants, Lists, Vendors, Connectors, etc.).
+				- You are unsure how a specific SuprSend functionality or API works.
+				- You are writing or debugging an integration with SuprSend.
+			How to use:
+				- Frame your queries using precise technical terms; avoid vague language.
+				- The tool returns a JSON array, where each item contains:
+				- uri: The documentation path.
+				- snippet: A relevant excerpt from the documentation.
+			Answering process:
+				- Review all provided snippets to answer the question.
+				- If the snippets are insufficient, use the corresponding uri to fetch the full documentation with the fetch_suprsend_documentation tool.
+				- Process each resource in the order provided.
+				- Use information from both the snippets and the full documentation to construct your final answer.`),
 			mcp.WithString("query",
-				mcp.Description(`Search query. The query should: 1. Identify the core concepts and intent 2. Add relevant synonyms and related terms 3. Structure the query to emphasize key terms 4. Include technical or domain-specific terminology if applicable`),
+				mcp.Description(`Search query. The query should: 
+					- Identify the core concepts and intent 
+					- Add relevant synonyms and related terms 
+					- Structure the query to emphasize key terms 
+					- Include technical or domain-specific terminology if applicable`),
 				mcp.Required(),
 			),
 		),
