@@ -8,17 +8,21 @@ import (
 	"os"
 
 	"github.com/MakeNowJust/heredoc/v2"
+	"github.com/fatih/color"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"go.szostok.io/version/extension"
+	"suprsend-cli/util"
 )
 
 var (
-	cfgFile    string
-	outputType string
-	verbosity  string
+	cfgFile       string
+	outputType    string
+	verbosity     string
+	serviceToken  string
+	noColorOutput bool
 )
 
 // rootCmd represents the base command when called without any subcommands
@@ -58,6 +62,8 @@ func init() {
 		if err := SetUpLogs(verbosity, outputType); err != nil {
 			return err
 		}
+
+		util.InitSDK(viper.GetString("service_token"), viper.GetBool("debug"))
 		return nil
 	}
 	// Here you will define your flags and configuration settings.
@@ -67,6 +73,11 @@ func init() {
 	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default: $HOME/.suprsend.yaml)")
 	rootCmd.PersistentFlags().StringVarP(&outputType, "output", "o", "pretty", "Output Tyle (pretty, yaml, json)")
 	rootCmd.PersistentFlags().StringVarP(&verbosity, "verbosity", "v", "info", "Log level (debug, info, warn, error, fatal, panic)")
+	rootCmd.PersistentFlags().StringVarP(&serviceToken, "service-token", "s", "", "Service token (default: $SUPRSEND_SERVICE_TOKEN)")
+	rootCmd.PersistentFlags().BoolVarP(&noColorOutput, "no-color", "n", false, "Disable color output")
+
+	viper.BindPFlag("service_token", rootCmd.PersistentFlags().Lookup("service-token"))
+	viper.BindPFlag("NO_COLOR", rootCmd.PersistentFlags().Lookup("no-color"))
 }
 
 // initConfig reads in config file and ENV variables if set.
@@ -86,6 +97,12 @@ func initConfig() {
 	}
 
 	viper.AutomaticEnv() // read in environment variables that match
+	// load configs from env
+	viper.BindEnv("debug", "DEBUG")
+	// if NO_COLOR is set, disable color output
+	if viper.GetBool("NO_COLOR") {
+		color.NoColor = true
+	}
 
 	// If a config file is found, read it in.
 	if err := viper.ReadInConfig(); err == nil {
@@ -98,10 +115,14 @@ func SetUpLogs(level string, outputType string) error {
 	if outputType == "json" {
 		log.SetFormatter(&log.JSONFormatter{})
 	}
+	if viper.GetBool("debug") {
+		verbosity = "debug"
+	}
 	lvl, err := log.ParseLevel(verbosity)
 	if err != nil {
 		return errors.Wrap(err, "parsing log level")
 	}
+	log.SetOutput(os.Stderr)
 	log.SetLevel(lvl)
 	return nil
 }

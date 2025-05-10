@@ -4,67 +4,50 @@ Copyright © 2025 SuprSend
 package cmd
 
 import (
-	"context"
-	"errors"
-	"fmt"
-	"io"
-	"net/http"
-	"net/url"
 	"strings"
 
-	"github.com/mark3labs/mcp-go/mcp"
 	"github.com/mark3labs/mcp-go/server"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 
+	toolset "suprsend-cli/cmd/tools"
 	"suprsend-cli/util"
 )
 
-var transport string
+var (
+	transport string
+	tools     string
+)
 
-func search_docs_handler(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
-	query, ok := request.Params.Arguments["query"].(string)
-	if !ok {
-		return nil, errors.New("query must be a string")
+func getSelectedTools(toolsFlag string) ([]*toolset.Tool, error) {
+	// selected tools
+	selected := []*toolset.Tool{}
+	supportedTools := toolset.GetAllTools()
+	// if toolsFlag is "all", return all the tools
+	if toolsFlag == "all" {
+		return supportedTools, nil
 	}
+	// get the tools mentioned in toolsFlag
+	tools := strings.Split(toolsFlag, ",")
 
-	encodedQuery := url.QueryEscape(query)
-	response, err := http.Get(fmt.Sprintf("https://rag.suprsend.com/?query=%s", encodedQuery))
-	if err != nil {
-		return nil, err
+	// if tool name is `type`.* include all the tools that have same type
+	for _, tool := range tools {
+		if strings.Contains(tool, ".*") {
+			toolType := strings.Split(tool, ".*")[0]
+			for _, t := range supportedTools {
+				if t.Type == toolType {
+					selected = append(selected, t)
+				}
+			}
+		} else {
+			for _, t := range supportedTools {
+				if t.Name == tool {
+					selected = append(selected, t)
+				}
+			}
+		}
 	}
-	defer response.Body.Close()
-
-	body, err := io.ReadAll(response.Body)
-	if err != nil {
-		return nil, err
-	}
-
-	return mcp.NewToolResultText(string(body)), nil
-}
-
-func fetch_docs_handler(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
-	uri, ok := request.Params.Arguments["uri"].(string)
-	if !ok {
-		return nil, errors.New("uri must be a string")
-	}
-	// if uri doesn't end with .md, add it
-	if !strings.HasSuffix(uri, ".md") {
-		uri = uri + ".md"
-	}
-	url := fmt.Sprintf("https://docs.suprsend.com/%s", uri)
-	response, err := http.Get(url)
-	if err != nil {
-		return nil, err
-	}
-	defer response.Body.Close()
-
-	body, err := io.ReadAll(response.Body)
-	if err != nil {
-		return nil, err
-	}
-
-	return mcp.NewToolResultText(string(body)), nil
+	return selected, nil
 }
 
 // startMcpServerCmd represents the startMcpServer command
@@ -74,6 +57,17 @@ var startMcpServerCmd = &cobra.Command{
 	Long: `Starts the MCP server for SuprSend.
 This server will handle all the requests from user about SuprSend capabilities and data.`,
 	Run: func(cmd *cobra.Command, args []string) {
+		selectedTools, err := getSelectedTools(tools)
+		if err != nil {
+			log.Fatalf("%v", err)
+		}
+		// Print a readable string representation of selectedTools
+		var toolStrs []string
+		for _, t := range selectedTools {
+			toolStrs = append(toolStrs, t.Type+":"+t.Name)
+		}
+		log.Debugf("Selected tools: [%s]", strings.Join(toolStrs, ", "))
+
 		mcpServer := server.NewMCPServer(
 			"SuprSend",
 			"0.1",
@@ -83,44 +77,10 @@ This server will handle all the requests from user about SuprSend capabilities a
 			server.WithLogging(),
 		)
 
-		doc_search := mcp.NewTool("search_suprsend_documentation",
-			mcp.WithDescription(`Use this tool whenever you need technical guidance or answers related to SuprSend. It is particularly useful when:
-			- A user asks about SuprSend’s capabilities, features, or integrations (e.g., Workflows, Templates, Tenants, Lists, Vendors, Connectors, etc.)
-			- You’re unsure how a specific SuprSend functionality or API works
-			- You’re writing or debugging an integration with SuprSend
-			How to use:
-				- Frame your queries using precise technical terms (avoid vague phrasing)
-				- This tool returns a JSON array in text format — each item contains:
-					- uri: the documentation path
-					- snippet: a short excerpt relevant to the query
-			Answering process:
-				1.	Review all snippets in order to try to answer the question.
-				2.	If by using all the snippets, you still don't have enough information to confidently answer:
-					- Use the corresponding uri to fetch full documentation content vy using the fetch_suprsend_documentation tool.
-				3.	Process each resource one-by-one in the order returned.
-				4.	Use information from both snippets and full documentation to construct the final answer.`),
-			mcp.WithString("query",
-				mcp.Description(`Search query. The query should: 
-				1. Identify the core concepts and intent 
-				2. Add relevant synonyms and related terms 
-				3. Structure the query to emphasize key terms 
-				4. Include technical or domain-specific terminology if applicable`),
-				mcp.Required(),
-			),
-		)
+		for _, t := range selectedTools {
+			mcpServer.AddTool(t.MCPTool, t.Handler)
+		}
 
-		fetch_doc := mcp.NewTool("fetch_suprsend_documentation",
-			mcp.WithDescription(`Use this tool to fetch the full documentation content for the given uri.`),
-			mcp.WithString("uri",
-				mcp.Description(`The uri of the documentation to fetch.`),
-				mcp.Required(),
-			))
-
-		mcpServer.AddTool(doc_search, search_docs_handler)
-		mcpServer.AddTool(fetch_doc, fetch_docs_handler)
-		// Start the server
-
-		// switch between transport types based on the transport flag
 		if transport == "sse" {
 			util.Banner()
 			sseServer := server.NewSSEServer(mcpServer, server.WithBaseURL("http://localhost:8080"))
@@ -136,9 +96,29 @@ This server will handle all the requests from user about SuprSend capabilities a
 	},
 }
 
+// Add a subcommand to startMcpServerCmd to list all the tools supported by the server
+var listToolsCmd = &cobra.Command{
+	Use:   "list-tools",
+	Short: "List all the tools supported by the server",
+	Run: func(cmd *cobra.Command, args []string) {
+		type toolListResponse struct {
+			Tool_Type        string `json:"tool_type"`
+			Tool_Name        string `json:"tool_name"`
+			Tool_Description string `json:"tool_description"`
+		}
+		var resp []toolListResponse
+		for _, t := range toolset.GetAllTools() {
+			resp = append(resp, toolListResponse{Tool_Type: t.Type, Tool_Name: t.Name, Tool_Description: t.Description})
+		}
+		outputType, _ := cmd.Flags().GetString("output")
+		util.OutputData(resp, outputType)
+	},
+}
+
 func init() {
+	startMcpServerCmd.AddCommand(listToolsCmd)
 	rootCmd.AddCommand(startMcpServerCmd)
 
-	// Add transport flag which can be either "stdio" or "sse", default is "stdio"
 	startMcpServerCmd.Flags().StringVarP(&transport, "transport", "t", "stdio", "The transport to use for the MCP server. Can be either 'stdio' or 'sse'.")
+	startMcpServerCmd.Flags().StringVarP(&tools, "tools", "T", "all", "The types of tools to use. Can be either 'all' or comma separated list of tool names.")
 }

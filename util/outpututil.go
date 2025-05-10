@@ -10,9 +10,12 @@ import (
 	"reflect"
 	"strconv"
 
+	"github.com/spf13/viper"
+
 	"github.com/olekukonko/tablewriter"
 
-	// log "github.com/sirupsen/logrus"
+	log "github.com/sirupsen/logrus"
+	"github.com/tidwall/pretty"
 	"gopkg.in/yaml.v3"
 )
 
@@ -24,25 +27,31 @@ func OutputData(data interface{}, format string) {
 	case "yaml":
 		outputYAML(data)
 	default:
+		// outputJSON(data)
 		outputTable(data)
 	}
 }
 
 // outputJSON prints data in JSON format
 func outputJSON(data interface{}) {
-	jsonData, err := json.Marshal(data)
+	jsonData, err := json.MarshalIndent(data, "", "   ")
 	if err != nil {
-		fmt.Println("Error creating JSON output:", err)
+		log.Fatal("Error creating JSON output:", err)
 		return
 	}
-	fmt.Println(string(jsonData))
+	// fmt.Println(string(jsonData))
+	if !viper.GetBool("NO_COLOR") {
+		fmt.Println(string(pretty.Color(jsonData, nil)))
+	} else {
+		fmt.Println(string(jsonData))
+	}
 }
 
 // outputYAML prints data in YAML format
 func outputYAML(data interface{}) {
 	yamlData, err := yaml.Marshal(data)
 	if err != nil {
-		fmt.Println("Error creating YAML output:", err)
+		log.Fatal("Error creating YAML output:", err)
 		return
 	}
 	fmt.Println(string(yamlData))
@@ -75,12 +84,12 @@ func outputTable(data interface{}) {
 	// Handle slice of structs
 	if val.Kind() == reflect.Slice {
 		if val.Len() == 0 {
-			fmt.Println("No data to display")
+			log.Fatal("No data to display")
 			return
 		}
 		elemType := val.Index(0).Type()
 		if elemType.Kind() != reflect.Struct {
-			fmt.Println("Slice elements must be structs")
+			log.Fatal("Slice elements must be structs")
 			return
 		}
 		values := make([]reflect.Value, val.Len())
@@ -91,12 +100,12 @@ func outputTable(data interface{}) {
 		return
 	}
 
-	fmt.Println("Input must be a struct or a slice of structs")
+	log.Fatal("Input must be a struct or a slice of structs")
 }
 
 func printStructAsTable(values []reflect.Value) {
 	if len(values) == 0 {
-		fmt.Println("No data to display")
+		log.Fatal("No data to display")
 		return
 	}
 
@@ -135,6 +144,15 @@ func formatValue(v reflect.Value) string {
 		return strconv.FormatFloat(v.Float(), 'f', 2, 64)
 	case reflect.Bool:
 		return strconv.FormatBool(v.Bool())
+	case reflect.Map:
+		// Check if it's map[string]any
+		if v.Type().Key().Kind() == reflect.String && v.Type().Elem().Kind() == reflect.Interface {
+			m := v.Interface()
+			if b, err := json.Marshal(m); err == nil {
+				return string(b)
+			}
+		}
+		return fmt.Sprintf("%v", v.Interface())
 	default:
 		return fmt.Sprintf("%v", v.Interface())
 	}
