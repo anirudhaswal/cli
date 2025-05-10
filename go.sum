@@ -52,6 +52,8 @@ github.com/lucasb-eyer/go-colorful v1.2.0 h1:1nnpGOrhyZZuNyfu1QjKiUICQ74+3FNCN69
 github.com/lucasb-eyer/go-colorful v1.2.0/go.mod h1:R4dSotOR9KMtayYi1e77YzuveK+i7ruzyGqttikkLy0=
 github.com/mark3labs/mcp-go v0.25.1-0.20250505091248-f47e2bce1b69 h1:fqwg4+HNbALkcA3KgQgO7z4t7w4IysA8seaejkn4ryo=
 github.com/mark3labs/mcp-go v0.25.1-0.20250505091248-f47e2bce1b69/go.mod h1:rXqOudj/djTORU/ThxYx8fqEVj/5pvTuuebQ2RC7uk4=
+github.com/mark3labs/mcp-go v0.26.1-0.20250510100027-b4686dbd55b0 h1:Bg/ef37miznK94PNOdztXPYcqfN6jS6jDcGF67U3Ur0=
+github.com/mark3labs/mcp-go v0.26.1-0.20250510100027-b4686dbd55b0/go.mod h1:rXqOudj/djTORU/ThxYx8fqEVj/5pvTuuebQ2RC7uk4=
 github.com/mattn/go-colorable v0.1.14 h1:9A9LHSqF/7dyVVX6g0U9cwm9pG3kP9gSzcuIPHPsaIE=
 github.com/mattn/go-colorable v0.1.14/go.mod h1:6LmQG8QLFO4G5z1gPvYEzlUgJ2wF+stgPZH1UqBm1s8=
 github.com/mattn/go-isatty v0.0.20 h1:xfD0iDuEKnDkl03q4limB+vH+GxLEtL/jb4xVJSWWEY=
@@ -107,8 +109,8 @@ github.com/stretchr/testify v1.10.0 h1:Xv5erBjTwe/5IxqUQTdXv5kgmIvbHo3QQyRwhJsOf
 github.com/stretchr/testify v1.10.0/go.mod h1:r2ic/lqez/lEtzL7wO/rwa5dbSLXVDPFyf8C91i36aY=
 github.com/subosito/gotenv v1.6.0 h1:9NlTDc1FTs4qu0DDq7AEtTPNw6SVm7uBMsUCUjABIf8=
 github.com/subosito/gotenv v1.6.0/go.mod h1:Dk4QP5c2W3ibzajGcXpNraDfq2IrhjMIvMSWPKKo0FU=
-github.com/suprsend/suprsend-go v0.5.3-0.20250508101140-d03246b554ca h1:hEBMf006EvKce+TLHQSaUvNJt9t4HJZSufb+EKHL+q0=
-github.com/suprsend/suprsend-go v0.5.3-0.20250508101140-d03246b554ca/go.mod h1:6Vzyzy0gzYHcXcLL3XpuSoSVQQKzLmb8eZIh0hiN9aw=
+github.com/suprsend/suprsend-go v0.6.0 h1:NwuY08V5iBWZ7qCvoaVbLtvkZM15M/Ujnh8j9CTzeKY=
+github.com/suprsend/suprsend-go v0.6.0/go.mod h1:6Vzyzy0gzYHcXcLL3XpuSoSVQQKzLmb8eZIh0hiN9aw=
 github.com/tidwall/pretty v1.2.1 h1:qjsOFOWWQl+N3RsoF5/ssm1pHmJJwhjlSbZ51I6wMl4=
 github.com/tidwall/pretty v1.2.1/go.mod h1:ITEVvHYasfjBbM0u2Pg8T2nJnzm8xPwvNhhsoaGGjNU=
 github.com/xeipuuv/gojsonpointer v0.0.0-20180127040702-4e3ac2762d5f/go.mod h1:N2zxlSyiKSe5eX1tZViRH5QA0qijqEDrYZiPEAiq3wU=
