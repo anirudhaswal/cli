@@ -51,11 +51,9 @@ After installation, you can use the CLI by running the `suprsend` command. For e
 suprsend --help
 ```
 
-## Features
 
-- Easy interaction with SuprSend API
-- Cross-platform support (Windows, macOS, Linux)
-- Automated releases for multiple architectures
+## Documentation
+Please refer to documentation [here](docs/suprsend.md)
 
 ## Contributing
 
