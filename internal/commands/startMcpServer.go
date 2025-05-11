@@ -74,6 +74,7 @@ This server will handle all the requests from user about SuprSend capabilities a
 			server.WithPromptCapabilities(true),
 			server.WithToolCapabilities(true),
 			server.WithLogging(),
+			server.WithRecovery(),
 		)
 
 		for _, t := range selectedTools {
