@@ -56,8 +56,8 @@ func init() {
 		if err := config.SetUpLogs(); err != nil {
 			return err
 		}
-		// check the subcommand
-		if cmd.Name() == "generate-config" {
+		// check the subcommand and return if it is generate-config or gendocs
+		if cmd.Name() == "generate-config" || cmd.Name() == "gendocs" {
 			return nil
 		}
 		utils.InitSDK(viper.GetString("service_token"), viper.GetBool("debug"))

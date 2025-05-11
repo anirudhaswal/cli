@@ -7,7 +7,7 @@ toolchain go1.24.2
 require (
 	github.com/MakeNowJust/heredoc/v2 v2.0.1
 	github.com/fatih/color v1.18.0
-	github.com/mark3labs/mcp-go v0.26.1-0.20250510175439-3dfa33164fe6
+	github.com/mark3labs/mcp-go v0.27.0
 	github.com/olekukonko/tablewriter v0.0.5
 	github.com/pkg/errors v0.9.1
 	github.com/sirupsen/logrus v1.9.3
