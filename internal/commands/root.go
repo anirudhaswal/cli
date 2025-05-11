@@ -32,7 +32,7 @@ func init() {
 	// Here you will define your flags and configuration settings.
 	// Cobra supports persistent flags, which, if defined here,
 	// will be global for your application.
-	rootCmd.PersistentFlags().StringVar(&conf.CfgFile, "config", "", "config file (default: $HOME/.suprsend.yaml)")
+	rootCmd.PersistentFlags().StringVar(&conf.CfgFile, "config", "", "config file (default: $HOME/suprsend.yaml)")
 	rootCmd.PersistentFlags().StringVarP(&conf.OutputType, "output", "o", "pretty", "Output Tyle (pretty, yaml, json)")
 	rootCmd.PersistentFlags().StringVarP(&conf.Verbosity, "verbosity", "v", "info", "Log level (debug, info, warn, error, fatal, panic)")
 	rootCmd.PersistentFlags().StringVarP(&conf.ServiceToken, "service-token", "s", "", "Service token (default: $SUPRSEND_SERVICE_TOKEN)")
@@ -56,7 +56,10 @@ func init() {
 		if err := config.SetUpLogs(); err != nil {
 			return err
 		}
-
+		// check the subcommand
+		if cmd.Name() == "generate-config" {
+			return nil
+		}
 		utils.InitSDK(viper.GetString("service_token"), viper.GetBool("debug"))
 		return nil
 	}

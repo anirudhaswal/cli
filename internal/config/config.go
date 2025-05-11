@@ -32,10 +32,9 @@ func InitConfig(cfgFile string) {
 		home, err := os.UserHomeDir()
 		cobra.CheckErr(err)
 
-		// Search config in home directory with name ".suprsend" (without extension).
 		viper.AddConfigPath(home)
 		viper.SetConfigType("yaml")
-		viper.SetConfigName(".suprsend")
+		viper.SetConfigName("suprsend")
 	}
 
 	viper.AutomaticEnv() // read in environment variables that match
