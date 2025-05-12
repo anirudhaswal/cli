@@ -25,6 +25,10 @@ func searchDocsHandler(ctx context.Context, request mcp.CallToolRequest) (*mcp.C
 	}
 	defer response.Body.Close()
 
+	if response.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("unexpected status code: %d", response.StatusCode)
+	}
+
 	body, err := io.ReadAll(response.Body)
 	if err != nil {
 		return nil, err
@@ -47,6 +51,10 @@ func fetchDocsHandler(ctx context.Context, request mcp.CallToolRequest) (*mcp.Ca
 		return nil, err
 	}
 	defer response.Body.Close()
+
+	if response.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("unexpected status code: %d", response.StatusCode)
+	}
 
 	body, err := io.ReadAll(response.Body)
 	if err != nil {
