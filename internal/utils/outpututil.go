@@ -11,6 +11,8 @@ import (
 	"strconv"
 
 	"github.com/olekukonko/tablewriter"
+	"github.com/olekukonko/tablewriter/renderer"
+	"github.com/olekukonko/tablewriter/tw"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
 	"github.com/tidwall/pretty"
@@ -122,9 +124,24 @@ func printStructAsTable(values []reflect.Value) {
 		return
 	}
 
-	table := tablewriter.NewWriter(os.Stdout)
-	table.SetAutoMergeCells(true)
-	table.SetRowLine(true)
+	table := tablewriter.NewTable(os.Stdout,
+		tablewriter.WithRenderer(renderer.NewBlueprint(tw.Rendition{
+			Settings: tw.Settings{
+				Separators: tw.Separators{BetweenRows: tw.On},
+			},
+		})),
+		tablewriter.WithConfig(tablewriter.Config{
+			Header: tw.CellConfig{
+				Formatting: tw.CellFormatting{Alignment: tw.AlignCenter},
+			},
+			Row: tw.CellConfig{
+				Formatting: tw.CellFormatting{
+					MergeMode: tw.MergeHierarchical,
+					Alignment: tw.AlignLeft,
+				},
+			},
+		}),
+	)
 
 	// Set headers based on struct field names
 	elemType := values[0].Type()
@@ -132,17 +149,19 @@ func printStructAsTable(values []reflect.Value) {
 	for i := 0; i < elemType.NumField(); i++ {
 		headers = append(headers, elemType.Field(i).Name)
 	}
-	table.SetHeader(headers)
+	table.Header(headers)
 
 	// Add rows
+	var rows [][]any
 	for _, val := range values {
-		var row []string
+		var row []any
 		for i := 0; i < val.NumField(); i++ {
 			field := val.Field(i)
 			row = append(row, formatValue(field))
 		}
-		table.Append(row)
+		rows = append(rows, row)
 	}
+	table.Bulk(rows)
 
 	table.Render()
 }
