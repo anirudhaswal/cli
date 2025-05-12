@@ -9,7 +9,9 @@ import (
 	"os"
 	"reflect"
 	"strconv"
+	"strings"
 
+	"github.com/fatih/color"
 	"github.com/olekukonko/tablewriter"
 	"github.com/olekukonko/tablewriter/renderer"
 	"github.com/olekukonko/tablewriter/tw"
@@ -35,7 +37,7 @@ func supportsColor() bool {
 }
 
 // OutputData chooses the output format based on the flag
-func OutputData(data interface{}, format string) {
+func OutputData(data any, format string) {
 	switch format {
 	case "json":
 		outputJSON(data)
@@ -48,13 +50,13 @@ func OutputData(data interface{}, format string) {
 }
 
 // outputJSON prints data in JSON format
-func outputJSON(data interface{}) {
+func outputJSON(data any) {
 	jsonData, err := json.MarshalIndent(data, "", "   ")
 	if err != nil {
 		log.Fatal("Error creating JSON output:", err)
 		return
 	}
-	// fmt.Println(string(jsonData))
+
 	if supportsColor() {
 		fmt.Println(string(pretty.Color(jsonData, nil)))
 	} else {
@@ -62,27 +64,41 @@ func outputJSON(data interface{}) {
 	}
 }
 
+func colorizeYAML(yamlString string) string {
+	lines := []string{}
+	for _, line := range strings.Split(yamlString, "\n") {
+		if strings.Contains(line, ":") {
+			parts := strings.SplitN(line, ":", 2)
+			key := strings.TrimSpace(parts[0])
+			value := ""
+			if len(parts) > 1 {
+				value = parts[1]
+			}
+			lines = append(lines, color.HiBlueString(key)+":"+color.GreenString(value))
+		} else {
+			lines = append(lines, line)
+		}
+	}
+	return strings.Join(lines, "\n")
+}
+
 // outputYAML prints data in YAML format
-func outputYAML(data interface{}) {
+func outputYAML(data any) {
 	yamlData, err := yaml.Marshal(data)
 	if err != nil {
 		log.Fatal("Error creating YAML output:", err)
 		return
 	}
-	fmt.Println(string(yamlData))
+	// trim the yaml data
+	yamlString := strings.TrimSpace(string(yamlData))
+	if supportsColor() {
+		fmt.Println(colorizeYAML(yamlString))
+	} else {
+		fmt.Println(yamlString)
+	}
 }
 
-// outputText prints data in plain text format
-// func outputText(data interface{}) {
-// 	fmt.Printf("Data: %v\n", data)
-// }
-
-// FetchData simulates data retrieval
-func FetchData() interface{} {
-	return map[string]string{"key": "value"}
-}
-
-func outputTable(data interface{}) {
+func outputTable(data any) {
 	val := reflect.ValueOf(data)
 
 	// If the input is a pointer, get the underlying element

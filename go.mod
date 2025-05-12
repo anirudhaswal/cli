@@ -1,6 +1,6 @@
 module github.com/suprsend/cli
 
-go 1.23.0
+go 1.24.0
 
 toolchain go1.24.2
 
@@ -8,7 +8,7 @@ require (
 	github.com/MakeNowJust/heredoc/v2 v2.0.1
 	github.com/fatih/color v1.18.0
 	github.com/mark3labs/mcp-go v0.27.0
-	github.com/olekukonko/tablewriter v1.0.2
+	github.com/olekukonko/tablewriter v1.0.4
 	github.com/pkg/errors v0.9.1
 	github.com/sirupsen/logrus v1.9.3
 	github.com/spf13/cobra v1.9.1
