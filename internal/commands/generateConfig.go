@@ -38,5 +38,14 @@ var genConfigCmd = &cobra.Command{
 }
 
 func init() {
+	genConfigCmd.SetHelpFunc(func(command *cobra.Command, strings []string) {
+		// Hide flag for this command
+		command.Flags().MarkHidden("config")
+		command.Flags().MarkHidden("output")
+		command.Flags().MarkHidden("service-token")
+		// Call parent help func
+		command.Parent().HelpFunc()(command, strings)
+	})
+
 	rootCmd.AddCommand(genConfigCmd)
 }
