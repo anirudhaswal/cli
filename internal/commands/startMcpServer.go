@@ -11,6 +11,7 @@ import (
 	"github.com/spf13/cobra"
 	toolset "github.com/suprsend/cli/internal/tools"
 	"github.com/suprsend/cli/internal/utils"
+	"go.szostok.io/version"
 )
 
 var (
@@ -66,10 +67,11 @@ This server will handle all the requests from user about SuprSend capabilities a
 			toolStrs = append(toolStrs, t.Type+":"+t.Name)
 		}
 		log.Debugf("Selected tools: [%s]", strings.Join(toolStrs, ", "))
+		info := version.Get()
 
 		mcpServer := server.NewMCPServer(
 			"SuprSend",
-			"0.1",
+			info.Version,
 			server.WithResourceCapabilities(true, true),
 			server.WithPromptCapabilities(true),
 			server.WithToolCapabilities(true),
@@ -82,7 +84,7 @@ This server will handle all the requests from user about SuprSend capabilities a
 		}
 
 		if transport == "sse" {
-			utils.Banner()
+			utils.Banner(info.Version)
 			sseServer := server.NewSSEServer(mcpServer, server.WithBaseURL("http://localhost:8080"))
 			log.Printf("SSE server listening on :8080")
 			if err := sseServer.Start(":8080"); err != nil {

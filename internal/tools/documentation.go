@@ -91,6 +91,7 @@ func newDocumentationTools() []*Tool {
 					- Include technical or domain-specific terminology if applicable`),
 				mcp.Required(),
 			),
+			mcp.WithReadOnlyHintAnnotation(true),
 		),
 		Handler: searchDocsHandler,
 	}
@@ -104,6 +105,7 @@ func newDocumentationTools() []*Tool {
 				mcp.Description(`The uri of the documentation to fetch.`),
 				mcp.Required(),
 			),
+			mcp.WithReadOnlyHintAnnotation(true),
 		),
 		Handler: fetchDocsHandler,
 	}

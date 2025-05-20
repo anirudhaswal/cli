@@ -2,8 +2,9 @@ package tools
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
+
+	"gopkg.in/yaml.v3"
 
 	"github.com/mark3labs/mcp-go/mcp"
 	"github.com/suprsend/cli/internal/utils"
@@ -28,11 +29,12 @@ func getUserHandler(ctx context.Context, request mcp.CallToolRequest) (*mcp.Call
 	if err != nil {
 		return nil, err
 	}
-	json_user, err := json.Marshal(user)
+
+	yamluser, err := yaml.Marshal(user)
 	if err != nil {
 		return nil, err
 	}
-	return mcp.NewToolResultText(string(json_user)), nil
+	return mcp.NewToolResultText(string(yamluser)), nil
 }
 
 func upsertUserHandler(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
@@ -69,7 +71,7 @@ func upsertUserHandler(ctx context.Context, request mcp.CallToolRequest) (*mcp.C
 		if err != nil {
 			return nil, err
 		}
-		log.Debugf(res.String())
+		log.Debug(res.String())
 	case "remove":
 		userInstance.Remove(map[string]any{key: value})
 	case "set":
@@ -91,7 +93,7 @@ func newUserTools() []*Tool {
 		Name:        "users.get",
 		Description: "Enables querying user information",
 		MCPTool: mcp.NewTool("get_suprsend_user",
-			mcp.WithDescription(`Use this tool to get all properties for a user in SuprSend. This tool will return a JSON object with all the properties of the user. At top level, it will return the distinct_id, properties (all the custom properties of the user), created_at, updated_at and an array of user channels ($email, push, $sms, $whatsapp, $slack etc.). Eeach object inside will have channel value, status and perma_status (permanent status of the user). If the workspace is not specified. ask the user to provide it before using this tool.`),
+			mcp.WithDescription(`Use this tool to get all properties for a user in SuprSend. This tool will return a YAML string with all the properties of the user. At top level, it will return the distinct_id, properties (all the custom properties of the user), created_at, updated_at and an array of user channels ($email, push, $sms, $whatsapp, $slack etc.). Eeach object inside will have channel value, status and perma_status (permanent status of the identity). If the workspace is not specified. ask the user to provide it before using this tool.`),
 			mcp.WithString("distinct_id",
 				mcp.Description(`The distinct_id of the user to get.`),
 				mcp.Required(),
@@ -100,6 +102,7 @@ func newUserTools() []*Tool {
 				mcp.Description(`SuprSend workspace to get the user from.`),
 				mcp.Required(),
 			),
+			mcp.WithReadOnlyHintAnnotation(true),
 		),
 		Handler: getUserHandler,
 	}
@@ -131,6 +134,7 @@ func newUserTools() []*Tool {
 				mcp.Description(`The value to needs to be added/removed/set/unset/appended/incremented.`),
 				mcp.Required(),
 			),
+			mcp.WithDestructiveHintAnnotation(true),
 		),
 		Handler: upsertUserHandler,
 	}

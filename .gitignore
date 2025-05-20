@@ -21,3 +21,5 @@ dist/
 bin/
 .DS_Store
 TODO.md
+.air.toml
+tmp/

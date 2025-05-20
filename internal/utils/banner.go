@@ -7,9 +7,7 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-var version = "dev"
-
-func Banner() {
+func Banner(version string) {
 	banner := `
    _____                  _____                __
   / ___/__  ______  _____/ ___/___  ____  ____/ /
@@ -17,8 +15,9 @@ func Banner() {
  ___/ / /_/ / /_/ / /   ___/ /  __/ / / / /_/ /  
 /____/\__,_/ .___/_/   /____/\___/_/ /_/\__,_/   
           /_/                                    
-`
+
+		  `
 	log.Info(banner)
 	// Print the current version of the CLI
-	log.Infof("SuprSend CLI - v.%s", version)
+	log.Infof("SuprSend CLI v.%s", version)
 }
