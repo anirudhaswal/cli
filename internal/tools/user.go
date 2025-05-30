@@ -13,14 +13,16 @@ import (
 )
 
 func getUserHandler(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
-	distinct_id, ok := request.Params.Arguments["distinct_id"].(string)
-	if !ok {
-		return nil, errors.New("distinct_id must be a string")
+	distinct_id, err := request.RequireString("distinct_id")
+	if err != nil {
+		return mcp.NewToolResultError(err.Error()), nil
 	}
-	workspace, ok := request.Params.Arguments["workspace"].(string)
-	if !ok {
-		return nil, errors.New("workspace must be a string")
+
+	workspace, err := request.RequireString("workspace")
+	if err != nil {
+		return mcp.NewToolResultError(err.Error()), nil
 	}
+
 	suprsend_client, err := utils.GetSuprSendWorkspaceClient(workspace)
 	if err != nil {
 		return nil, err
@@ -38,25 +40,25 @@ func getUserHandler(ctx context.Context, request mcp.CallToolRequest) (*mcp.Call
 }
 
 func upsertUserHandler(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
-	distinct_id, ok := request.Params.Arguments["distinct_id"].(string)
-	if !ok {
-		return nil, errors.New("distinct_id must be a string")
+	distinct_id, err := request.RequireString("distinct_id")
+	if err != nil {
+		return mcp.NewToolResultError(err.Error()), nil
 	}
-	workspace, ok := request.Params.Arguments["workspace"].(string)
-	if !ok {
-		return nil, errors.New("workspace must be a string")
+	workspace, err := request.RequireString("workspace")
+	if err != nil {
+		return mcp.NewToolResultError(err.Error()), nil
 	}
-	action, ok := request.Params.Arguments["action"].(string)
-	if !ok {
-		return nil, errors.New("action must be a string")
+	action, err := request.RequireString("action")
+	if err != nil {
+		return mcp.NewToolResultError(err.Error()), nil
 	}
-	key, ok := request.Params.Arguments["key"].(string)
-	if !ok {
-		return nil, errors.New("key must be a string")
+	key, err := request.RequireString("key")
+	if err != nil {
+		return mcp.NewToolResultError(err.Error()), nil
 	}
-	value, ok := request.Params.Arguments["value"].(string)
-	if !ok {
-		return nil, errors.New("value must be a string")
+	value, err := request.RequireString("value")
+	if err != nil {
+		return mcp.NewToolResultError(err.Error()), nil
 	}
 	suprsend_client, err := utils.GetSuprSendWorkspaceClient(workspace)
 	if err != nil {

@@ -2,7 +2,6 @@ package tools
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -13,9 +12,9 @@ import (
 )
 
 func searchDocsHandler(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
-	query, ok := request.Params.Arguments["query"].(string)
-	if !ok {
-		return nil, errors.New("query must be a string")
+	query, err := request.RequireString("query")
+	if err != nil {
+		return mcp.NewToolResultError(err.Error()), nil
 	}
 
 	encodedQuery := url.QueryEscape(query)
@@ -38,10 +37,11 @@ func searchDocsHandler(ctx context.Context, request mcp.CallToolRequest) (*mcp.C
 }
 
 func fetchDocsHandler(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
-	uri, ok := request.Params.Arguments["uri"].(string)
-	if !ok {
-		return nil, errors.New("uri must be a string")
+	uri, err := request.RequireString("uri")
+	if err != nil {
+		return mcp.NewToolResultError(err.Error()), nil
 	}
+
 	if !strings.HasSuffix(uri, ".md") {
 		uri = uri + ".md"
 	}
