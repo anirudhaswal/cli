@@ -4,6 +4,8 @@ Copyright © 2025 SuprSend
 package utils
 
 import (
+	"fmt"
+
 	log "github.com/sirupsen/logrus"
 )
 
@@ -17,7 +19,7 @@ func Banner(version string) {
           /_/                                    
 
 		  `
-	log.Info(banner)
+	fmt.Println(banner)
 	// Print the current version of the CLI
 	log.Infof("SuprSend CLI v.%s", version)
 }
