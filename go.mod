@@ -7,13 +7,13 @@ toolchain go1.24.2
 require (
 	github.com/MakeNowJust/heredoc/v2 v2.0.1
 	github.com/fatih/color v1.18.0
-	github.com/mark3labs/mcp-go v0.30.2-0.20250529154430-e744c1925c70
+	github.com/mark3labs/mcp-go v0.32.0
 	github.com/olekukonko/tablewriter v1.0.7
 	github.com/pkg/errors v0.9.1
 	github.com/sirupsen/logrus v1.9.3
 	github.com/spf13/cobra v1.9.1
 	github.com/spf13/viper v1.20.1
-	github.com/suprsend/suprsend-go v0.6.0
+	github.com/suprsend/suprsend-go v0.6.1-0.20250530104637-b54bd966dbe4
 	github.com/tidwall/pretty v1.2.1
 	go.szostok.io/version v1.2.0
 	gopkg.in/yaml.v3 v3.0.1
