@@ -17,6 +17,7 @@ require (
 	github.com/tidwall/pretty v1.2.1
 	go.szostok.io/version v1.2.0
 	gopkg.in/yaml.v3 v3.0.1
+	resty.dev/v3 v3.0.0-beta.3
 )
 
 require (

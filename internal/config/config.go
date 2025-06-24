@@ -17,6 +17,7 @@ type Config struct {
 	Verbosity     string
 	ServiceToken  string
 	NoColorOutput bool
+	Workspace     string
 }
 
 // cfg is the global configuration instance.
