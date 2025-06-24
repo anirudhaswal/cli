@@ -25,7 +25,7 @@ type WorkflowAPIResponse struct {
 	} `json:"meta"`
 }
 
-func (c *SS_MgmntClient) GetWorkflows(workspace string, limit int, offset int, mode string) ([]Workflow, error) {
+func (c *SS_MgmntClient) GetWorkflows(workspace string, limit int, offset int, mode string) (*WorkflowAPIResponse, error) {
 	if mode != "live" && mode != "draft" {
 		return nil, fmt.Errorf("invalid mode: %s", mode)
 	}
@@ -51,5 +51,5 @@ func (c *SS_MgmntClient) GetWorkflows(workspace string, limit int, offset int, m
 
 	workflows := res.Result().(*WorkflowAPIResponse)
 
-	return workflows.Results, nil
+	return workflows, nil
 }

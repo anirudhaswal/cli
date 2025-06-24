@@ -21,6 +21,18 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
+// IsOutputPiped checks if os.Stdout is connected to a pipe or redirected.
+func IsOutputPiped() bool {
+	fi, err := os.Stdout.Stat()
+	if err != nil {
+		return false
+	}
+
+	// If ModeCharDevice is NOT set, it means the output is not a character device (terminal).
+	// This implies it's a pipe or redirection.
+	return (fi.Mode() & os.ModeCharDevice) == 0
+}
+
 func supportsColor() bool {
 	// check if output is redirected to a file
 	fileInfo, _ := os.Stdout.Stat()
@@ -28,7 +40,6 @@ func supportsColor() bool {
 		return false
 	}
 
-	// check if stdout is a tty
 	if viper.GetBool("NO_COLOR") {
 		return false
 	}

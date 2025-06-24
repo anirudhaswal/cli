@@ -4,9 +4,13 @@ Copyright © 2025 NAME HERE <EMAIL ADDRESS>
 package commands
 
 import (
+	"context"
+	"fmt"
+
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"github.com/suprsend/cli/internal/utils"
+	"github.com/yarlson/pin"
 )
 
 // listCmd represents the list command
@@ -15,6 +19,15 @@ var workflowListCmd = &cobra.Command{
 	Short: "List workflows for a workspace",
 	Long:  `List workflows for a workspace`,
 	Run: func(cmd *cobra.Command, args []string) {
+		var p *pin.Pin
+		if !utils.IsOutputPiped() {
+			p = pin.New("Loading...",
+				pin.WithSpinnerColor(pin.ColorCyan),
+				pin.WithTextColor(pin.ColorYellow),
+			)
+			cancel := p.Start(context.Background())
+			defer cancel()
+		}
 		workspace, _ := cmd.Flags().GetString("workspace")
 		mgmnt_client := utils.GetSuprSendMgmntClient()
 
@@ -26,8 +39,11 @@ var workflowListCmd = &cobra.Command{
 			log.Errorf("Error getting workflows: %s", err)
 			return
 		}
+		if p != nil {
+			p.Stop(fmt.Sprintf("Showing %d workflows out of %d from workspace %s \n", len(workflows.Results), workflows.Meta.Count, workspace))
+		}
 		outputType, _ := cmd.Flags().GetString("output")
-		utils.OutputData(workflows, outputType)
+		utils.OutputData(workflows.Results, outputType)
 	},
 }
 

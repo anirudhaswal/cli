@@ -15,6 +15,7 @@ require (
 	github.com/spf13/viper v1.20.1
 	github.com/suprsend/suprsend-go v0.6.1-0.20250530104637-b54bd966dbe4
 	github.com/tidwall/pretty v1.2.1
+	github.com/yarlson/pin v0.9.1
 	go.szostok.io/version v1.2.0
 	gopkg.in/yaml.v3 v3.0.1
 	resty.dev/v3 v3.0.0-beta.3
