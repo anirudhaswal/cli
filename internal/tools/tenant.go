@@ -53,110 +53,41 @@ func upsertTenantHandler(ctx context.Context, request mcp.CallToolRequest) (*mcp
 	if err != nil {
 		return mcp.NewToolResultError(err.Error()), nil
 	}
-	request_data, ok := request.GetArguments()["tenant_properties"]
+
+	raw_props, ok := request.GetArguments()["tenant_properties"]
 	if !ok {
 		return mcp.NewToolResultError("tenant_properties is required"), nil
 	}
-	tenant_properties, ok := request_data.(map[string]any)
+
+	tenant_properties, ok := raw_props.(map[string]any)
 	if !ok {
 		return mcp.NewToolResultError("invalid tenant_properties"), nil
 	}
 
-	tenant_name, tenant_name_ok := tenant_properties["tenant_name"]
-	var tenant_name_ptr *string
-	if tenant_name_ok {
-		tenant_name_str := tenant_name.(string)
-		tenant_name_ptr = &tenant_name_str
-	}
-	tenant_logo, tenant_logo_ok := tenant_properties["logo"]
-	var tenant_logo_ptr *string
-	if tenant_logo_ok {
-		tenant_logo_str := tenant_logo.(string)
-		tenant_logo_ptr = &tenant_logo_str
-	}
-	tenant_timezone, tenant_timezone_ok := tenant_properties["timezone"]
-	var tenant_timezone_ptr *string
-	if tenant_timezone_ok {
-		tenant_timezone_str := tenant_timezone.(string)
-		tenant_timezone_ptr = &tenant_timezone_str
-	}
-	tenant_primary_color, tenant_primary_color_ok := tenant_properties["primary_color"]
-	var tenant_primary_color_ptr *string
-	if tenant_primary_color_ok {
-		tenant_primary_color_str := tenant_primary_color.(string)
-		tenant_primary_color_ptr = &tenant_primary_color_str
-	}
-
-	tenant_secondary_color, tenant_secondary_color_ok := tenant_properties["secondary_color"]
-	var tenant_secondary_color_ptr *string
-	if tenant_secondary_color_ok {
-		tenant_secondary_color_str := tenant_secondary_color.(string)
-		tenant_secondary_color_ptr = &tenant_secondary_color_str
-	}
-	tenant_tertiary_color, tenant_tertiary_color_ok := tenant_properties["tertiary_color"]
-	var tenant_tertiary_color_ptr *string
-	if tenant_tertiary_color_ok {
-		tenant_tertiary_color_str := tenant_tertiary_color.(string)
-		tenant_tertiary_color_ptr = &tenant_tertiary_color_str
-	}
 	// todo: add blocked_channels
 	// blocked_channels, blocked_channels_ok := tenant_properties["blocked_channels"]
-	tenant_embedded_preference_url, tenant_embedded_preference_url_ok := tenant_properties["embedded_preference_url"]
-	var tenant_embedded_preference_url_ptr *string
-	if tenant_embedded_preference_url_ok {
-		tenant_embedded_preference_url_str := tenant_embedded_preference_url.(string)
-		tenant_embedded_preference_url_ptr = &tenant_embedded_preference_url_str
-	}
-	tenant_hosted_preference_domain, tenant_hosted_preference_domain_ok := tenant_properties["hosted_preference_domain"]
-	var tenant_hosted_preference_domain_ptr *string
-	if tenant_hosted_preference_domain_ok {
-		tenant_hosted_preference_domain_str := tenant_hosted_preference_domain.(string)
-		tenant_hosted_preference_domain_ptr = &tenant_hosted_preference_domain_str
-	}
-	tenant_social_links, tenant_social_links_ok := tenant_properties["social_links"]
-	var tenant_social_links_ptr *suprsend.TenantSocialLinks
-	if tenant_social_links_ok {
-		social_links_map, ok := tenant_social_links.(map[string]any)
-		if ok {
-			social_links := &suprsend.TenantSocialLinks{}
-
-			if facebook, ok := social_links_map["facebook"].(string); ok {
-				social_links.Facebook = &facebook
-			}
-			if twitter, ok := social_links_map["twitter"].(string); ok {
-				social_links.Twitter = &twitter
-			}
-			if instagram, ok := social_links_map["instagram"].(string); ok {
-				social_links.Instagram = &instagram
-			}
-			tenant_social_links_ptr = social_links
-		}
-
-	}
-	tenant_custom_properties, tenant_custom_properties_ok := tenant_properties["custom_properties"]
-	var tenant_custom_properties_map map[string]any
-	if tenant_custom_properties_ok {
-		tenant_custom_properties_map = tenant_custom_properties.(map[string]any)
-	}
 
 	tenant_payload := &suprsend.Tenant{
-		TenantName:             tenant_name_ptr,
-		Logo:                   tenant_logo_ptr,
-		Timezone:               tenant_timezone_ptr,
-		PrimaryColor:           tenant_primary_color_ptr,
-		SecondaryColor:         tenant_secondary_color_ptr,
-		TertiaryColor:          tenant_tertiary_color_ptr,
-		EmbeddedPreferenceUrl:  tenant_embedded_preference_url_ptr,
-		HostedPreferenceDomain: tenant_hosted_preference_domain_ptr,
-		SocialLinks:            tenant_social_links_ptr,
-		Properties:             tenant_custom_properties_map,
+		TenantName:             utils.GetStringPtr(tenant_properties, "tenant_name"),
+		Logo:                   utils.GetStringPtr(tenant_properties, "tenant_logo_ptr"),
+		Timezone:               utils.GetStringPtr(tenant_properties, "timezone"),
+		PrimaryColor:           utils.GetStringPtr(tenant_properties, "primary_color"),
+		SecondaryColor:         utils.GetStringPtr(tenant_properties, "secondary_color"),
+		TertiaryColor:          utils.GetStringPtr(tenant_properties, "tertiary_color"),
+		EmbeddedPreferenceUrl:  utils.GetStringPtr(tenant_properties, "embedded_preference_url"),
+		HostedPreferenceDomain: utils.GetStringPtr(tenant_properties, "hosted_preference_domain"),
+		SocialLinks:            buildSocialLinks(utils.GetMap(tenant_properties, "social_links")),
+	}
+
+	if custom_tenant_properties, ok := tenant_properties["custom_properties"].(map[string]any); ok {
+		tenant_payload.Properties = custom_tenant_properties
 	}
 
 	tenant, err := suprsend_client.Tenants.Upsert(ctx, tenant_id, tenant_payload)
 	if err != nil {
 		err_str := err.Error()
-		if strings.Contains(err_str, "{\"tenant_name\": \"missing value\"}") {
-			return mcp.NewToolResultError("tenant_name is required when creating a new tenant try again with a tenant_name"), nil
+		if strings.Contains(err_str, `{"tenant_name": "missing value"}`) {
+			return mcp.NewToolResultError("tenant_name is required when creating a new tenant. Try again with a tenant_name."), nil
 		}
 		return mcp.NewToolResultError(err_str), nil
 	}
@@ -201,72 +132,8 @@ func newTenantTools() []*Tool {
 				mcp.Required(),
 			),
 			mcp.WithObject("tenant_properties",
-				mcp.Description(`The properties to upsert for the tenant.`),
-				mcp.Properties(map[string]any{
-					"tenant_name": map[string]any{
-						"type":        "string",
-						"description": "Name of the tenant",
-					},
-					"logo": map[string]any{
-						"type":        "string",
-						"description": "url of the logo of the tenant",
-					},
-					"timezone": map[string]any{
-						"type":        "string",
-						"description": "timezone of the tenant",
-					},
-					"blocked_channels": map[string]any{
-						"type":        "array",
-						"description": "blocked channels of the tenant",
-						"items": map[string]any{
-							"type":        "string",
-							"description": "blocked channel of the tenant",
-						},
-					},
-					"embedded_preference_url": map[string]any{
-						"type":        "string",
-						"description": "embedded preference url of the tenant",
-					},
-					"hosted_preference_domain": map[string]any{
-						"type":        "string",
-						"description": "hosted preference domain of the tenant",
-					},
-					"primary_color": map[string]any{
-						"type":        "string",
-						"description": "primary color of the tenant in hex format",
-					},
-					"secondary_color": map[string]any{
-						"type":        "string",
-						"description": "secondary color of the tenant in hex format",
-					},
-					"tertiary_color": map[string]any{
-						"type":        "string",
-						"description": "tertiary color of the tenant in hex format",
-					},
-					"social_links": map[string]any{
-						"type":        "object",
-						"description": "social links of the tenant",
-						"properties": map[string]any{
-							"facebook": map[string]any{
-								"type":        "string",
-								"description": "facebook url of the tenant",
-							},
-							"twitter": map[string]any{
-								"type":        "string",
-								"description": "twitter url of the tenant",
-							},
-							"instagram": map[string]any{
-								"type":        "string",
-								"description": "instagram url of the tenant",
-							},
-						},
-					},
-					"custom_properties": map[string]any{
-						"type":        "object",
-						"description": "custom properties of the tenant",
-					},
-				},
-				),
+				mcp.Description("The properties to upsert for the tenant."),
+				mcp.Properties(tenantPropertiesSchema),
 			),
 			mcp.WithDestructiveHintAnnotation(true),
 		),
@@ -280,4 +147,46 @@ func init() {
 	for _, t := range newTenantTools() {
 		RegisterTool(t, "tenants")
 	}
+}
+
+func buildSocialLinks(m map[string]any) *suprsend.TenantSocialLinks {
+	if m == nil {
+		return nil
+	}
+	s := &suprsend.TenantSocialLinks{}
+	if v, ok := m["facebook"].(string); ok {
+		s.Facebook = &v
+	}
+	if v, ok := m["twitter"].(string); ok {
+		s.Twitter = &v
+	}
+	if v, ok := m["instagram"].(string); ok {
+		s.Instagram = &v
+	}
+	return s
+}
+
+var tenantPropertiesSchema = map[string]any{
+	"tenant_name":              utils.StringSchema("Name of the tenant"),
+	"logo":                     utils.StringSchema("Url of tenant's logo"),
+	"timezone":                 utils.StringSchema("Timezone of the tenant"),
+	"blocked_channels":         utils.StringSchema("Blocked channels of the tenant"),
+	"embedded_preference_url":  utils.StringSchema("Embedded preference URL"),
+	"hosted_preference_domain": utils.StringSchema("Hosted preference domain"),
+	"primary_color":            utils.StringSchema("Primary color in hex format"),
+	"secondary_color":          utils.StringSchema("Secondary color in hex format"),
+	"tertiary_color":           utils.StringSchema("Tertiary color in hex format"),
+	"social_links": map[string]any{
+		"type":        "object",
+		"description": "Social links of the tenant",
+		"properties": map[string]any{
+			"facebook":  utils.StringSchema("Facebook URL"),
+			"twitter":   utils.StringSchema("Twitter URL"),
+			"instagram": utils.StringSchema("Instagram URL"),
+		},
+	},
+	"custom_properties": map[string]any{
+		"type":        "object",
+		"description": "Custom properties of the tenant",
+	},
 }

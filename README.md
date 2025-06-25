@@ -26,7 +26,7 @@ To build SuprSend CLI from source, follow these steps:
     
     ```bash
     git clone https://github.com/suprsend/cli.git
-    cd cli
+    cd cli/cmd/suprsend
     ```
     
 3. Build the binary:
