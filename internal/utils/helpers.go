@@ -5,22 +5,8 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/mark3labs/mcp-go/mcp"
 	suprsend "github.com/suprsend/suprsend-go"
 )
-
-func McpStringField(name, description string, required bool, enumValues ...string) mcp.ToolOption {
-	opts := []mcp.PropertyOption{
-		mcp.Description(description),
-	}
-	if required {
-		opts = append(opts, mcp.Required())
-	}
-	if len(enumValues) > 0 {
-		opts = append(opts, mcp.Enum(enumValues...))
-	}
-	return mcp.WithString(name, opts...)
-}
 
 func GetStringPtr(m map[string]any, key string) *string {
 	if val, ok := m[key].(string); ok {
