@@ -1,11 +1,12 @@
 /*
-Copyright © 2025 NAME HERE <EMAIL ADDRESS>
+Copyright © 2025 SuprSend
 */
 package commands
 
 import (
 	"bufio"
 	"context"
+	"encoding/json"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -104,6 +105,71 @@ var workflowPullCmd = &cobra.Command{
 	},
 }
 
+var workflowPushCmd = &cobra.Command{
+	Use:   "push",
+	Short: "push workflows from local to suprsend",
+	Long:  `push workflows from local to suprsend dashboard`,
+	Run: func(cmd *cobra.Command, args []string) {
+		dirPath := filepath.Join(".", "suprsend", "workflow")
+
+		if _, err := os.Stat(dirPath); os.IsNotExist(err) {
+			fmt.Printf("Directory '%s' does not exist. Exiting.\n", dirPath)
+			return
+		}
+
+		mgmntClient := utils.GetSuprSendMgmntClient()
+		resp, err := mgmntClient.GetWorkflows("production", 20, 0, "live")
+		if err != nil {
+			log.Errorf("Failed to get workflows: %v", err)
+			return
+		}
+
+		existingSlugs := make(map[string]bool)
+		for _, wf := range resp.Results {
+			existingSlugs[wf.Slug] = true
+		}
+
+		files, err := os.ReadDir(dirPath)
+		if err != nil {
+			log.Errorf("Failed to read local workflows directory: %v", err)
+			return
+		}
+
+		for _, file := range files {
+			if file.IsDir() || !strings.HasSuffix(file.Name(), ".json") {
+				continue
+			}
+
+			slug := strings.TrimSuffix(file.Name(), ".json")
+			if _, exists := existingSlugs[slug]; exists {
+				fmt.Printf("Skipping '%s.json' (already exists on server)\n", slug)
+				continue
+			}
+
+			path := filepath.Join(dirPath, file.Name())
+			data, err := os.ReadFile(path)
+			if err != nil {
+				log.Errorf("Failed to read file %s: %v", file.Name(), err)
+				continue
+			}
+
+			var workflow map[string]any
+			if err := json.Unmarshal(data, &workflow); err != nil {
+				log.Errorf("Failed to parse JSON for %s: %v", file.Name(), err)
+				continue
+			}
+
+			err = mgmntClient.PushWorkflow(slug, workflow)
+			if err != nil {
+				log.Errorf("Failed to push workflow %s: %v", slug, err)
+				continue
+			}
+
+			fmt.Printf("Pushed workflow: %s\n", slug)
+		}
+	},
+}
+
 func init() {
 	workflowListCmd.Flags().IntP("limit", "l", 20, "Limit the number of workflows to list")
 	workflowListCmd.Flags().IntP("offset", "f", 0, "Offset the number of workflows to list (default: 0)")
@@ -115,4 +181,5 @@ func init() {
 	workflowPullCmd.Flags().BoolVarP(&force, "force-dir", "f", false, "Create workflow directory without the permission")
 	workflowCmd.AddCommand(workflowListCmd)
 	workflowCmd.AddCommand(workflowPullCmd)
+	workflowCmd.AddCommand(workflowPushCmd)
 }

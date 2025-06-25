@@ -53,3 +53,37 @@ func (c *SS_MgmntClient) GetWorkflows(workspace string, limit int, offset int, m
 
 	return workflows, nil
 }
+
+func (c *SS_MgmntClient) PushWorkflow(slug string, workflow map[string]any) error {
+	if slug == "" {
+		return fmt.Errorf("slug cannot be empty")
+	}
+
+	client := resty.New()
+	defer client.Close()
+
+	url := fmt.Sprintf("%sv1/staging/workflow/%s/", c.mgmnt_base_URL, slug)
+	fmt.Printf("Request: url %s", url)
+
+	log.Debugf("Pushing workflow to: %s", url)
+
+	res, err := client.R().
+		SetDebug(c.debug).
+		SetHeader("Authorization", "ServiceToken "+c.serviceToken).
+		SetHeader("Content-Type", "application/json").
+		SetBody(workflow).
+		Post(url)
+
+	if err != nil {
+		log.Errorf("Error pushing workflow: %s", err)
+		return err
+	}
+
+	if res.IsError() {
+		log.Errorf("Push failed: %s - %s", res.Status(), res.String())
+		return fmt.Errorf("push failed: %s", res.Status())
+	}
+
+	log.Infof("Successfully pushed workflow: %s", slug)
+	return nil
+}
