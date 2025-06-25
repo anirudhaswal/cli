@@ -58,26 +58,26 @@ func HandleAction(ctx context.Context, userInstance suprsend.UserEdit, action, k
 	switch action {
 	case "upsert":
 		if key != "" && value != "" {
-			userInstance.Set(map[string]interface{}{key: value})
+			userInstance.Set(map[string]any{key: value})
 			out = fmt.Sprintf("Key set successfully for user with distinct_id: %s for key: %s and value: %s", distinct_id, key, value)
 		} else {
 			out = "User upserted successfully with distinct_id: " + distinct_id
 		}
 		_, err = suprsend_client.Users.AsyncEdit(ctx, userInstance)
 	case "remove":
-		userInstance.Remove(map[string]interface{}{key: value})
+		userInstance.Remove(map[string]any{key: value})
 		out = fmt.Sprintf("Key removed successfully from user with distinct_id: %s for key: %s and value: %s", distinct_id, key, value)
 	case "set":
-		userInstance.Set(map[string]interface{}{key: value})
+		userInstance.Set(map[string]any{key: value})
 		out = fmt.Sprintf("Key set successfully for user with distinct_id: %s for key: %s and value: %s", distinct_id, key, value)
 	case "unset":
 		userInstance.Unset([]string{key})
 		out = fmt.Sprintf("Key unset successfully for user with distinct_id: %s for key: %s and value: %s", distinct_id, key, value)
 	case "append":
-		userInstance.Append(map[string]interface{}{key: value})
+		userInstance.Append(map[string]any{key: value})
 		out = fmt.Sprintf("Key appended successfully for user with distinct_id: %s for key: %s and value: %s", distinct_id, key, value)
 	case "increment":
-		userInstance.Increment(map[string]interface{}{key: value})
+		userInstance.Increment(map[string]any{key: value})
 		out = fmt.Sprintf("Key incremented successfully for user with distinct_id: %s for key: %s and value: %s", distinct_id, key, value)
 	case "add_email":
 		userInstance.AddEmail(value)
@@ -116,7 +116,7 @@ func HandleAction(ctx context.Context, userInstance suprsend.UserEdit, action, k
 		userInstance.RemoveIospush(value, identity_provider)
 		out = fmt.Sprintf("iOS push removed successfully for user with distinct_id: %s for key: %s and value: %s and identity_provider: %s", distinct_id, key, value, identity_provider)
 	case "add_slack", "remove_slack":
-		payload, slackOut, err := prepareSlackPayload(slack_details, action)
+		payload, slackOut, err := prepareSlackPayload(slack_details)
 		if err != nil {
 			return "", err
 		}
@@ -131,12 +131,12 @@ func HandleAction(ctx context.Context, userInstance suprsend.UserEdit, action, k
 	return out, err
 }
 
-func prepareSlackPayload(slackDetails map[string]interface{}, action string) (map[string]interface{}, string, error) {
-	var payload map[string]interface{}
+func prepareSlackPayload(slackDetails map[string]any) (map[string]any, string, error) {
+	var payload map[string]any
 	var slackOut string
 
 	if url, ok := slackDetails["slack_incoming_webhook_url"]; ok {
-		payload = map[string]interface{}{"incoming_webhook": map[string]interface{}{"url": url}}
+		payload = map[string]any{"incoming_webhook": map[string]any{"url": url}}
 		slackOut = "Slack incoming webhook %s successfully for user with distinct_id: %s and value: %s"
 	} else {
 		accessToken, accessTokenOk := slackDetails["access_token"]
@@ -148,7 +148,7 @@ func prepareSlackPayload(slackDetails map[string]interface{}, action string) (ma
 			if !accessTokenOk {
 				return nil, "", errors.New("access_token is required when slack_email is provided")
 			}
-			payload = map[string]interface{}{
+			payload = map[string]any{
 				"access_token": accessToken,
 				"email":        slackEmail,
 			}
@@ -157,7 +157,7 @@ func prepareSlackPayload(slackDetails map[string]interface{}, action string) (ma
 			if !accessTokenOk {
 				return nil, "", errors.New("access_token is required when slack_channel_id is provided")
 			}
-			payload = map[string]interface{}{
+			payload = map[string]any{
 				"access_token": accessToken,
 				"channel_id":   slackChannelID,
 			}
@@ -166,7 +166,7 @@ func prepareSlackPayload(slackDetails map[string]interface{}, action string) (ma
 			if !accessTokenOk {
 				return nil, "", errors.New("access_token is required when slack_user_id is provided")
 			}
-			payload = map[string]interface{}{
+			payload = map[string]any{
 				"access_token": accessToken,
 				"user_id":      slackUserID,
 			}

@@ -224,7 +224,7 @@ var slackPropertiesSchema = map[string]any{
 	"slack_incoming_webhook_url": utils.StringSchema("Incoming webhook URL for the Slack"),
 }
 
-func getSlackDetails(request mcp.CallToolRequest, action string) (map[string]interface{}, error) {
+func getSlackDetails(request mcp.CallToolRequest, action string) (map[string]any, error) {
 	if action != "add_slack" && action != "remove_slack" {
 		return nil, nil
 	}
@@ -234,7 +234,7 @@ func getSlackDetails(request mcp.CallToolRequest, action string) (map[string]int
 		return nil, errors.New("required argument 'slack_details' not found")
 	}
 
-	slackDetails, ok := slackDetailsRaw.(map[string]interface{})
+	slackDetails, ok := slackDetailsRaw.(map[string]any)
 	if !ok {
 		return nil, errors.New("invalid slack_details")
 	}
