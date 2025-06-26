@@ -129,7 +129,7 @@ func newObjectTools() []*Tool {
 		Handler: getObjectHandler,
 	}
 
-	upsert_object_handler := &Tool{
+	upsert_suprsend_object := &Tool{
 		Name:        "objects.upsert",
 		Description: "Enables upserting object information",
 		MCPTool: mcp.NewTool("upsert_suprsend_object",
@@ -193,7 +193,7 @@ func newObjectTools() []*Tool {
 		Handler: upsertObjectHandler,
 	}
 
-	return []*Tool{get_suprsend_object, upsert_object_handler}
+	return []*Tool{get_suprsend_object, upsert_suprsend_object}
 }
 
 func init() {
