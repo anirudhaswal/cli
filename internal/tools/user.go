@@ -78,7 +78,7 @@ func upsertUserHandler(ctx context.Context, request mcp.CallToolRequest) (*mcp.C
 	}
 	userInstance := suprsend_client.Users.GetEditInstance(distinct_id)
 
-	out, err := utils.HandleAction(ctx, userInstance, action, key, value, slack_details, identity_provider, distinct_id, workspace)
+	out, err := utils.HandleUserAction(ctx, userInstance, action, key, value, slack_details, identity_provider, distinct_id, workspace)
 	if err != nil {
 		return nil, err
 	}
