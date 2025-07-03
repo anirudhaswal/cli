@@ -51,6 +51,11 @@ After installation, you can use the CLI by running the `suprsend` command. For e
 suprsend --help
 ```
 
+### Generating types
+
+````bash
+suprsend type-morph --language <string> --schema assets/schema/schema.json --schemaName <string> --file <string>
+```
 
 ## Documentation
 Please refer to documentation [here](docs/suprsend.md)
@@ -58,6 +63,15 @@ Please refer to documentation [here](docs/suprsend.md)
 ## Contributing
 
 Contributions are welcome! Please feel free to submit a Pull Request.
+
+### Generating build-artifacts locally
+```bash
+make build
+```
+### Removing local build artifacts
+```bash
+make clean
+```
 
 ## License
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.

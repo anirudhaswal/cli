@@ -30,11 +30,12 @@ async function main() {
     const [
     language = "typescript",
     schemaPath = "./schema.json",
+    schemaName = "SchemaType",
     outputPath = "./output.txt",
   ] = Deno.args;
 
   const text = await Deno.readTextFile(schemaPath);
-  const { lines } = await quicktypeJSONSchema(language, "SchemaType", text);
+  const { lines } = await quicktypeJSONSchema(language, schemaName, text);
 
   const output = lines.join("\n");
   await Deno.writeTextFile(outputPath, output);

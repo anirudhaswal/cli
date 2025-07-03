@@ -11,6 +11,9 @@ before:
     - go mod tidy
     # you may remove this if you don't need go generate
     # - go generate ./...
+    # - to generate build artifacts locally
+    - make clean
+    - make build
 
 builds:
   - main: ./cmd/suprsend

@@ -4,6 +4,7 @@ Copyright © 2025 SuprSend
 package main
 
 import (
+	_ "embed"
 	"os"
 
 	"github.com/suprsend/cli/internal/commands"
