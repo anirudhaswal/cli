@@ -106,6 +106,168 @@ func upsertObjectHandler(ctx context.Context, request mcp.CallToolRequest) (*mcp
 	return mcp.NewToolResultText(out), nil
 }
 
+func getObjectPreferences(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+	objId, err := request.RequireString("object_id")
+	if err != nil {
+		return mcp.NewToolResultError(err.Error()), nil
+	}
+
+	objType, err := request.RequireString("object_type")
+	if err != nil {
+		return mcp.NewToolResultError(err.Error()), nil
+	}
+
+	workspace, err := request.RequireString("workspace")
+	if err != nil {
+		return mcp.NewToolResultError(err.Error()), nil
+	}
+
+	suprsendClient, err := utils.GetSuprSendWorkspaceClient(workspace)
+	if err != nil {
+		return mcp.NewToolResultError(err.Error()), nil
+	}
+
+	objIdentifier := suprsend.ObjectIdentifier{
+		Id:         objId,
+		ObjectType: objType,
+	}
+
+	objPref, err := suprsendClient.Objects.GetPreference(ctx, objIdentifier, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	yamlPref, err := yaml.Marshal(objPref)
+	if err != nil {
+		return nil, err
+	}
+
+	return mcp.NewToolResultText(string(yamlPref)), nil
+}
+
+func getObjectCategoryPreferences(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+	objId, err := request.RequireString("object_id")
+	if err != nil {
+		return mcp.NewToolResultError(err.Error()), nil
+	}
+
+	objType, err := request.RequireString("object_type")
+	if err != nil {
+		return mcp.NewToolResultError(err.Error()), nil
+	}
+
+	category, err := request.RequireString("category")
+	if err != nil {
+		return mcp.NewToolResultError(err.Error()), nil
+	}
+
+	workspace, err := request.RequireString("workspace")
+	if err != nil {
+		return mcp.NewToolResultError(err.Error()), nil
+	}
+
+	suprsendClient, err := utils.GetSuprSendWorkspaceClient(workspace)
+	if err != nil {
+		return mcp.NewToolResultError(err.Error()), nil
+	}
+
+	objIdentifier := suprsend.ObjectIdentifier{
+		Id:         objId,
+		ObjectType: objType,
+	}
+
+	objPref, err := suprsendClient.Objects.GetCategoryPreference(ctx, objIdentifier, category, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	yamlPref, err := yaml.Marshal(objPref)
+	if err != nil {
+		return nil, err
+	}
+
+	return mcp.NewToolResultText(string(yamlPref)), nil
+}
+
+func updateObjectCategoryPreference(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+	objId, err := request.RequireString("object_id")
+	if err != nil {
+		return mcp.NewToolResultError(err.Error()), nil
+	}
+
+	objType, err := request.RequireString("object_type")
+	if err != nil {
+		return mcp.NewToolResultError(err.Error()), nil
+	}
+
+	obj := suprsend.ObjectIdentifier{
+		Id:         objId,
+		ObjectType: objType,
+	}
+
+	category, err := request.RequireString("category")
+	if err != nil {
+		return mcp.NewToolResultError(err.Error()), nil
+	}
+
+	args := request.GetArguments()
+
+	rawPayload, ok := args["payload"].(map[string]any)
+	if !ok {
+		return mcp.NewToolResultError("payload must be an object"), nil
+	}
+
+	pref, ok := rawPayload["preference"].(string)
+	if !ok {
+		return mcp.NewToolResultError("preference must be a string"), nil
+	}
+
+	optOutAny, ok := rawPayload["opt_out_channels"]
+	if !ok {
+		optOutAny = []any{}
+	}
+	optOutSlice, ok := optOutAny.([]any)
+	if !ok {
+		return mcp.NewToolResultError("opt_out_channels must be an array"), nil
+	}
+
+	optOutChannels := make([]string, 0, len(optOutSlice))
+	for _, v := range optOutSlice {
+		s, ok := v.(string)
+		if !ok {
+			return mcp.NewToolResultError("opt_out_channels must be an array of strings"), nil
+		}
+		optOutChannels = append(optOutChannels, s)
+	}
+
+	prefPayload := suprsend.ObjectUpdateCategoryPreferenceBody{
+		Preference:     pref,
+		OptOutChannels: optOutChannels,
+	}
+
+	workspace, err := request.RequireString("workspace")
+	if err != nil {
+		return nil, err
+	}
+
+	suprsendClient, err := utils.GetSuprSendWorkspaceClient(workspace)
+	if err != nil {
+		return nil, err
+	}
+
+	objPref, err := suprsendClient.Objects.UpdateCategoryPreference(ctx, obj, category, prefPayload, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	yamlPref, err := yaml.Marshal(objPref)
+	if err != nil {
+		return nil, err
+	}
+
+	return mcp.NewToolResultText(string(yamlPref)), nil
+}
+
 func newObjectTools() []*Tool {
 	get_suprsend_object := &Tool{
 		Name:        "objects.get",
@@ -193,7 +355,91 @@ func newObjectTools() []*Tool {
 		Handler: upsertObjectHandler,
 	}
 
-	return []*Tool{get_suprsend_object, upsert_suprsend_object}
+	get_suprsend_object_preferences := &Tool{
+		Name:        "objects.get_preferences",
+		Description: "Enables querying object preferences",
+		MCPTool: mcp.NewTool("get_suprsend_object_preferences",
+			mcp.WithDescription("Use this tool to get the preferences for an object."),
+			mcp.WithString("object_id",
+				mcp.Description("The object_id of the object to get preferences from."),
+				mcp.Required(),
+			),
+			mcp.WithString("object_type",
+				mcp.Description("The object_type of the object to get preferences from."),
+				mcp.Required(),
+			),
+			mcp.WithString("workspace",
+				mcp.Description("SuprSend workspace to get the user from."),
+				mcp.Required(),
+			),
+		),
+		Handler: getObjectPreferences,
+	}
+
+	get_suprsend_category_preference_object := &Tool{
+		Name:        "objects.get_preferences.category",
+		Description: "Enables querying a specific category preference for an object.",
+		MCPTool: mcp.NewTool("get_suprsend_category_preference_object",
+			mcp.WithDescription("Use this tool to get the preferences for an object."),
+			mcp.WithString("object_id",
+				mcp.Description("The object_id of the object to get preferences from."),
+				mcp.Required(),
+			),
+			mcp.WithString("object_type",
+				mcp.Description("The object_type of the object to get preferences from."),
+				mcp.Required(),
+			),
+			mcp.WithString("category",
+				mcp.Description("The category_slug of the object to get preferencs from."),
+				mcp.Required(),
+			),
+			mcp.WithString("workspace",
+				mcp.Description("SuprSend workspace to get the user from."),
+				mcp.Required(),
+			),
+		),
+		Handler: getObjectCategoryPreferences,
+	}
+
+	update_suprsend_category_preference_object := &Tool{
+		Name:        "objects.update_preferences.category",
+		Description: "Enables updating a specific category preference for an object.",
+		MCPTool: mcp.NewTool("update_suprsend_category_preference_object",
+			mcp.WithDescription("Use this tool to update a specific category preference for an object."),
+			mcp.WithString("object_id",
+				mcp.Description("The object_id of the object to get preferences from."),
+				mcp.Required(),
+			),
+			mcp.WithString("object_type",
+				mcp.Description("The object_type of the object to get preferences from."),
+				mcp.Required(),
+			),
+			mcp.WithString("category",
+				mcp.Description("category_slug of an category to get."),
+				mcp.Required(),
+			),
+			mcp.WithObject("payload",
+				mcp.Description("Payload of an category to update a category preference for an user."),
+				mcp.Required(),
+			),
+			mcp.WithString("workspace",
+				mcp.Description("SuprSend workspace to get the user from."),
+				mcp.Required(),
+			),
+			mcp.WithDestructiveHintAnnotation(true),
+		),
+		Handler: updateObjectCategoryPreference,
+	}
+
+	tools := []*Tool{
+		get_suprsend_object,
+		upsert_suprsend_object,
+		get_suprsend_object_preferences,
+		get_suprsend_category_preference_object,
+		update_suprsend_category_preference_object,
+	}
+
+	return tools
 }
 
 func init() {
