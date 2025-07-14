@@ -61,6 +61,8 @@ var workflowPullCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		dirPath := filepath.Join(".", "suprsend", "workflow")
 
+		workspace, _ := cmd.Flags().GetString("workspace")
+
 		if _, err := os.Stat(dirPath); os.IsNotExist(err) {
 			if force {
 				err := os.MkdirAll(dirPath, 0755)
@@ -92,7 +94,7 @@ var workflowPullCmd = &cobra.Command{
 		}
 
 		mgmnt_client := utils.GetSuprSendMgmntClient()
-		workflows_resp, err := mgmnt_client.GetWorkflows("production", 20, 0, "live")
+		workflows_resp, err := mgmnt_client.GetWorkflows(workspace, 20, 0, "live")
 		if err != nil {
 			log.Errorf("Error getting workflows: %s", err)
 			return
@@ -111,6 +113,7 @@ var workflowPushCmd = &cobra.Command{
 	Long:  `push workflows from local to suprsend dashboard`,
 	Run: func(cmd *cobra.Command, args []string) {
 		dirPath := filepath.Join(".", "suprsend", "workflow")
+		workspace, _ := cmd.Flags().GetString("workspace")
 
 		if _, err := os.Stat(dirPath); os.IsNotExist(err) {
 			fmt.Printf("Directory '%s' does not exist. Exiting.\n", dirPath)
@@ -159,7 +162,7 @@ var workflowPushCmd = &cobra.Command{
 				continue
 			}
 
-			err = mgmntClient.PushWorkflow(slug, workflow)
+			err = mgmntClient.PushWorkflow(workspace, slug, workflow)
 			if err != nil {
 				log.Errorf("Failed to push workflow %s: %v", slug, err)
 				continue
@@ -170,11 +173,37 @@ var workflowPushCmd = &cobra.Command{
 	},
 }
 
+var workflowCommitCmd = &cobra.Command{
+	Use:   "commit",
+	Short: "Commit a draft workflow to live.",
+	Long:  "Commits a draft workflow to live",
+	Run: func(cmd *cobra.Command, args []string) {
+		if len(args) < 1 {
+			log.Fatal("Category Slug is required")
+		}
+		workspace, _ := cmd.Flags().GetString("workspace")
+
+		slug := args[0]
+
+		mgmntClient := utils.GetSuprSendMgmntClient()
+
+		commmitMessage, _ := cmd.Flags().GetString("commit-message")
+
+		err := mgmntClient.CommitWorkflow(workspace, slug, commmitMessage)
+		if err != nil {
+			log.Errorf("Failed to commit workflow %s: %v", slug, err)
+		}
+
+		fmt.Printf("Committed workflow: %s\n", slug)
+	},
+}
+
 func init() {
 	workflowListCmd.Flags().IntP("limit", "l", 20, "Limit the number of workflows to list")
 	workflowListCmd.Flags().IntP("offset", "f", 0, "Offset the number of workflows to list (default: 0)")
 	// add flag to set mode which can be one of draft, live with validation of the flag
 	workflowListCmd.Flags().StringP("mode", "m", "live", "Mode to list workflows (draft, live)")
+	workflowListCmd.Flags().StringP("commit-message", "c", "", "Commit Message for making a workflow live")
 	workflowListCmd.SetHelpFunc(func(cmd *cobra.Command, args []string) {
 		cmd.Parent().HelpFunc()(cmd, args)
 	})
@@ -182,4 +211,5 @@ func init() {
 	workflowCmd.AddCommand(workflowListCmd)
 	workflowCmd.AddCommand(workflowPullCmd)
 	workflowCmd.AddCommand(workflowPushCmd)
+	workflowCmd.AddCommand(workflowCommitCmd)
 }
