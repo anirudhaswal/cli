@@ -7,6 +7,7 @@ import (
 	"github.com/MakeNowJust/heredoc/v2"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
+	workflow "github.com/suprsend/cli/internal/commands/workflow"
 	"github.com/suprsend/cli/internal/config"
 	"github.com/suprsend/cli/internal/utils"
 	"go.szostok.io/version/extension"
@@ -49,6 +50,8 @@ func init() {
 			extension.WithUpgradeNotice("suprsend", "cli"),
 		),
 	)
+
+	rootCmd.AddCommand(workflow.WorkflowCmd)
 
 	rootCmd.PersistentPreRunE = func(cmd *cobra.Command, args []string) error {
 		if err := config.SetUpLogs(); err != nil {
