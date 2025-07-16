@@ -6,10 +6,10 @@ import (
 	"github.com/suprsend/cli/internal/utils"
 )
 
-var workflowCommitCmd = &cobra.Command{
-	Use:   "commit",
-	Short: "Commit a draft workflow to live.",
-	Long:  "Commits a draft workflow to live",
+var workflowResetCmd = &cobra.Command{
+	Use:   "reset",
+	Short: "Reset a live workflow to draft",
+	Long:  "Commits a live workflow to draft",
 	Run: func(cmd *cobra.Command, args []string) {
 		if len(args) < 1 {
 			log.Error("Category slug is required.")
@@ -21,17 +21,16 @@ var workflowCommitCmd = &cobra.Command{
 
 		mgmntClient := utils.GetSuprSendMgmntClient()
 
-		err := mgmntClient.FinalizeWorkflow(workspace, slug, true)
+		err := mgmntClient.FinalizeWorkflow(workspace, slug, false)
 		if err != nil {
 			log.WithError(err).Errorf("Failed to commit workflow %s", slug)
 			return
 		}
 
-		log.Printf("Committed workflow: %s\n", slug)
+		log.Printf("Reset workflow: %s\n", slug)
 	},
 }
 
 func init() {
-	workflowListCmd.Flags().StringP("commit-message", "c", "", "Commit Message for making a workflow live")
-	WorkflowCmd.AddCommand(workflowCommitCmd)
+	WorkflowCmd.AddCommand(workflowResetCmd)
 }

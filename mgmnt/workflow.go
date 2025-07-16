@@ -2,11 +2,11 @@ package mgmnt
 
 import (
 	"fmt"
-	"net/url"
 	"strconv"
+	"strings"
 
 	log "github.com/sirupsen/logrus"
-	"resty.dev/v3"
+	"github.com/suprsend/cli/internal/client"
 )
 
 type Workflow struct {
@@ -31,7 +31,7 @@ func (c *SS_MgmntClient) GetWorkflows(workspace string, limit int, offset int, m
 		return nil, fmt.Errorf("invalid mode: %s", mode)
 	}
 
-	client := resty.New()
+	client := client.NewHTTPClient()
 	defer client.Close()
 
 	log.Debugf("Getting workflows for workspace: %s, service token: %s", workspace, c.serviceToken)
@@ -60,7 +60,7 @@ func (c *SS_MgmntClient) PushWorkflow(workspace, slug string, workflow map[strin
 		return fmt.Errorf("slug cannot be empty")
 	}
 
-	client := resty.New()
+	client := client.NewHTTPClient()
 	defer client.Close()
 
 	url := fmt.Sprintf("%sv1/%s/workflow/%s/", c.mgmnt_base_URL, workspace, slug)
@@ -89,43 +89,44 @@ func (c *SS_MgmntClient) PushWorkflow(workspace, slug string, workflow map[strin
 	return nil
 }
 
-func (c *SS_MgmntClient) CommitWorkflow(workspace, slug, message string) error {
+func (c *SS_MgmntClient) FinalizeWorkflow(workspace, slug string, commit bool) error {
 	if slug == "" {
 		return fmt.Errorf("slug cannot be empty")
 	}
 
-	client := resty.New()
+	client := client.NewHTTPClient()
 	defer client.Close()
 
-	urlStr := fmt.Sprintf("%sv1/%s/workflow/%s/commit/", c.mgmnt_base_URL, workspace, slug)
+	urlStr := fmt.Sprintf("%sv1/%s/workflow/%s/enable/", c.mgmnt_base_URL, workspace, slug)
 
-	query := url.Values{}
-
-	if message != "" {
-		query.Set("commit_message", message)
+	body := map[string]interface{}{
+		"is_enabled": commit,
 	}
 
-	if len(query) > 0 {
-		urlStr += "?" + query.Encode()
+	action := "resetting"
+	if commit {
+		action = "committing"
 	}
 
-	log.Debugf("Committing a draft workflow of slug: %s (live)", slug)
+	log.Debugf("Finalizing workflow (slug: %s) by %s", slug, action)
 
 	res, err := client.R().
 		SetDebug(c.debug).
 		SetHeader("Authorization", "ServiceToken "+c.serviceToken).
 		SetHeader("Content-Type", "application/json").
+		SetBody(body).
 		Patch(urlStr)
 
 	if err != nil {
-		log.Errorf("Error getting workflow: %s", err)
+		log.Errorf("Error %s workflow (slug: %s): %s", action, slug, err)
+		return err
 	}
 
 	if res.IsError() {
-		log.Errorf("Commit Failed: %s - %s", res.Status(), res.String())
-		return fmt.Errorf("push failed: %s", res.Status())
+		log.Errorf("%s failed for workflow (slug: %s): %s - %s", action, slug, res.Status(), res.String())
+		return err
 	}
 
-	log.Infof("Successfully committed workflow: %s", slug)
+	log.Infof("Successfully %s workflow: %s", strings.TrimSuffix(action, "ing")+"ed", slug)
 	return nil
 }

@@ -52,7 +52,6 @@ func init() {
 	workflowListCmd.Flags().IntP("offset", "f", 0, "Offset the number of workflows to list (default: 0)")
 	// add flag to set mode which can be one of draft, live with validation of the flag
 	workflowListCmd.Flags().StringP("mode", "m", "live", "Mode to list workflows (draft, live)")
-	workflowListCmd.Flags().StringP("commit-message", "c", "", "Commit Message for making a workflow live")
 	workflowListCmd.SetHelpFunc(func(cmd *cobra.Command, args []string) {
 		cmd.Parent().HelpFunc()(cmd, args)
 	})

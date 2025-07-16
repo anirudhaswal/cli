@@ -25,6 +25,7 @@ var workflowPullCmd = &cobra.Command{
 				err := os.MkdirAll(dirPath, 0755)
 				if err != nil {
 					log.WithError(err).Error("Failed to create directory")
+					return
 				}
 				log.Printf("Directory created at: %s\n", dirPath)
 			} else {
@@ -37,6 +38,7 @@ var workflowPullCmd = &cobra.Command{
 					err := os.MkdirAll(dirPath, 0755)
 					if err != nil {
 						log.WithError(err).Error("Failed to create directory")
+						return
 					}
 					log.Infof("Directory created at: %s", dirPath)
 				} else {
@@ -58,6 +60,7 @@ var workflowPullCmd = &cobra.Command{
 		log.Infoln("Pulling workflows...")
 		if err := writeWorkflowsToFiles(*workflows_resp, "./suprsend/workflow"); err != nil {
 			log.WithError(err).Error("Error saving workflows")
+			return
 		}
 	},
 }

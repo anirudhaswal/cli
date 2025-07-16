@@ -59,19 +59,19 @@ var workflowPushCmd = &cobra.Command{
 			data, err := os.ReadFile(path)
 			if err != nil {
 				log.WithError(err).Errorf("Failed to read file %s", file.Name())
-				continue
+				return
 			}
 
 			var workflow map[string]any
 			if err := json.Unmarshal(data, &workflow); err != nil {
 				log.WithError(err).Errorf("Failed to parse JSON for %s", file.Name())
-				continue
+				return
 			}
 
 			err = mgmntClient.PushWorkflow(workspace, slug, workflow)
 			if err != nil {
 				log.WithError(err).Errorf("Failed to push workflow %s", slug)
-				continue
+				return
 			}
 
 			log.Printf("Pushed workflow: %s\n", slug)
