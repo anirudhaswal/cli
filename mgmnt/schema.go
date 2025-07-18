@@ -2,8 +2,9 @@ package mgmnt
 
 import (
 	"fmt"
-	"log"
+	"strings"
 
+	log "github.com/sirupsen/logrus"
 	"resty.dev/v3"
 )
 
@@ -146,5 +147,48 @@ func (c *SS_MgmntClient) PushSchema(workspace, schemaSlug string, payload map[st
 	}
 
 	log.Printf("Pushed schema to %s", workspace)
+	return nil
+}
+
+func (c *SS_MgmntClient) FinalizeSchema(workspace, slug string, commit bool) error {
+	if slug == "" {
+		return fmt.Errorf("slug cannot be empty")
+	}
+
+	client := resty.New()
+	defer client.Close()
+
+	urlStr := fmt.Sprintf("%s/v1/%s/schema/%s/toggle_enabled/", c.baseURL, workspace, slug)
+	log.Infof("%s", urlStr)
+
+	body := map[string]interface{}{
+		"is_enabled": commit,
+	}
+
+	action := "resetting"
+	if commit {
+		action = "committing"
+	}
+
+	log.Debugf("Finalizing schema (slug: %s) by %s", slug, action)
+
+	res, err := client.R().
+		SetDebug(c.debug).
+		SetHeader("Authorization", "ServiceToken "+c.serviceToken).
+		SetHeader("Content-Type", "application/json").
+		SetBody(body).
+		Patch(urlStr)
+
+	if err != nil {
+		log.Errorf("Error %s schema (slug: %s): %s", action, slug, err)
+		return err
+	}
+
+	if res.IsError() {
+		log.Errorf("%s failed for schema (slug: %s): %s - %s", action, slug, res.Status(), res.String())
+		return err
+	}
+
+	log.Infof("Successfully %s schema: %s", strings.TrimSuffix(action, "ing")+"ed", slug)
 	return nil
 }
