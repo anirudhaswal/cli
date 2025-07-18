@@ -24,3 +24,4 @@ TODO.md
 .air.toml
 tmp/
 /internal/utils/embedded-binaries
+/suprsend

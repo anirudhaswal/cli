@@ -2,52 +2,69 @@ package commands
 
 import (
 	_ "embed"
+	"encoding/json"
 	"fmt"
 	"os"
 	"os/exec"
 
+	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"github.com/suprsend/cli/internal/utils"
 )
 
+// GET v1/:ws/schema -- bulk list
+// GET v1/:ws/schema/:slug_schema -- get a single schema
+
 var typeMorphCmd = &cobra.Command{
 	Use:   "type-morph",
-	Short: "Generate Types from JSON Schema",
-	RunE: func(cmd *cobra.Command, args []string) error {
-		targetLang, err := cmd.Flags().GetString("language")
-		if err != nil {
-			return fmt.Errorf("could not read 'language' flag: %w", err)
+	Short: "Generate Types from JSON Schema from a single slug",
+	Args:  cobra.ExactArgs(3),
+	Run: func(cmd *cobra.Command, args []string) {
+		if len(args) < 1 {
+			log.Error("Please pass the required arguments [workspace] [schema_name] [target_lang]")
 		}
 
-		schema, err := cmd.Flags().GetString("schema")
-		if err != nil {
-			return fmt.Errorf("could not read 'schema' flag: %w", err)
-		}
-
-		schemaName, err := cmd.Flags().GetString("schemaName")
-		if err != nil {
-			return fmt.Errorf("could not read 'schemaName' flag: %w", err)
-		}
+		workspace := args[0]
+		schemaSlug := args[1]
+		targetLang := args[2]
 
 		fileName, err := cmd.Flags().GetString("file")
 		if err != nil {
-			return fmt.Errorf("could not read 'file' flag: %w", err)
+			log.WithError(err).Error("Could not read file_name flag")
+			return
 		}
 
-		return runTypeMorph(targetLang, schema, schemaName, fileName)
+		mgmntClient := utils.GetSuprSendMgmntClient()
+
+		resp, err := mgmntClient.GetSchema(workspace, schemaSlug)
+		if err != nil {
+			log.WithError(err).Error("Couldn't fetch schema")
+			return
+		}
+
+		schemaName := resp.Name
+
+		schemaJSON := map[string]interface{}{
+			"type":       resp.JSONSchema.Type,
+			"properties": resp.JSONSchema.Properties,
+			"required":   resp.JSONSchema.Required,
+		}
+
+		schemaBytes, err := json.MarshalIndent(schemaJSON, "", "  ")
+		if err != nil {
+			log.Fatalf("Failed to marshal schema: %v", err)
+		}
+
+		err = runTypeMorph(targetLang, string(schemaBytes), schemaName, fileName)
+		if err != nil {
+			log.WithError(err).Error("Could not generate types")
+		}
 	},
 }
 
 func init() {
 	flags := typeMorphCmd.Flags()
-	flags.String("language", "", "Target language to generate types for. (required)")
-	flags.String("schema", "", "JSON Schema file to generate types from.(required)")
-	flags.String("schemaName", "SchemaType", "SchemaName for the types generated.")
 	flags.String("file", "", "Target file to generate types into. (required)")
-
-	typeMorphCmd.MarkFlagRequired("language")
-	typeMorphCmd.MarkFlagRequired("schema")
-	typeMorphCmd.MarkFlagRequired("file")
 
 	rootCmd.AddCommand(typeMorphCmd)
 }

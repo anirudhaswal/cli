@@ -29,12 +29,25 @@ async function quicktypeJSONSchema(
 async function main() {
     const [
     language = "typescript",
-    schemaPath = "./schema.json",
+    schemaInput = "./schema.json",
     schemaName = "SchemaType",
     outputPath = "./output.txt",
   ] = Deno.args;
 
-  const text = await Deno.readTextFile(schemaPath);
+  let text: string;
+
+  try {
+    text = await Deno.readTextFile(schemaInput);
+  } catch (_) {
+    try {
+      JSON.parse(schemaInput); // validate it's valid JSON
+      text = schemaInput;
+    } catch (err) {
+      console.error(err);
+      Deno.exit(1);
+    }
+  }
+
   const { lines } = await quicktypeJSONSchema(language, schemaName, text);
 
   const output = lines.join("\n");
