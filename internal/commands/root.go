@@ -51,6 +51,10 @@ func init() {
 		),
 	)
 
+	workflow.WorkflowCmd.PersistentFlags().IntP("limit", "l", 20, "Limit the number of workflows to list")
+	workflow.WorkflowCmd.PersistentFlags().IntP("offset", "f", 0, "Offset the number of workflows to list (default: 0)")
+	workflow.WorkflowCmd.PersistentFlags().StringP("mode", "m", "live", "Mode to list workflows (draft, live)")
+
 	rootCmd.AddCommand(workflow.WorkflowCmd)
 
 	rootCmd.PersistentPreRunE = func(cmd *cobra.Command, args []string) error {

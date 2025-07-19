@@ -6,10 +6,11 @@ import (
 	"os"
 	"path/filepath"
 
+	log "github.com/sirupsen/logrus"
 	"github.com/suprsend/cli/mgmnt"
 )
 
-func writeWorkflowsToFiles(resp mgmnt.WorkflowAPIResponse, outputDir string) error {
+func writeWorkflowsToFiles(resp mgmnt.WorkflowsResponse, outputDir string) error {
 	info, err := os.Stat(outputDir)
 	if err != nil {
 		if os.IsNotExist(err) {
@@ -24,28 +25,34 @@ func writeWorkflowsToFiles(resp mgmnt.WorkflowAPIResponse, outputDir string) err
 	}
 
 	for _, wf := range resp.Results {
-		filename := filepath.Join(outputDir, fmt.Sprintf("%s.json", wf.Slug))
+		obj, ok := wf.(map[string]any)
+		if !ok {
+			continue
+		}
+
+		slug, _ := obj["slug"].(string)
+		filename := filepath.Join(outputDir, fmt.Sprintf("%s.json", slug))
 
 		if _, err := os.Stat(filename); err == nil {
-			fmt.Printf("Skipped (already exists): %s\n", filename)
+			log.Printf("Skipped (already exists): %s\n", filename)
 			continue
 		} else if err != nil && !os.IsNotExist(err) {
-			fmt.Printf("Error checking file '%s': %v\n", filename, err)
-			continue
+			log.Errorf("Error checking file '%s': %v\n", filename, err)
+			return err
 		}
 
 		fileData, err := json.MarshalIndent(wf, "", "  ")
 		if err != nil {
-			fmt.Printf("Error marshalling workflow '%s': %v\n", wf.Slug, err)
+			log.Errorf("Error marshalling workflow '%s': %v\n", slug, err)
 			continue
 		}
 
 		if err := os.WriteFile(filename, fileData, 0644); err != nil {
-			fmt.Printf("Error writing file '%s': %v\n", filename, err)
+			log.Errorf("Error writing file '%s': %v\n", filename, err)
 			continue
 		}
 
-		fmt.Printf("Wrote: %s\n", filename)
+		log.Infof("Wrote: %s\n", filename)
 	}
 
 	return nil

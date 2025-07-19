@@ -20,6 +20,9 @@ var workflowPushCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		dirPath := filepath.Join(".", "suprsend", "workflow")
 		workspace, _ := cmd.Flags().GetString("workspace")
+		limit, _ := cmd.Flags().GetInt("limit")
+		offset, _ := cmd.Flags().GetInt("offset")
+		mode, _ := cmd.Flags().GetString("mode")
 
 		if _, err := os.Stat(dirPath); os.IsNotExist(err) {
 			log.WithError(err).Errorf("Directory '%s' does not exist. Exiting.\n", dirPath)
@@ -27,7 +30,7 @@ var workflowPushCmd = &cobra.Command{
 		}
 
 		mgmntClient := utils.GetSuprSendMgmntClient()
-		resp, err := mgmntClient.GetWorkflows("production", 20, 0, "live")
+		resp, err := mgmntClient.GetWorkflows(workspace, limit, offset, mode)
 		if err != nil {
 			log.WithError(err).Error("Failed to get workflows")
 			return
@@ -35,7 +38,13 @@ var workflowPushCmd = &cobra.Command{
 
 		existingSlugs := make(map[string]bool)
 		for _, wf := range resp.Results {
-			existingSlugs[wf.Slug] = true
+			obj, ok := wf.(map[string]any)
+			if !ok {
+				continue
+			}
+
+			slug, _ := obj["slug"].(string)
+			existingSlugs[slug] = true
 		}
 
 		files, err := os.ReadDir(dirPath)
@@ -80,6 +89,6 @@ var workflowPushCmd = &cobra.Command{
 }
 
 func init() {
-	workflowPullCmd.Flags().BoolVarP(&force, "force-dir", "f", false, "Create workflow directory without the permission")
+	workflowPushCmd.Flags().BoolVarP(&force, "force-dir", "d", false, "Create workflow directory without the permission")
 	WorkflowCmd.AddCommand(workflowPushCmd)
 }

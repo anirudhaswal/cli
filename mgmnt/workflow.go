@@ -26,7 +26,16 @@ type WorkflowAPIResponse struct {
 	} `json:"meta"`
 }
 
-func (c *SS_MgmntClient) GetWorkflows(workspace string, limit int, offset int, mode string) (*WorkflowAPIResponse, error) {
+type WorkflowsResponse struct {
+	Results []any `json:"results"`
+	Meta    struct {
+		Count  int `json:"count"`
+		Limit  int `json:"limit"`
+		Offset int `json:"offset"`
+	} `json:"meta"`
+}
+
+func (c *SS_MgmntClient) ListWorkflows(workspace string, limit int, offset int, mode string) (*WorkflowAPIResponse, error) {
 	if mode != "live" && mode != "draft" {
 		return nil, fmt.Errorf("invalid mode: %s", mode)
 	}
@@ -51,6 +60,35 @@ func (c *SS_MgmntClient) GetWorkflows(workspace string, limit int, offset int, m
 	}
 
 	workflows := res.Result().(*WorkflowAPIResponse)
+
+	return workflows, nil
+}
+
+func (c *SS_MgmntClient) GetWorkflows(workspace string, limit int, offset int, mode string) (*WorkflowsResponse, error) {
+	if mode != "live" && mode != "draft" {
+		return nil, fmt.Errorf("invalid mode: %s", mode)
+	}
+
+	client := client.NewHTTPClient()
+	defer client.Close()
+
+	log.Debugf("Getting workflows for workspace: %s, service token: %s", workspace, c.serviceToken)
+	res, err := client.R().
+		SetDebug(c.debug).
+		SetHeader("Authorization", "ServiceToken "+c.serviceToken).
+		SetResult(&WorkflowsResponse{}).
+		Get(c.mgmnt_base_URL + "v1/" + workspace + "/workflow/?limit=" + strconv.Itoa(limit) + "&offset=" + strconv.Itoa(offset) + "&mode=" + mode)
+	if err != nil {
+		log.Errorf("Error getting workflows: %s", err)
+		return nil, err
+	}
+
+	if res.IsError() {
+		log.Errorf("Error getting workflows: %s", res.Status())
+		return nil, fmt.Errorf("error getting workflows: %s", res.Status())
+	}
+
+	workflows := res.Result().(*WorkflowsResponse)
 
 	return workflows, nil
 }

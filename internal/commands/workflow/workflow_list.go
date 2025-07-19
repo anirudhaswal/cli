@@ -34,7 +34,7 @@ var workflowListCmd = &cobra.Command{
 		limit, _ := cmd.Flags().GetInt("limit")
 		offset, _ := cmd.Flags().GetInt("offset")
 		mode, _ := cmd.Flags().GetString("mode")
-		workflows, err := mgmnt_client.GetWorkflows(workspace, limit, offset, mode)
+		workflows, err := mgmnt_client.ListWorkflows(workspace, limit, offset, mode)
 		if err != nil {
 			log.WithError(err).Error("Couldn't fetch workflows")
 			return
@@ -48,10 +48,6 @@ var workflowListCmd = &cobra.Command{
 }
 
 func init() {
-	workflowListCmd.Flags().IntP("limit", "l", 20, "Limit the number of workflows to list")
-	workflowListCmd.Flags().IntP("offset", "f", 0, "Offset the number of workflows to list (default: 0)")
-	// add flag to set mode which can be one of draft, live with validation of the flag
-	workflowListCmd.Flags().StringP("mode", "m", "live", "Mode to list workflows (draft, live)")
 	workflowListCmd.SetHelpFunc(func(cmd *cobra.Command, args []string) {
 		cmd.Parent().HelpFunc()(cmd, args)
 	})
