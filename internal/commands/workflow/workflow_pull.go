@@ -19,8 +19,6 @@ var workflowPullCmd = &cobra.Command{
 		dirPath := filepath.Join(".", "suprsend", "workflow")
 
 		workspace, _ := cmd.Flags().GetString("workspace")
-		limit, _ := cmd.Flags().GetInt("limit")
-		offset, _ := cmd.Flags().GetInt("offset")
 		mode, _ := cmd.Flags().GetString("mode")
 
 		if _, err := os.Stat(dirPath); os.IsNotExist(err) {
@@ -54,7 +52,8 @@ var workflowPullCmd = &cobra.Command{
 		}
 
 		mgmnt_client := utils.GetSuprSendMgmntClient()
-		workflows_resp, err := mgmnt_client.GetWorkflows(workspace, limit, offset, mode)
+		workflows_resp, err := mgmnt_client.GetWorkflows(workspace, mode)
+
 		if err != nil {
 			log.WithError(err).Error("Error getting workflows")
 			return

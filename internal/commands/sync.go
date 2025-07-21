@@ -20,12 +20,11 @@ var syncCmd = &cobra.Command{
 		dirPath := filepath.Join(".", "suprsend", "workflow")
 
 		workspace, _ := cmd.Flags().GetString("workspace")
-		limit, _ := cmd.Flags().GetInt("limit")
-		offset, _ := cmd.Flags().GetInt("offset")
 		mode, _ := cmd.Flags().GetString("mode")
 
 		mgmnt_client := utils.GetSuprSendMgmntClient()
-		workflows_resp, err := mgmnt_client.GetWorkflows(workspace, limit, offset, mode)
+		workflows_resp, err := mgmnt_client.GetWorkflows(workspace, mode)
+
 		if err != nil {
 			log.WithError(err).Error("Error getting workflows")
 			return

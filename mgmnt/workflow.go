@@ -64,7 +64,7 @@ func (c *SS_MgmntClient) ListWorkflows(workspace string, limit int, offset int, 
 	return workflows, nil
 }
 
-func (c *SS_MgmntClient) GetWorkflows(workspace string, limit int, offset int, mode string) (*WorkflowsResponse, error) {
+func (c *SS_MgmntClient) GetWorkflows(workspace string, mode string) (*WorkflowsResponse, error) {
 	if mode != "live" && mode != "draft" {
 		return nil, fmt.Errorf("invalid mode: %s", mode)
 	}
@@ -77,7 +77,7 @@ func (c *SS_MgmntClient) GetWorkflows(workspace string, limit int, offset int, m
 		SetDebug(c.debug).
 		SetHeader("Authorization", "ServiceToken "+c.serviceToken).
 		SetResult(&WorkflowsResponse{}).
-		Get(c.mgmnt_base_URL + "v1/" + workspace + "/workflow/?limit=" + strconv.Itoa(limit) + "&offset=" + strconv.Itoa(offset) + "&mode=" + mode)
+		Get(c.mgmnt_base_URL + "v1/" + workspace + "/workflow/?mode=" + mode)
 	if err != nil {
 		log.Errorf("Error getting workflows: %s", err)
 		return nil, err
@@ -127,7 +127,7 @@ func (c *SS_MgmntClient) PushWorkflow(workspace, slug string, workflow map[strin
 	return nil
 }
 
-func (c *SS_MgmntClient) FinalizeWorkflow(workspace, slug string, commit bool) error {
+func (c *SS_MgmntClient) ChangeStatusWorkflow(workspace, slug string, commit bool) error {
 	if slug == "" {
 		return fmt.Errorf("slug cannot be empty")
 	}

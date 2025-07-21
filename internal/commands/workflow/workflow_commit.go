@@ -21,7 +21,7 @@ var workflowCommitCmd = &cobra.Command{
 
 		mgmntClient := utils.GetSuprSendMgmntClient()
 
-		err := mgmntClient.FinalizeWorkflow(workspace, slug, true)
+		err := mgmntClient.ChangeStatusWorkflow(workspace, slug, true)
 		if err != nil {
 			log.WithError(err).Errorf("Failed to commit workflow %s", slug)
 			return
