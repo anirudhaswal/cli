@@ -61,7 +61,7 @@ var workflowPullCmd = &cobra.Command{
 		}
 
 		log.Infoln("Pulling workflows...")
-		if err := writeWorkflowsToFiles(*workflows_resp, "./suprsend/workflow"); err != nil {
+		if err := WriteWorkflowsToFiles(*workflows_resp, dirPath); err != nil {
 			log.WithError(err).Error("Error saving workflows")
 			return
 		}

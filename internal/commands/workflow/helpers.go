@@ -10,7 +10,7 @@ import (
 	"github.com/suprsend/cli/mgmnt"
 )
 
-func writeWorkflowsToFiles(resp mgmnt.WorkflowsResponse, outputDir string) error {
+func WriteWorkflowsToFiles(resp mgmnt.WorkflowsResponse, outputDir string) error {
 	info, err := os.Stat(outputDir)
 	if err != nil {
 		if os.IsNotExist(err) {
