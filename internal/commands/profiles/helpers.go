@@ -20,6 +20,19 @@ type Config struct {
 	Profiles      map[string]Profile `yaml:"profiles"`
 }
 
+type ProfileListItem struct {
+	Name         string `json:"name" yaml:"name"`
+	Active       string `json:"active" yaml:"active"`
+	BaseUrl      string `json:"base_url,omitempty" yaml:"base_url,omitempty"`
+	MgmntUrl     string `json:"mgmnt_url,omitempty" yaml:"mgmnt_url,omitempty"`
+	ServiceToken string `json:"service_token,omitempty" yaml:"service_token,omitempty"`
+}
+
+type SimpleProfileListItem struct {
+	Name   string `json:"name" yaml:"name"`
+	Active string `json:"active" yaml:"active"`
+}
+
 func EnsureConfig(path string) (*Config, string, error) {
 	var configPath string
 	if path != "" {
@@ -48,8 +61,8 @@ func EnsureConfig(path string) (*Config, string, error) {
 			ActiveProfile: "default",
 			Profiles: map[string]Profile{
 				"default": {
-					BaseUrl:      "https://hub.suprsend.com",
-					MgmntUrl:     "https://api.suprsend.com",
+					BaseUrl:      "",
+					MgmntUrl:     "",
 					ServiceToken: "",
 				},
 			},
@@ -90,4 +103,22 @@ func LoadConfig(path string) (*Config, error) {
 		return nil, err
 	}
 	return &cfg, nil
+}
+
+func (p *Profile) resolveUrl(configValue, envKey, defaultValue string) string {
+	if configValue != "" {
+		return configValue
+	}
+	if envUrl := os.Getenv(envKey); envUrl != "" {
+		return envUrl
+	}
+	return defaultValue
+}
+
+func (p *Profile) GetResolvedBaseUrl() string {
+	return p.resolveUrl(p.BaseUrl, "SUPRSEND_BASE_URL", "https://hub.suprsend.com")
+}
+
+func (p *Profile) GetResolvedMgmntUrl() string {
+	return p.resolveUrl(p.MgmntUrl, "SUPRSEND_MGMNT_URL", "https://api.suprsend.com")
 }

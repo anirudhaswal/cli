@@ -1,11 +1,11 @@
 package profiles
 
 import (
-	"fmt"
 	"sort"
 
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
+	"github.com/suprsend/cli/internal/utils"
 )
 
 var listProfilesCmd = &cobra.Command{
@@ -32,13 +32,62 @@ var listProfilesCmd = &cobra.Command{
 			log.Warn("No profiles found.")
 		}
 
-		fmt.Println("Profiles:")
+		outputType, _ := cmd.Flags().GetString("output")
+
+		// Check if any profile has BaseUrl, MgmntUrl, or ServiceToken values
+		hasBaseUrl := false
+		hasMgmntUrl := false
+		hasServiceToken := false
+
 		for _, name := range names {
-			active := ""
-			if name == cfg.ActiveProfile {
-				active = "(active)"
+			profile := cfg.Profiles[name]
+			if profile.BaseUrl != "" {
+				hasBaseUrl = true
 			}
-			fmt.Printf(" - %s %s\n", name, active)
+			if profile.MgmntUrl != "" {
+				hasMgmntUrl = true
+			}
+			if profile.ServiceToken != "" {
+				hasServiceToken = true
+			}
+		}
+
+		if hasBaseUrl || hasMgmntUrl || hasServiceToken {
+			var profileData []ProfileListItem
+
+			for _, name := range names {
+				profile := cfg.Profiles[name]
+				isActive := "no"
+				if name == cfg.ActiveProfile {
+					isActive = "yes"
+				}
+
+				profileData = append(profileData, ProfileListItem{
+					Name:         name,
+					Active:       isActive,
+					BaseUrl:      profile.BaseUrl,
+					MgmntUrl:     profile.MgmntUrl,
+					ServiceToken: profile.ServiceToken,
+				})
+			}
+
+			utils.OutputData(profileData, outputType)
+		} else {
+			var profileData []SimpleProfileListItem
+
+			for _, name := range names {
+				isActive := "no"
+				if name == cfg.ActiveProfile {
+					isActive = "yes"
+				}
+
+				profileData = append(profileData, SimpleProfileListItem{
+					Name:   name,
+					Active: isActive,
+				})
+			}
+
+			utils.OutputData(profileData, outputType)
 		}
 	},
 }

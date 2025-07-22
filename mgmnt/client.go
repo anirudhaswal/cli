@@ -19,22 +19,40 @@ type SS_MgmntClient struct {
 }
 
 func NewClient(serviceToken string, debug bool) *SS_MgmntClient {
+	return NewClientWithUrls(serviceToken, "", "", debug)
+}
+
+func NewClientWithUrls(serviceToken string, baseURL string, mgmntURL string, debug bool) *SS_MgmntClient {
 	// if service token is not set, log error and exit
 	if serviceToken == "" {
 		log.Fatal("Service token is required")
 	}
-	// Check if SUPRSEND_BASE_URL is set in ENV, if not, use default
-	baseURL := "https://hub.suprsend.com"
-	if os.Getenv("SUPRSEND_BASE_URL") != "" {
-		baseURL = os.Getenv("SUPRSEND_BASE_URL")
+
+	// Resolve baseURL: custom > env > default
+	if baseURL == "" {
+		if envUrl := os.Getenv("SUPRSEND_BASE_URL"); envUrl != "" {
+			baseURL = envUrl
+		} else {
+			baseURL = "https://hub.suprsend.com"
+		}
 	}
+
+	// Resolve mgmntURL: custom > env > default
+	if mgmntURL == "" {
+		if envUrl := os.Getenv("SUPRSEND_MGMNT_URL"); envUrl != "" {
+			mgmntURL = envUrl
+		} else {
+			mgmntURL = "https://api.suprsend.com"
+		}
+	}
+
 	client := &SS_MgmntClient{
 		serviceToken: serviceToken,
 		baseURL:      baseURL,
 		debug:        debug,
 	}
 	client.workspaceClients = make(map[string]*suprsend.Client)
-	log.Debugf("New management client created with base URL: %s and service token: %s and debug: %t", baseURL, serviceToken, debug)
+	log.Debugf("New management client created with base URL: %s, mgmnt URL: %s, service token: %s and debug: %t", baseURL, mgmntURL, serviceToken, debug)
 	return client
 }
 

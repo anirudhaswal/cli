@@ -4,6 +4,8 @@ Copyright © 2025 SuprSend
 package commands
 
 import (
+	"fmt"
+
 	"github.com/MakeNowJust/heredoc/v2"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -63,7 +65,25 @@ func init() {
 		if cmd.Name() == "generate-config" || cmd.Name() == "gendocs" {
 			return nil
 		}
-		utils.InitSDK(viper.GetString("service_token"), viper.GetBool("debug"))
+
+		// Load profile configuration
+		cfg, _, err := profiles.EnsureConfig(conf.CfgFile)
+		if err != nil {
+			return err
+		}
+
+		// Get the active profile
+		activeProfile, exists := cfg.Profiles[cfg.ActiveProfile]
+		if !exists {
+			return fmt.Errorf("active profile '%s' not found", cfg.ActiveProfile)
+		}
+
+		utils.InitSDKWithUrls(
+			viper.GetString("service_token"),
+			activeProfile.GetResolvedBaseUrl(),
+			activeProfile.GetResolvedMgmntUrl(),
+			viper.GetBool("debug"),
+		)
 		return nil
 	}
 }
