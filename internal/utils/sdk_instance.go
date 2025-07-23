@@ -9,11 +9,6 @@ import (
 // SDKInstance is a singleton instance of the SuprSend SDK
 var SDKInstance *mgmnt.SS_MgmntClient
 
-// InitSDK initializes the SuprSend SDK
-func InitSDK(serviceToken string, debug bool) {
-	InitSDKWithUrls(serviceToken, "", "", debug)
-}
-
 // InitSDKWithUrls initializes the SuprSend SDK with custom URLs
 func InitSDKWithUrls(serviceToken string, baseUrl string, mgmntUrl string, debug bool) {
 	if SDKInstance != nil {

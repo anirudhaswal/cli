@@ -18,17 +18,13 @@ type SS_MgmntClient struct {
 	debug            bool
 }
 
-func NewClient(serviceToken string, debug bool) *SS_MgmntClient {
-	return NewClientWithUrls(serviceToken, "", "", debug)
-}
-
 func NewClientWithUrls(serviceToken string, baseURL string, mgmntURL string, debug bool) *SS_MgmntClient {
 	// if service token is not set, log error and exit
 	if serviceToken == "" {
 		log.Fatal("Service token is required")
 	}
 
-	// Resolve baseURL: custom > env > default
+	// custom > env > default
 	if baseURL == "" {
 		if envUrl := os.Getenv("SUPRSEND_BASE_URL"); envUrl != "" {
 			baseURL = envUrl
@@ -37,7 +33,7 @@ func NewClientWithUrls(serviceToken string, baseURL string, mgmntURL string, deb
 		}
 	}
 
-	// Resolve mgmntURL: custom > env > default
+	// custom > env > default
 	if mgmntURL == "" {
 		if envUrl := os.Getenv("SUPRSEND_MGMNT_URL"); envUrl != "" {
 			mgmntURL = envUrl
