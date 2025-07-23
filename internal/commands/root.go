@@ -4,9 +4,13 @@ Copyright © 2025 SuprSend
 package commands
 
 import (
+	"fmt"
+	"os"
+
 	"github.com/MakeNowJust/heredoc/v2"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
+	"github.com/suprsend/cli/internal/commands/profiles"
 	"github.com/suprsend/cli/internal/config"
 	"github.com/suprsend/cli/internal/utils"
 	"go.szostok.io/version/extension"
@@ -52,6 +56,8 @@ func init() {
 		),
 	)
 
+	rootCmd.AddCommand(profiles.ProfilesCmd)
+
 	rootCmd.PersistentPreRunE = func(cmd *cobra.Command, args []string) error {
 		if err := config.SetUpLogs(); err != nil {
 			return err
@@ -60,7 +66,35 @@ func init() {
 		if cmd.Name() == "generate-config" || cmd.Name() == "gendocs" {
 			return nil
 		}
-		utils.InitSDK(viper.GetString("service_token"), viper.GetBool("debug"))
+
+		cfg, _, err := profiles.EnsureConfig(conf.CfgFile)
+		if err != nil {
+			return err
+		}
+
+		activeProfile, exists := cfg.Profiles[cfg.ActiveProfile]
+		if !exists {
+			return fmt.Errorf("active profile '%s' not found", cfg.ActiveProfile)
+		}
+
+		// flag > profile > env
+		serviceToken := viper.GetString("service_token")
+		if serviceToken == "" {
+			if activeProfile.ServiceToken != "" {
+				serviceToken = activeProfile.ServiceToken
+			} else {
+				serviceToken = os.Getenv("SUPRSEND_SERVICE_TOKEN")
+			}
+		}
+
+		conf.ServiceToken = serviceToken
+
+		utils.InitSDKWithUrls(
+			viper.GetString("service_token"),
+			activeProfile.GetResolvedBaseUrl(),
+			activeProfile.GetResolvedMgmntUrl(),
+			viper.GetBool("debug"),
+		)
 		return nil
 	}
 }
