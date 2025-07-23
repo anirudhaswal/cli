@@ -5,6 +5,7 @@ package commands
 
 import (
 	"fmt"
+	"os"
 
 	"github.com/MakeNowJust/heredoc/v2"
 	"github.com/spf13/cobra"
@@ -66,17 +67,27 @@ func init() {
 			return nil
 		}
 
-		// Load profile configuration
 		cfg, _, err := profiles.EnsureConfig(conf.CfgFile)
 		if err != nil {
 			return err
 		}
 
-		// Get the active profile
 		activeProfile, exists := cfg.Profiles[cfg.ActiveProfile]
 		if !exists {
 			return fmt.Errorf("active profile '%s' not found", cfg.ActiveProfile)
 		}
+
+		// flag > profile > env
+		serviceToken := viper.GetString("service_token")
+		if serviceToken == "" {
+			if activeProfile.ServiceToken != "" {
+				serviceToken = activeProfile.ServiceToken
+			} else {
+				serviceToken = os.Getenv("SUPRSEND_SERVICE_TOKEN")
+			}
+		}
+
+		conf.ServiceToken = serviceToken
 
 		utils.InitSDKWithUrls(
 			viper.GetString("service_token"),

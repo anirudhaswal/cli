@@ -1,6 +1,8 @@
 package profiles
 
 import (
+	"fmt"
+
 	"github.com/sabouaram/cobra_ui"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
@@ -23,11 +25,10 @@ var profilesAddCmd = &cobra.Command{
 		cfg, path, err := EnsureConfig(path)
 		if err != nil {
 			log.WithError(err).Error("Failed to load or create config")
+			return
 		}
 
-		if addName == "" || addServiceToken == "" {
-			runAddInteractive(cfg, path)
-		} else {
+		if addName != "" && addServiceToken != "" {
 			cfg.Profiles[addName] = Profile{
 				BaseUrl:      addBaseUrl,
 				MgmntUrl:     addMgmntUrl,
@@ -37,9 +38,13 @@ var profilesAddCmd = &cobra.Command{
 			err := SaveConfig(cfg, path)
 			if err != nil {
 				log.WithError(err).Error("Failed to save config")
+				return
 			}
-		}
 
+			log.Infof("Profile %s added successfully", addName)
+		} else {
+			runAddInteractive(cfg, path)
+		}
 	},
 }
 
@@ -54,38 +59,61 @@ func init() {
 func runAddInteractive(cfg *Config, path string) {
 	ui := cobra_ui.New()
 
-	ui.SetQuestions([]cobra_ui.Question{
-		{
+	var questions []cobra_ui.Question
+
+	if addName == "" {
+		questions = append(questions, cobra_ui.Question{
 			Text: "Name: ",
 			Handler: func(s string) error {
+				if s == "" {
+					return fmt.Errorf("profile name cannot be empty")
+				}
+				if _, exists := cfg.Profiles[s]; exists {
+					return fmt.Errorf("profile '%s' already exists", s)
+				}
 				addName = s
 				return nil
 			},
-		},
-		{
-			Text: "Base URL: ",
+		})
+	}
+
+	if addServiceToken == "" {
+		questions = append(questions, cobra_ui.Question{
+			Text: "Service Token: ",
+			Handler: func(s string) error {
+				if s == "" {
+					return fmt.Errorf("service token cannot be empty")
+				}
+				addServiceToken = s
+				return nil
+			},
+		})
+	}
+
+	if addBaseUrl == "" {
+		questions = append(questions, cobra_ui.Question{
+			Text: "Base URL (optional, press Enter for default): ",
 			Handler: func(s string) error {
 				addBaseUrl = s
 				return nil
 			},
-		},
-		{
-			Text: "Management URL: ",
+		})
+	}
+
+	if addMgmntUrl == "" {
+		questions = append(questions, cobra_ui.Question{
+			Text: "Management URL (optional, press Enter for default): ",
 			Handler: func(s string) error {
 				addMgmntUrl = s
 				return nil
 			},
-		},
-		{
-			Text: "Service Token: ",
-			Handler: func(s string) error {
-				addServiceToken = s
-				return nil
-			},
-		},
-	})
+		})
+	}
 
-	ui.RunInteractiveUI()
+	if len(questions) > 0 {
+		ui.SetQuestions(questions)
+		ui.RunInteractiveUI()
+	}
 
 	cfg.Profiles[addName] = Profile{
 		BaseUrl:      addBaseUrl,
@@ -96,6 +124,7 @@ func runAddInteractive(cfg *Config, path string) {
 	err := SaveConfig(cfg, path)
 	if err != nil {
 		log.WithError(err).Error("Failed to save config")
+		return
 	}
 
 	log.Infof("Profile %s added successfully", addName)

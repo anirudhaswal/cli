@@ -21,14 +21,13 @@ var profilesModifyCmd = &cobra.Command{
 	Short: "Modify a profile",
 	Long:  "Modify a profile in the configs",
 	Run: func(cmd *cobra.Command, args []string) {
-		// add a check here if the passed profile name is valid
 		path, _ := cmd.Flags().GetString("config")
 
 		cfg, path, err := EnsureConfig(path)
 		if err != nil {
 			log.WithError(err).Error("Failed to load or create config")
+			return
 		}
-
 		if modifyName != "" {
 			if _, exists := cfg.Profiles[modifyName]; !exists {
 				log.Errorf("Profile %s not found", modifyName)
@@ -36,26 +35,34 @@ var profilesModifyCmd = &cobra.Command{
 			}
 		}
 
-		if modifyName == "" || modifyServiceToken == "" {
-			runModifyInteractive(cfg, path)
-		} else {
-			cfg.Profiles[modifyName] = Profile{
-				BaseUrl:      modifyBaseUrl,
-				MgmntUrl:     modifyMgmntUrl,
-				ServiceToken: modifyServiceToken,
+		if modifyName != "" && modifyServiceToken != "" {
+			selectedProfile := cfg.Profiles[modifyName]
+
+			if modifyBaseUrl != "" {
+				selectedProfile.BaseUrl = modifyBaseUrl
 			}
+			if modifyMgmntUrl != "" {
+				selectedProfile.MgmntUrl = modifyMgmntUrl
+			}
+			selectedProfile.ServiceToken = modifyServiceToken
+
+			cfg.Profiles[modifyName] = selectedProfile
 
 			err := SaveConfig(cfg, path)
 			if err != nil {
 				log.WithError(err).Error("Failed to save config")
+				return
 			}
-		}
 
+			log.Infof("Profile %s modified successfully", modifyName)
+		} else {
+			runModifyInteractive(cfg, path)
+		}
 	},
 }
 
 func init() {
-	profilesModifyCmd.Flags().StringVar(&modifyName, "name", "", "Name of the profile (required)")
+	profilesModifyCmd.Flags().StringVar(&modifyName, "name", "", "Name of the profile to modify")
 	profilesModifyCmd.Flags().StringVar(&modifyBaseUrl, "base-url", "", "Base URL")
 	profilesModifyCmd.Flags().StringVar(&modifyMgmntUrl, "mgmnt-url", "", "Management URL")
 	profilesModifyCmd.Flags().StringVar(&modifyServiceToken, "token", "", "Service Token")
@@ -75,18 +82,20 @@ func runModifyInteractive(cfg *Config, path string) {
 		return
 	}
 
-	ui.SetQuestions([]cobra_ui.Question{
-		{
-			Text: "Select a profile to modify: ",
-			Handler: func(s string) error {
-				modifyName = s
-				return nil
+	if modifyName == "" {
+		ui.SetQuestions([]cobra_ui.Question{
+			{
+				Text: "Select a profile to modify: ",
+				Handler: func(s string) error {
+					modifyName = s
+					return nil
+				},
+				Options: profileNames,
 			},
-			Options: profileNames,
-		},
-	})
+		})
 
-	ui.RunInteractiveUI()
+		ui.RunInteractiveUI()
+	}
 
 	selectedProfile, exists := cfg.Profiles[modifyName]
 	if !exists {
@@ -116,9 +125,11 @@ func runModifyInteractive(cfg *Config, path string) {
 		currentToken = "not set"
 	}
 
-	ui2.SetQuestions([]cobra_ui.Question{
-		{
-			Text: fmt.Sprintf("Base URL (current: %s): ", currentBaseURL),
+	var questions []cobra_ui.Question
+
+	if modifyBaseUrl == "" {
+		questions = append(questions, cobra_ui.Question{
+			Text: fmt.Sprintf("Base URL (current: %s, press Enter to keep): ", currentBaseURL),
 			Handler: func(s string) error {
 				if s != "" {
 					modifyBaseUrl = s
@@ -127,9 +138,12 @@ func runModifyInteractive(cfg *Config, path string) {
 				}
 				return nil
 			},
-		},
-		{
-			Text: fmt.Sprintf("Management URL (current: %s): ", currentMgmntURL),
+		})
+	}
+
+	if modifyMgmntUrl == "" {
+		questions = append(questions, cobra_ui.Question{
+			Text: fmt.Sprintf("Management URL (current: %s, press Enter to keep): ", currentMgmntURL),
 			Handler: func(s string) error {
 				if s != "" {
 					modifyMgmntUrl = s
@@ -138,9 +152,12 @@ func runModifyInteractive(cfg *Config, path string) {
 				}
 				return nil
 			},
-		},
-		{
-			Text: fmt.Sprintf("Service Token (current: %s): ", currentToken),
+		})
+	}
+
+	if modifyServiceToken == "" {
+		questions = append(questions, cobra_ui.Question{
+			Text: fmt.Sprintf("Service Token (current: %s, press Enter to keep): ", currentToken),
 			Handler: func(s string) error {
 				if s != "" {
 					modifyServiceToken = s
@@ -149,20 +166,26 @@ func runModifyInteractive(cfg *Config, path string) {
 				}
 				return nil
 			},
-		},
-	})
+		})
+	}
 
-	ui2.RunInteractiveUI()
+	if len(questions) > 0 {
+		ui2.SetQuestions(questions)
+		ui2.RunInteractiveUI()
+	}
 
-	cfg.Profiles[modifyName] = Profile{
+	updatedProfile := Profile{
 		BaseUrl:      modifyBaseUrl,
 		MgmntUrl:     modifyMgmntUrl,
 		ServiceToken: modifyServiceToken,
 	}
 
+	cfg.Profiles[modifyName] = updatedProfile
+
 	err := SaveConfig(cfg, path)
 	if err != nil {
 		log.WithError(err).Error("Failed to save config")
+		return
 	}
 
 	log.Infof("Profile %s modified successfully", modifyName)
