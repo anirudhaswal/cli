@@ -5,9 +5,9 @@ import (
 	"errors"
 	"io"
 	"net/http"
+	"os"
 
 	log "github.com/sirupsen/logrus"
-	"github.com/spf13/viper"
 	suprsend "github.com/suprsend/suprsend-go"
 )
 
@@ -19,20 +19,30 @@ type SS_MgmntClient struct {
 	debug            bool
 }
 
-func NewClient(serviceToken string, debug bool) *SS_MgmntClient {
+func NewClientWithUrls(serviceToken string, baseURL string, mgmntURL string, debug bool) *SS_MgmntClient {
 	// if service token is not set, log error and exit
 	if serviceToken == "" {
 		log.Fatal("Service token is required")
 	}
-	// Check if SUPRSEND_BASE_URL is set in ENV, if not, use default
-	hub_base_URL := "https://hub.suprsend.com/"
-	if viper.GetString("SUPRSEND_BASE_URL") != "" {
-		hub_base_URL = viper.GetString("SUPRSEND_BASE_URL")
+
+	// custom > env > default
+	if baseURL == "" {
+		if envUrl := os.Getenv("SUPRSEND_BASE_URL"); envUrl != "" {
+			baseURL = envUrl
+		} else {
+			baseURL = "https://hub.suprsend.com"
+		}
 	}
-	mgmnt_base_URL := "https://api.suprsend.com/"
-	if viper.GetString("SUPRSEND_MGMNT_URL") != "" {
-		mgmnt_base_URL = viper.GetString("SUPRSEND_MGMNT_URL")
+
+	// custom > env > default
+	if mgmntURL == "" {
+		if envUrl := os.Getenv("SUPRSEND_MGMNT_URL"); envUrl != "" {
+			mgmntURL = envUrl
+		} else {
+			mgmntURL = "https://api.suprsend.com"
+		}
 	}
+
 	client := &SS_MgmntClient{
 		serviceToken:   serviceToken,
 		hub_base_URL:   hub_base_URL,
@@ -40,7 +50,7 @@ func NewClient(serviceToken string, debug bool) *SS_MgmntClient {
 		debug:          debug,
 	}
 	client.workspaceClients = make(map[string]*suprsend.Client)
-	log.Debugf("New management client created with base URL: %s and mgmnt URL: %s and service token: %s and debug: %t", hub_base_URL, mgmnt_base_URL, serviceToken, debug)
+	log.Debugf("New management client created with base URL: %s, mgmnt URL: %s, service token: %s and debug: %t", baseURL, mgmntURL, serviceToken, debug)
 	return client
 }
 
