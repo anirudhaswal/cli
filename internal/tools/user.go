@@ -103,7 +103,7 @@ func getUserPreferencesHandler(ctx context.Context, request mcp.CallToolRequest)
 	if err != nil {
 		return nil, err
 	}
-	user_pref, err := suprsend_client.Users.GetUserPreferences(ctx, distinct_id, nil)
+	user_pref, err := suprsend_client.Users.GetFullPreference(ctx, distinct_id, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -180,17 +180,17 @@ func updateUserCategoryPreference(ctx context.Context, request mcp.CallToolReque
 		return mcp.NewToolResultError("opt_out_channels must be an array"), nil
 	}
 
-	optOutChannels := make([]*string, 0, len(optOutSlice))
+	optOutChannels := make([]string, 0, len(optOutSlice))
 	for _, v := range optOutSlice {
 		s, ok := v.(string)
 		if !ok {
 			return mcp.NewToolResultError("opt_out_channels must be an array of strings"), nil
 		}
-		optOutChannels = append(optOutChannels, &s)
+		optOutChannels = append(optOutChannels, s)
 	}
 
 	prefPayload := suprsend.UserUpdateCategoryPreferenceBody{
-		Preference:     &pref,
+		Preference:     pref,
 		OptOutChannels: optOutChannels,
 	}
 

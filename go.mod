@@ -10,10 +10,11 @@ require (
 	github.com/mark3labs/mcp-go v0.32.0
 	github.com/olekukonko/tablewriter v1.0.7
 	github.com/pkg/errors v0.9.1
+	github.com/sabouaram/cobra_ui v1.0.2
 	github.com/sirupsen/logrus v1.9.3
 	github.com/spf13/cobra v1.9.1
 	github.com/spf13/viper v1.20.1
-	github.com/suprsend/suprsend-go v0.6.1-0.20250703115821-1002ee3f6743
+	github.com/suprsend/suprsend-go v0.7.0
 	github.com/tidwall/pretty v1.2.1
 	go.szostok.io/version v1.2.0
 	gopkg.in/yaml.v3 v3.0.1
@@ -58,7 +59,6 @@ require (
 	github.com/pelletier/go-toml/v2 v2.2.4 // indirect
 	github.com/rivo/uniseg v0.4.7 // indirect
 	github.com/russross/blackfriday/v2 v2.1.0 // indirect
-	github.com/sabouaram/cobra_ui v1.0.2 // indirect
 	github.com/sagikazarmark/locafero v0.9.0 // indirect
 	github.com/shopspring/decimal v1.4.0 // indirect
 	github.com/sourcegraph/conc v0.3.0 // indirect

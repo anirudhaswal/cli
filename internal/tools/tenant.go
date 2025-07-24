@@ -163,9 +163,9 @@ func updateCategoryPreferenceTenant(ctx context.Context, request mcp.CallToolReq
 		blockedChannels = append(blockedChannels, s)
 	}
 
-	prefPayload := suprsend.TenantPreferenceCategoryUpdateBody{
+	prefPayload := suprsend.TenantCategoryPreferenceUpdateBody{
 		Preference:          pref,
-		VisibleToSubscriber: visibleToSubscriber,
+		VisibleToSubscriber: &visibleToSubscriber,
 		MandatoryChannels:   mandatoryChannels,
 		BlockedChannels:     blockedChannels,
 	}
@@ -180,7 +180,7 @@ func updateCategoryPreferenceTenant(ctx context.Context, request mcp.CallToolReq
 		return nil, err
 	}
 
-	tenantPref, err := suprsendClient.Tenants.UpdateCategoryPreference(ctx, tenantId, category, prefPayload, nil)
+	tenantPref, err := suprsendClient.Tenants.UpdateCategoryPreference(ctx, tenantId, category, prefPayload)
 	if err != nil {
 		return nil, err
 	}
@@ -209,7 +209,7 @@ func getCategoryPreferenceTenant(ctx context.Context, request mcp.CallToolReques
 		return nil, err
 	}
 
-	tenantPref, err := suprsendClient.Tenants.GetAllCategoriesPreference(ctx, tenantId)
+	tenantPref, err := suprsendClient.Tenants.GetAllCategoriesPreference(ctx, tenantId, nil)
 	if err != nil {
 		return nil, err
 	}

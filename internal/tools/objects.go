@@ -132,7 +132,7 @@ func getObjectPreferences(ctx context.Context, request mcp.CallToolRequest) (*mc
 		ObjectType: objType,
 	}
 
-	objPref, err := suprsendClient.Objects.GetPreference(ctx, objIdentifier, nil)
+	objPref, err := suprsendClient.Objects.GetFullPreference(ctx, objIdentifier, nil)
 	if err != nil {
 		return nil, err
 	}
