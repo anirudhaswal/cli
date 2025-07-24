@@ -99,6 +99,129 @@ func upsertTenantHandler(ctx context.Context, request mcp.CallToolRequest) (*mcp
 	return mcp.NewToolResultText(string(yamluser)), nil
 }
 
+func updateCategoryPreferenceTenant(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+	tenantId, err := request.RequireString("tenant_id")
+	if err != nil {
+		return mcp.NewToolResultError(err.Error()), nil
+	}
+
+	category, err := request.RequireString("category")
+	if err != nil {
+		return mcp.NewToolResultError(err.Error()), nil
+	}
+
+	args := request.GetArguments()
+
+	rawPayload, ok := args["payload"].(map[string]any)
+	if !ok {
+		return mcp.NewToolResultError("payload must be an object"), nil
+	}
+
+	pref, ok := rawPayload["preference"].(string)
+	if !ok {
+		return mcp.NewToolResultError("preference must be a string"), nil
+	}
+
+	visibleToSubscriber, ok := rawPayload["visible_to_subscriber"].(bool)
+	if !ok {
+		return mcp.NewToolResultError("visible_to_subscriber must be bool"), nil
+	}
+
+	mandatoryChannelsAny, ok := rawPayload["mandatory_channels"]
+	if !ok {
+		mandatoryChannelsAny = []any{}
+	}
+	mandatoryChannelsSlice, ok := mandatoryChannelsAny.([]any)
+	if !ok {
+		return mcp.NewToolResultError("mandatory_channels must be an array"), nil
+	}
+
+	mandatoryChannels := make([]string, 0, len(mandatoryChannelsSlice))
+	for _, v := range mandatoryChannelsSlice {
+		s, ok := v.(string)
+		if !ok {
+			return mcp.NewToolResultError("mandatory_channels must be an array of strings"), nil
+		}
+		mandatoryChannels = append(mandatoryChannels, s)
+	}
+
+	blockedChannelsAny, ok := rawPayload["blocked_channels"]
+	if !ok {
+		blockedChannelsAny = []any{}
+	}
+	blockedChannelsSlice, ok := blockedChannelsAny.([]any)
+	if !ok {
+		return mcp.NewToolResultError("blocked_channels must be an array"), nil
+	}
+
+	blockedChannels := make([]string, 0, len(blockedChannelsSlice))
+	for _, v := range blockedChannelsSlice {
+		s, ok := v.(string)
+		if !ok {
+			return mcp.NewToolResultError("blocked_channels must be an array of strings"), nil
+		}
+		blockedChannels = append(blockedChannels, s)
+	}
+
+	prefPayload := suprsend.TenantCategoryPreferenceUpdateBody{
+		Preference:          pref,
+		VisibleToSubscriber: &visibleToSubscriber,
+		MandatoryChannels:   mandatoryChannels,
+		BlockedChannels:     blockedChannels,
+	}
+
+	workspace, err := request.RequireString("workspace")
+	if err != nil {
+		return mcp.NewToolResultError(err.Error()), nil
+	}
+
+	suprsendClient, err := utils.GetSuprSendWorkspaceClient(workspace)
+	if err != nil {
+		return nil, err
+	}
+
+	tenantPref, err := suprsendClient.Tenants.UpdateCategoryPreference(ctx, tenantId, category, prefPayload)
+	if err != nil {
+		return nil, err
+	}
+
+	yamlPref, err := yaml.Marshal(tenantPref)
+	if err != nil {
+		return nil, err
+	}
+
+	return mcp.NewToolResultText(string(yamlPref)), nil
+}
+
+func getCategoryPreferenceTenant(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+	tenantId, err := request.RequireString("tenant_id")
+	if err != nil {
+		return mcp.NewToolResultError(err.Error()), nil
+	}
+
+	workspace, err := request.RequireString("workspace")
+	if err != nil {
+		return mcp.NewToolResultError(err.Error()), nil
+	}
+
+	suprsendClient, err := utils.GetSuprSendWorkspaceClient(workspace)
+	if err != nil {
+		return nil, err
+	}
+
+	tenantPref, err := suprsendClient.Tenants.GetAllCategoriesPreference(ctx, tenantId, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	yamlPref, err := yaml.Marshal(tenantPref)
+	if err != nil {
+		return nil, err
+	}
+
+	return mcp.NewToolResultText(string(yamlPref)), nil
+}
+
 func newTenantTools() []*Tool {
 	get_suprsend_tenant := &Tool{
 		Name:        "tenants.get",
@@ -140,7 +263,51 @@ func newTenantTools() []*Tool {
 		Handler: upsertTenantHandler,
 	}
 
-	return []*Tool{get_suprsend_tenant, upsert_suprsend_tenant}
+	update_suprsend_category_preference_tenant := &Tool{
+		Name:        "tenants.update_preferences",
+		Description: "Enables updating category preference for a tenant",
+		MCPTool: mcp.NewTool("update_suprsend_category_preference_tenant",
+			mcp.WithDescription("Use this tool to update a category preference for a tenant."),
+			mcp.WithString("tenant_id",
+				mcp.Description("The tenant_id of the tenant to update."),
+				mcp.Required(),
+			),
+			mcp.WithString("category",
+				mcp.Description("category_slug of an category to get."),
+				mcp.Required(),
+			),
+			mcp.WithObject("payload",
+				mcp.Description("The properties to upsert for the tenant."),
+				mcp.Required(),
+			),
+			mcp.WithString("workspace",
+				mcp.Description(`SuprSend workspace to get the user from.`),
+				mcp.Required(),
+			),
+			mcp.WithDestructiveHintAnnotation(true),
+		),
+		Handler: updateCategoryPreferenceTenant,
+	}
+
+	get_suprsend_categories_preference_tenant := &Tool{
+		Name:        "tenants.get_preferences",
+		Description: "Enables querying all categories preference for a tenant",
+		MCPTool: mcp.NewTool("get_suprsend_categories_preference_tenant",
+			mcp.WithDescription("Use this tool to query categories for a tenant."),
+			mcp.WithString("tenant_id",
+				mcp.Description("The tenant_id of the tenant to update."),
+				mcp.Required(),
+			),
+			mcp.WithString("workspace",
+				mcp.Description(`SuprSend workspace to get the user from.`),
+				mcp.Required(),
+			),
+			mcp.WithDestructiveHintAnnotation(true),
+		),
+		Handler: getCategoryPreferenceTenant,
+	}
+
+	return []*Tool{get_suprsend_tenant, upsert_suprsend_tenant, update_suprsend_category_preference_tenant, get_suprsend_categories_preference_tenant}
 }
 
 func init() {
