@@ -46,7 +46,99 @@ func RequiresKey(action string) bool {
 	return actions[action]
 }
 
-func HandleAction(ctx context.Context, userInstance suprsend.UserEdit, action, key, value string, slack_details map[string]interface{}, identity_provider, distinct_id string, workspace string) (string, error) {
+func HandleObjectAction(ctx context.Context, objectInstance suprsend.ObjectEdit, action, key, value string, slack_details map[string]interface{}, identity_provider string, objectIdentifier suprsend.ObjectIdentifier, workspace string) (string, error) {
+	var err error
+	var out string
+
+	suprsend_client, err := GetSuprSendWorkspaceClient(workspace)
+	if err != nil {
+		return "", err
+	}
+
+	switch action {
+	case "upsert":
+		if key != "" && value != "" {
+			objectInstance.Set(map[string]any{key: value})
+			out = fmt.Sprintf("Key set successfully for object with object_id: %s for key: %s and value: %s", objectIdentifier.Id, key, value)
+		} else {
+			out = "User upserted successfully with object_id: " + objectIdentifier.Id
+		}
+
+		obj_edit_request := suprsend.ObjectEditRequest{
+			Identifier:   &objectIdentifier,
+			EditInstance: objectInstance,
+			Payload:      map[string]any{key: value},
+		}
+
+		_, err = suprsend_client.Objects.Edit(ctx, obj_edit_request)
+	case "remove":
+		objectInstance.Remove(map[string]any{key: value})
+		out = fmt.Sprintf("Key removed successfully from user with object_id: %s for key: %s and value: %s", objectIdentifier.Id, key, value)
+	case "set":
+		objectInstance.Set(map[string]any{key: value})
+		out = fmt.Sprintf("Key set successfully for user with object_id: %s for key: %s and value: %s", objectIdentifier.Id, key, value)
+	case "unset":
+		objectInstance.Unset([]string{key})
+		out = fmt.Sprintf("Key unset successfully for user with object_id: %s for key: %s and value: %s", objectIdentifier.Id, key, value)
+	case "append":
+		objectInstance.Append(map[string]any{key: value})
+		out = fmt.Sprintf("Key appended successfully for user with object_id: %s for key: %s and value: %s", objectIdentifier.Id, key, value)
+	case "increment":
+		objectInstance.Increment(map[string]any{key: value})
+		out = fmt.Sprintf("Key incremented successfully for user with object_id: %s for key: %s and value: %s", objectIdentifier.Id, key, value)
+	case "add_email":
+		objectInstance.AddEmail(value)
+		out = fmt.Sprintf("Email added successfully for user with object_id: %s for key: %s and value: %s", objectIdentifier.Id, key, value)
+	case "set_preferred_language":
+		objectInstance.SetPreferredLanguage(value)
+		out = fmt.Sprintf("Preferred language set successfully for user with object_id: %s for key: %s and value: %s", objectIdentifier.Id, key, value)
+	case "set_timezone":
+		objectInstance.SetTimezone(value)
+		out = fmt.Sprintf("Timezone set successfully for user with object_id: %s for key: %s and value: %s", objectIdentifier.Id, key, value)
+	case "remove_email":
+		objectInstance.RemoveEmail(value)
+		out = fmt.Sprintf("Email removed successfully for user with object_id: %s for key: %s and value: %s", objectIdentifier.Id, key, value)
+	case "add_sms":
+		objectInstance.AddSms(value)
+		out = fmt.Sprintf("SMS added successfully for user with object_id: %s for key: %s and value: %s", objectIdentifier.Id, key, value)
+	case "remove_sms":
+		objectInstance.RemoveSms(value)
+		out = fmt.Sprintf("SMS removed successfully for user with object_id: %s for key: %s and value: %s", objectIdentifier.Id, key, value)
+	case "add_whatsapp":
+		objectInstance.AddWhatsapp(value)
+		out = fmt.Sprintf("Whatsapp added successfully for user with object_id: %s for key: %s and value: %s", objectIdentifier.Id, key, value)
+	case "remove_whatsapp":
+		objectInstance.RemoveWhatsapp(value)
+		out = fmt.Sprintf("Whatsapp removed successfully for user with object_id: %s for key: %s and value: %s", objectIdentifier.Id, key, value)
+	case "add_androidpush":
+		objectInstance.AddAndroidpush(value, identity_provider)
+		out = fmt.Sprintf("Android push added successfully for user with object_id: %s for key: %s and value: %s and identity_provider: %s", objectIdentifier.Id, key, value, identity_provider)
+	case "remove_androidpush":
+		objectInstance.RemoveAndroidpush(value, identity_provider)
+		out = fmt.Sprintf("Android push removed successfully for user with object_id: %s for key: %s and value: %s and identity_provider: %s", objectIdentifier.Id, key, value, identity_provider)
+	case "add_iospush":
+		objectInstance.AddIospush(value, identity_provider)
+		out = fmt.Sprintf("iOS push added successfully for user with object_id: %s for key: %s and value: %s and identity_provider: %s", objectIdentifier.Id, key, value, identity_provider)
+	case "remove_iospush":
+		objectInstance.RemoveIospush(value, identity_provider)
+		out = fmt.Sprintf("iOS push removed successfully for user with object_id: %s for key: %s and value: %s and identity_provider: %s", objectIdentifier.Id, key, value, identity_provider)
+	case "add_slack", "remove_slack":
+		payload, slackOut, err := prepareSlackPayload(slack_details)
+		if err != nil {
+			return "", err
+		}
+		if action == "add_slack" {
+			objectInstance.AddSlack(payload)
+		} else {
+			objectInstance.RemoveSlack(payload)
+		}
+		out = fmt.Sprintf(slackOut, objectIdentifier.Id, value)
+	}
+
+	return out, err
+}
+
+func HandleUserAction(ctx context.Context, userInstance suprsend.UserEdit, action, key, value string, slack_details map[string]interface{}, identity_provider, distinct_id string, workspace string) (string, error) {
 	var err error
 	var out string
 

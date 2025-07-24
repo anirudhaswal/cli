@@ -4,7 +4,6 @@ Copyright © 2025 SuprSend
 package commands
 
 import (
-	"fmt"
 	"os"
 
 	"github.com/MakeNowJust/heredoc/v2"
@@ -81,10 +80,11 @@ func init() {
 			return err
 		}
 
-		activeProfile, exists := cfg.Profiles[cfg.ActiveProfile]
-		if !exists {
-			return fmt.Errorf("active profile '%s' not found", cfg.ActiveProfile)
+		if cmd.Name() == "profiles" {
+			return nil
 		}
+
+		activeProfile := cfg.Profiles[cfg.ActiveProfile]
 
 		// flag > profile > env
 		serviceToken := viper.GetString("service_token")

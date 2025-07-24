@@ -26,3 +26,4 @@ tmp/
 
 /suprsend
 /cmd/suprsend/suprsend
+/internal/utils/embedded-binaries/type-morph

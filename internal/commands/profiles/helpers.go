@@ -58,14 +58,8 @@ func EnsureConfig(path string) (*Config, string, error) {
 		}
 
 		defaultCfg := &Config{
-			ActiveProfile: "default",
-			Profiles: map[string]Profile{
-				"default": {
-					BaseUrl:      "",
-					MgmntUrl:     "",
-					ServiceToken: "",
-				},
-			},
+			ActiveProfile: "",
+			Profiles:      make(map[string]Profile),
 		}
 		if err := SaveConfig(defaultCfg, configPath); err != nil {
 			log.WithError(err).Error("Failed to create default config")

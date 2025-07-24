@@ -57,6 +57,11 @@ func init() {
 }
 
 func runAddInteractive(cfg *Config, path string) {
+	addName = ""
+	addServiceToken = ""
+	addBaseUrl = ""
+	addMgmntUrl = ""
+
 	ui := cobra_ui.New()
 
 	var questions []cobra_ui.Question
@@ -94,7 +99,11 @@ func runAddInteractive(cfg *Config, path string) {
 		questions = append(questions, cobra_ui.Question{
 			Text: "Base URL (optional, press Enter for default): ",
 			Handler: func(s string) error {
-				addBaseUrl = s
+				if s != "" {
+					addBaseUrl = s
+				} else {
+					addBaseUrl = "https://hub.suprsend.com/"
+				}
 				return nil
 			},
 		})
@@ -104,7 +113,11 @@ func runAddInteractive(cfg *Config, path string) {
 		questions = append(questions, cobra_ui.Question{
 			Text: "Management URL (optional, press Enter for default): ",
 			Handler: func(s string) error {
-				addMgmntUrl = s
+				if s != "" {
+					addMgmntUrl = s
+				} else {
+					addMgmntUrl = "https://api.suprsend.com/"
+				}
 				return nil
 			},
 		})
@@ -113,6 +126,20 @@ func runAddInteractive(cfg *Config, path string) {
 	if len(questions) > 0 {
 		ui.SetQuestions(questions)
 		ui.RunInteractiveUI()
+	}
+
+	if addName == "" {
+		log.Error("Profile name is required")
+		return
+	}
+	if addServiceToken == "" {
+		log.Error("Service token is required")
+		return
+	}
+
+	if cfg.ActiveProfile == "" {
+		cfg.ActiveProfile = addName
+		log.Infof("Set '%s' as the active profile", addName)
 	}
 
 	cfg.Profiles[addName] = Profile{

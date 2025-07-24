@@ -78,7 +78,7 @@ func runModifyInteractive(cfg *Config, path string) {
 	}
 
 	if len(profileNames) == 0 {
-		log.Error("No profiles found")
+		log.Info("No profiles found. Use the command 'suprsend profiles add' to add a profile.")
 		return
 	}
 
@@ -172,6 +172,15 @@ func runModifyInteractive(cfg *Config, path string) {
 	if len(questions) > 0 {
 		ui2.SetQuestions(questions)
 		ui2.RunInteractiveUI()
+	}
+
+	if modifyName == "" {
+		log.Error("Profile name is required")
+		return
+	}
+	if modifyServiceToken == "" {
+		log.Error("Service token is required")
+		return
 	}
 
 	updatedProfile := Profile{
