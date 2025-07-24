@@ -264,7 +264,7 @@ func newTenantTools() []*Tool {
 	}
 
 	update_suprsend_category_preference_tenant := &Tool{
-		Name:        "tenants.update_preferences.category",
+		Name:        "tenants.upsert_preferences",
 		Description: "Enables updating category preference for a tenant",
 		MCPTool: mcp.NewTool("update_suprsend_category_preference_tenant",
 			mcp.WithDescription("Use this tool to update a category preference for a tenant."),
@@ -290,8 +290,8 @@ func newTenantTools() []*Tool {
 	}
 
 	get_suprsend_categories_preference_tenant := &Tool{
-		Name:        "tenants.get_preferences.category",
-		Description: "Enables querying categories preference for a tenant",
+		Name:        "tenants.get_preferences",
+		Description: "Enables querying all categories preference for a tenant",
 		MCPTool: mcp.NewTool("get_suprsend_categories_preference_tenant",
 			mcp.WithDescription("Use this tool to query categories for a tenant."),
 			mcp.WithString("tenant_id",
