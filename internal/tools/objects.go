@@ -406,7 +406,7 @@ func newObjectTools() []*Tool {
 
 	add_suprsend_obj_subscriptions := &Tool{
 		Name:        "object.upsert_subscriptions",
-		Description: "Enables adding subscription to an object",
+		Description: "Enables upserting subscription to an object",
 		MCPTool: mcp.NewTool("add_suprsend_object_subscriptions",
 			mcp.WithDescription("Use this tool to add subscriptions to an object."),
 			mcp.WithString("object_id",

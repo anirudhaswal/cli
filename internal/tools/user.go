@@ -294,7 +294,7 @@ func newUserTools() []*Tool {
 	}
 
 	update_suprsend_category_preference_user := &Tool{
-		Name:        "user.upsert_preferences",
+		Name:        "user.update_preferences",
 		Description: "Enables updating a specific category preference for an user",
 		MCPTool: mcp.NewTool("update_suprsend_category_preference_user",
 			mcp.WithDescription("Use this tool to update a specific category preference for an user"),
