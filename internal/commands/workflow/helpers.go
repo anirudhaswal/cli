@@ -33,14 +33,6 @@ func WriteWorkflowsToFiles(resp mgmnt.WorkflowsResponse, outputDir string) error
 		slug, _ := obj["slug"].(string)
 		filename := filepath.Join(outputDir, fmt.Sprintf("%s.json", slug))
 
-		if _, err := os.Stat(filename); err == nil {
-			log.Printf("Skipped (already exists): %s\n", filename)
-			continue
-		} else if err != nil && !os.IsNotExist(err) {
-			log.Errorf("Error checking file '%s': %v\n", filename, err)
-			return err
-		}
-
 		fileData, err := json.MarshalIndent(wf, "", "  ")
 		if err != nil {
 			log.Errorf("Error marshalling workflow '%s': %v\n", slug, err)

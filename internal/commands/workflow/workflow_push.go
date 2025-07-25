@@ -2,6 +2,7 @@ package workflow
 
 import (
 	"encoding/json"
+	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
@@ -20,29 +21,10 @@ var workflowPushCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		dirPath := filepath.Join(".", "suprsend", "workflow")
 		workspace, _ := cmd.Flags().GetString("workspace")
-		mode, _ := cmd.Flags().GetString("mode")
 
 		if _, err := os.Stat(dirPath); os.IsNotExist(err) {
 			log.WithError(err).Errorf("Directory '%s' does not exist. Exiting.\n", dirPath)
 			return
-		}
-
-		mgmntClient := utils.GetSuprSendMgmntClient()
-		resp, err := mgmntClient.GetWorkflows(workspace, mode)
-		if err != nil {
-			log.WithError(err).Error("Failed to get workflows")
-			return
-		}
-
-		existingSlugs := make(map[string]bool)
-		for _, wf := range resp.Results {
-			obj, ok := wf.(map[string]any)
-			if !ok {
-				continue
-			}
-
-			slug, _ := obj["slug"].(string)
-			existingSlugs[slug] = true
 		}
 
 		files, err := os.ReadDir(dirPath)
@@ -51,37 +33,33 @@ var workflowPushCmd = &cobra.Command{
 			return
 		}
 
+		fmt.Printf("Pushing workflows to %s\n", workspace)
+		mgmntClient := utils.GetSuprSendMgmntClient()
+
 		for _, file := range files {
 			if file.IsDir() || !strings.HasSuffix(file.Name(), ".json") {
 				continue
 			}
 
 			slug := strings.TrimSuffix(file.Name(), ".json")
-			if _, exists := existingSlugs[slug]; exists {
-				log.Printf("Skipping '%s.json' (already exists on server)\n", slug)
-				continue
-			}
-
 			path := filepath.Join(dirPath, file.Name())
 			data, err := os.ReadFile(path)
 			if err != nil {
 				log.WithError(err).Errorf("Failed to read file %s", file.Name())
-				return
+				continue
 			}
 
 			var workflow map[string]any
 			if err := json.Unmarshal(data, &workflow); err != nil {
 				log.WithError(err).Errorf("Failed to parse JSON for %s", file.Name())
-				return
+				continue
 			}
 
 			err = mgmntClient.PushWorkflow(workspace, slug, workflow)
 			if err != nil {
 				log.WithError(err).Errorf("Failed to push workflow %s", slug)
-				return
+				continue
 			}
-
-			log.Printf("Pushed workflow: %s\n", slug)
 		}
 	},
 }

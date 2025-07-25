@@ -77,8 +77,6 @@ func (c *SS_MgmntClient) GetWorkflows(workspace string, mode string) (*Workflows
 	allWorkflows := []any{}
 	totalCount := 0
 
-	log.Infof("Getting all workflows for workspace: %s, service token: %s", workspace, c.serviceToken)
-
 	for {
 		log.Debugf("Fetching workflows with limit: %d, offset: %d", limit, offset)
 
@@ -142,8 +140,6 @@ func (c *SS_MgmntClient) PushWorkflow(workspace, slug string, workflow map[strin
 	defer client.Close()
 
 	url := fmt.Sprintf("%sv1/%s/workflow/%s/", c.mgmnt_base_URL, workspace, slug)
-	fmt.Printf("Request: url %s", url)
-
 	log.Debugf("Pushing workflow to: %s", url)
 
 	res, err := client.R().
