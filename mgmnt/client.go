@@ -39,14 +39,14 @@ func NewClientWithUrls(serviceToken string, baseURL string, mgmntURL string, deb
 		if envUrl := os.Getenv("SUPRSEND_MGMNT_URL"); envUrl != "" {
 			mgmntURL = envUrl
 		} else {
-			mgmntURL = "https://api.suprsend.com"
+			mgmntURL = "https://api.suprsend.com/"
 		}
 	}
 
 	client := &SS_MgmntClient{
 		serviceToken:   serviceToken,
-		hub_base_URL:   hub_base_URL,
-		mgmnt_base_URL: mgmnt_base_URL,
+		hub_base_URL:   baseURL,
+		mgmnt_base_URL: mgmntURL,
 		debug:          debug,
 	}
 	client.workspaceClients = make(map[string]*suprsend.Client)

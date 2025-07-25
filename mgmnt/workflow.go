@@ -72,25 +72,65 @@ func (c *SS_MgmntClient) GetWorkflows(workspace string, mode string) (*Workflows
 	client := client.NewHTTPClient()
 	defer client.Close()
 
-	log.Debugf("Getting workflows for workspace: %s, service token: %s", workspace, c.serviceToken)
-	res, err := client.R().
-		SetDebug(c.debug).
-		SetHeader("Authorization", "ServiceToken "+c.serviceToken).
-		SetResult(&WorkflowsResponse{}).
-		Get(c.mgmnt_base_URL + "v1/" + workspace + "/workflow/?mode=" + mode)
-	if err != nil {
-		log.Errorf("Error getting workflows: %s", err)
-		return nil, err
+	limit := 50
+	offset := 0
+	allWorkflows := []any{}
+	totalCount := 0
+
+	log.Infof("Getting all workflows for workspace: %s, service token: %s", workspace, c.serviceToken)
+
+	for {
+		log.Debugf("Fetching workflows with limit: %d, offset: %d", limit, offset)
+
+		res, err := client.R().
+			SetDebug(c.debug).
+			SetHeader("Authorization", "ServiceToken "+c.serviceToken).
+			SetResult(&WorkflowsResponse{}).
+			Get(c.mgmnt_base_URL + "v1/" + workspace + "/workflow/?limit=" + strconv.Itoa(limit) + "&offset=" + strconv.Itoa(offset) + "&mode=" + mode)
+		if err != nil {
+			log.Errorf("Error getting workflows: %s", err)
+			return nil, err
+		}
+
+		if res.IsError() {
+			log.Errorf("Error getting workflows: %s", res.Status())
+			return nil, fmt.Errorf("error getting workflows: %s", res.Status())
+		}
+
+		workflows := res.Result().(*WorkflowsResponse)
+
+		if len(workflows.Results) == 0 {
+			log.Debugf("No more workflows found, stopping pagination")
+			break
+		}
+
+		allWorkflows = append(allWorkflows, workflows.Results...)
+		totalCount += len(workflows.Results)
+
+		log.Debugf("Fetched %d workflows, total so far: %d", len(workflows.Results), totalCount)
+
+		if len(workflows.Results) < limit {
+			log.Debugf("Received fewer results than limit (%d < %d), stopping pagination", len(workflows.Results), limit)
+			break
+		}
+
+		offset += limit
 	}
 
-	if res.IsError() {
-		log.Errorf("Error getting workflows: %s", res.Status())
-		return nil, fmt.Errorf("error getting workflows: %s", res.Status())
-	}
+	log.Infof("Successfully fetched all %d workflows", totalCount)
 
-	workflows := res.Result().(*WorkflowsResponse)
-
-	return workflows, nil
+	return &WorkflowsResponse{
+		Results: allWorkflows,
+		Meta: struct {
+			Count  int `json:"count"`
+			Limit  int `json:"limit"`
+			Offset int `json:"offset"`
+		}{
+			Count:  totalCount,
+			Limit:  limit,
+			Offset: 0,
+		},
+	}, nil
 }
 
 func (c *SS_MgmntClient) PushWorkflow(workspace, slug string, workflow map[string]any) error {
