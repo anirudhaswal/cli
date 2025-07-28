@@ -6,6 +6,7 @@ import (
 	"path/filepath"
 
 	log "github.com/sirupsen/logrus"
+	"github.com/suprsend/cli/internal/config"
 	"gopkg.in/yaml.v3"
 )
 
@@ -99,20 +100,46 @@ func LoadConfig(path string) (*Config, error) {
 	return &cfg, nil
 }
 
-func (p *Profile) resolveUrl(configValue, envKey, defaultValue string) string {
-	if configValue != "" {
-		return configValue
-	}
-	if envUrl := os.Getenv(envKey); envUrl != "" {
+func GetResolvedBaseUrl() string {
+	// ENV Variable
+	if envUrl := os.Getenv("SUPRSEND_BASE_URL"); envUrl != "" {
 		return envUrl
 	}
-	return defaultValue
+
+	// get the value from the active profile
+	cfg, err := LoadConfig(config.Cfg.CfgFile)
+	if err != nil {
+		log.WithError(err).Error("Failed to load config file")
+		return ""
+	}
+
+	activeProfile := cfg.Profiles[cfg.ActiveProfile]
+	if activeProfile.BaseUrl != "" {
+		return activeProfile.BaseUrl
+	}
+
+	// Default value
+	return "https://hub.suprsend.com"
 }
 
-func (p *Profile) GetResolvedBaseUrl() string {
-	return p.resolveUrl(p.BaseUrl, "SUPRSEND_BASE_URL", "https://hub.suprsend.com")
-}
+func GetResolvedMgmntUrl() string {
+	// ENV Variable
+	if envUrl := os.Getenv("SUPRSEND_MGMNT_URL"); envUrl != "" {
+		return envUrl
+	}
 
-func (p *Profile) GetResolvedMgmntUrl() string {
-	return p.resolveUrl(p.MgmntUrl, "SUPRSEND_MGMNT_URL", "https://api.suprsend.com")
+	// get the value from the active profile
+	cfg, err := LoadConfig(config.Cfg.CfgFile)
+	if err != nil {
+		log.WithError(err).Error("Failed to load config file")
+		return ""
+	}
+
+	activeProfile := cfg.Profiles[cfg.ActiveProfile]
+	if activeProfile.MgmntUrl != "" {
+		return activeProfile.MgmntUrl
+	}
+
+	// 3. Default value
+	return "https://api.suprsend.com"
 }

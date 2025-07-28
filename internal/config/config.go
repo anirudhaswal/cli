@@ -35,7 +35,7 @@ func InitConfig(cfgFile string) {
 
 		viper.AddConfigPath(home)
 		viper.SetConfigType("yaml")
-		viper.SetConfigName("suprsend")
+		viper.SetConfigName(".suprsend")
 	}
 
 	viper.AutomaticEnv() // read in environment variables that match
