@@ -1,7 +1,10 @@
 package profiles
 
 import (
+	"bufio"
 	"fmt"
+	"os"
+	"strings"
 
 	"github.com/sabouaram/cobra_ui"
 	log "github.com/sirupsen/logrus"
@@ -137,6 +140,33 @@ func runAddInteractive(cfg *Config, path string) {
 		return
 	}
 
+	fmt.Println("\n📋 Profile Summary:")
+	fmt.Printf("   Name: %s\n", addName)
+	fmt.Printf("   Service Token: %s...%s\n", addServiceToken[:8], addServiceToken[len(addServiceToken)-4:])
+	fmt.Printf("   Base URL: %s\n", addBaseUrl)
+	fmt.Printf("   Management URL: %s\n", addMgmntUrl)
+
+	reader := bufio.NewReader(os.Stdin)
+	for {
+		fmt.Print("\n🤔 Add this profile? (Y/n): ")
+		response, err := reader.ReadString('\n')
+		if err != nil {
+			log.WithError(err).Error("Failed to read input")
+			return
+		}
+
+		response = strings.ToLower(strings.TrimSpace(response))
+		if response == "y" || response == "yes" {
+			break
+		}
+		if response == "n" || response == "no" || response == "" {
+			log.Infof("Profile creation cancelled")
+			return
+		}
+
+		log.Infof("❌ Please enter 'y' for yes or 'n' for no")
+	}
+
 	if cfg.ActiveProfile == "" {
 		cfg.ActiveProfile = addName
 		log.Infof("Set '%s' as the active profile", addName)
@@ -154,5 +184,5 @@ func runAddInteractive(cfg *Config, path string) {
 		return
 	}
 
-	log.Infof("Profile %s added successfully", addName)
+	log.Infof("✨Profile %s added successfully!\n", addName)
 }

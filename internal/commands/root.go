@@ -56,12 +56,13 @@ func init() {
 
 	rootCmd.AddCommand(profiles.ProfilesCmd)
 
-	workflow.WorkflowCmd.PersistentFlags().IntP("limit", "l", 20, "Limit the number of workflows to list")
-	workflow.WorkflowCmd.PersistentFlags().IntP("offset", "f", 0, "Offset the number of workflows to list (default: 0)")
 	workflow.WorkflowCmd.PersistentFlags().StringP("mode", "m", "live", "Mode to list workflows (draft, live)")
-	syncCmd.PersistentFlags().IntP("limit", "l", 20, "Limit the number of workflows to list")
-	syncCmd.PersistentFlags().IntP("offset", "f", 0, "Offset the number of workflows to list (default: 0)")
-	syncCmd.PersistentFlags().StringP("mode", "m", "live", "Mode to list workflows (draft, live)")
+
+	syncCmd.Flags().StringP("from", "f", "staging", "Source workspace (required)")
+	syncCmd.Flags().StringP("to", "t", "staging", "Destination workspace (required)")
+	syncCmd.Flags().StringP("mode", "m", "live", "Mode to sync workflows (draft, live)")
+	syncCmd.MarkFlagRequired("from")
+	syncCmd.MarkFlagRequired("to")
 
 	rootCmd.AddCommand(workflow.WorkflowCmd)
 	rootCmd.AddCommand(syncCmd)
@@ -99,7 +100,7 @@ func init() {
 		conf.ServiceToken = serviceToken
 
 		utils.InitSDKWithUrls(
-			viper.GetString("service_token"),
+			conf.ServiceToken,
 			activeProfile.GetResolvedBaseUrl(),
 			activeProfile.GetResolvedMgmntUrl(),
 			viper.GetBool("debug"),

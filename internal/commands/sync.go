@@ -19,32 +19,24 @@ var syncCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		dirPath := filepath.Join(".", "suprsend", "workflow")
 
-		workspace, _ := cmd.Flags().GetString("workspace")
 		mode, _ := cmd.Flags().GetString("mode")
+		fromWorkspace, _ := cmd.Flags().GetString("from")
+		toWorkspace, _ := cmd.Flags().GetString("to")
+
+		log.Infof("Syncing workflows from %s to %s", fromWorkspace, toWorkspace)
 
 		mgmnt_client := utils.GetSuprSendMgmntClient()
-		workflows_resp, err := mgmnt_client.GetWorkflows(workspace, mode)
+		workflows_resp, err := mgmnt_client.GetWorkflows(fromWorkspace, mode)
 
 		if err != nil {
 			log.WithError(err).Error("Error getting workflows")
 			return
 		}
 
-		log.Infoln("Pulling workflows...")
+		log.Infof("Pulling workflows from %s ... \n", fromWorkspace)
 		if err := workflow.WriteWorkflowsToFiles(*workflows_resp, dirPath); err != nil {
 			log.WithError(err).Error("Error saving workflows")
 			return
-		}
-
-		existingSlugs := make(map[string]bool)
-		for _, wf := range workflows_resp.Results {
-			obj, ok := wf.(map[string]any)
-			if !ok {
-				continue
-			}
-
-			slug, _ := obj["slug"].(string)
-			existingSlugs[slug] = true
 		}
 
 		files, err := os.ReadDir(dirPath)
@@ -59,11 +51,6 @@ var syncCmd = &cobra.Command{
 			}
 
 			slug := strings.TrimSuffix(file.Name(), ".json")
-			if _, exists := existingSlugs[slug]; exists {
-				log.Printf("Skipping '%s.json' (already exists on server)\n", slug)
-				continue
-			}
-
 			path := filepath.Join(dirPath, file.Name())
 			data, err := os.ReadFile(path)
 			if err != nil {
@@ -77,10 +64,10 @@ var syncCmd = &cobra.Command{
 				return
 			}
 
-			err = mgmnt_client.PushWorkflow(workspace, slug, workflow)
+			err = mgmnt_client.PushWorkflow(toWorkspace, slug, workflow)
 			if err != nil {
 				log.WithError(err).Errorf("Failed to push workflow %s", slug)
-				return
+				continue
 			}
 
 			log.Printf("Pushed workflow: %s\n", slug)
