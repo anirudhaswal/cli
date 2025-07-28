@@ -10,9 +10,9 @@ import (
 )
 
 type Profile struct {
-	BaseUrl      string `yaml:"SUPRSEND_BASE_URL"`
-	MgmntUrl     string `yaml:"SUPRSEND_MGMNT_URL"`
-	ServiceToken string `yaml:"SUPRSEND_SERVICE_TOKEN"`
+	BaseUrl      string `yaml:"base_url"`
+	MgmntUrl     string `yaml:"mgmnt_url"`
+	ServiceToken string `yaml:"service_token"`
 }
 
 type Config struct {
