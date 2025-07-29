@@ -89,15 +89,26 @@ func SaveConfig(cfg *Config, path string) error {
 func LoadConfig(path string) (*Config, error) {
 	data, err := os.ReadFile(path)
 	if err != nil {
-		log.WithError(err).Errorf("Failed to read config file: %s", path)
 		return nil, err
 	}
 	var cfg Config
 	if err := yaml.Unmarshal(data, &cfg); err != nil {
-		log.WithError(err).Error("Failed to parse YAML config")
 		return nil, err
 	}
 	return &cfg, nil
+}
+
+func GetConfigFilePath() string {
+	if config.Cfg.CfgFile != "" {
+		return config.Cfg.CfgFile
+	}
+
+	homeDir, err := os.UserHomeDir()
+	if err != nil {
+		log.WithError(err).Error("Could not get user home directory")
+		return ""
+	}
+	return filepath.Join(homeDir, ".suprsend.yaml")
 }
 
 func GetResolvedBaseUrl() string {
@@ -107,10 +118,14 @@ func GetResolvedBaseUrl() string {
 	}
 
 	// get the value from the active profile
-	cfg, err := LoadConfig(config.Cfg.CfgFile)
+	configPath := GetConfigFilePath()
+	if configPath == "" {
+		return "https://hub.suprsend.com/"
+	}
+
+	cfg, err := LoadConfig(configPath)
 	if err != nil {
-		log.WithError(err).Error("Failed to load config file")
-		return ""
+		return "https://hub.suprsend.com/"
 	}
 
 	activeProfile := cfg.Profiles[cfg.ActiveProfile]
@@ -119,7 +134,7 @@ func GetResolvedBaseUrl() string {
 	}
 
 	// Default value
-	return "https://hub.suprsend.com"
+	return "https://hub.suprsend.com/"
 }
 
 func GetResolvedMgmntUrl() string {
@@ -129,10 +144,14 @@ func GetResolvedMgmntUrl() string {
 	}
 
 	// get the value from the active profile
-	cfg, err := LoadConfig(config.Cfg.CfgFile)
+	configPath := GetConfigFilePath()
+	if configPath == "" {
+		return "https://api.suprsend.com/"
+	}
+
+	cfg, err := LoadConfig(configPath)
 	if err != nil {
-		log.WithError(err).Error("Failed to load config file")
-		return ""
+		return "https://api.suprsend.com/"
 	}
 
 	activeProfile := cfg.Profiles[cfg.ActiveProfile]
@@ -140,6 +159,6 @@ func GetResolvedMgmntUrl() string {
 		return activeProfile.MgmntUrl
 	}
 
-	// 3. Default value
-	return "https://api.suprsend.com"
+	// Default value
+	return "https://api.suprsend.com/"
 }

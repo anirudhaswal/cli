@@ -109,9 +109,13 @@ func getServiceTokenWithPriority() string {
 	}
 
 	// Config file
-	cfg, err := profiles.LoadConfig(config.Cfg.CfgFile)
+	configPath := profiles.GetConfigFilePath()
+	if configPath == "" {
+		return ""
+	}
+
+	cfg, err := profiles.LoadConfig(configPath)
 	if err != nil {
-		log.WithError(err).Error("Failed to load config file")
 		return ""
 	}
 
