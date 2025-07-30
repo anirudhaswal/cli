@@ -2,6 +2,7 @@ package mgmnt
 
 import (
 	"fmt"
+	"os"
 	"strconv"
 	"strings"
 
@@ -78,44 +79,34 @@ func (c *SS_MgmntClient) GetWorkflows(workspace string, mode string) (*Workflows
 	totalCount := 0
 
 	for {
-		log.Debugf("Fetching workflows with limit: %d, offset: %d", limit, offset)
-
 		res, err := client.R().
 			SetDebug(c.debug).
 			SetHeader("Authorization", "ServiceToken "+c.serviceToken).
 			SetResult(&WorkflowsResponse{}).
 			Get(c.mgmnt_base_URL + "v1/" + workspace + "/workflow/?limit=" + strconv.Itoa(limit) + "&offset=" + strconv.Itoa(offset) + "&mode=" + mode)
 		if err != nil {
-			log.Errorf("Error getting workflows: %s", err)
+			fmt.Fprintf(os.Stdout, "Error: Failed to get workflows: %v\n", err)
 			return nil, err
 		}
 
 		if res.IsError() {
-			log.Errorf("Error getting workflows: %s", res.Status())
+			fmt.Fprintf(os.Stdout, "Error: Failed to get workflows: %v\n", res.Status())
 			return nil, fmt.Errorf("error getting workflows: %s", res.Status())
 		}
 
 		workflows := res.Result().(*WorkflowsResponse)
 
 		if len(workflows.Results) == 0 {
-			log.Debugf("No more workflows found, stopping pagination")
+			fmt.Fprintf(os.Stdout, "No more workflows found, stopping pagination\n")
 			break
 		}
 
 		allWorkflows = append(allWorkflows, workflows.Results...)
 		totalCount += len(workflows.Results)
-
-		log.Debugf("Fetched %d workflows, total so far: %d", len(workflows.Results), totalCount)
-
-		if len(workflows.Results) < limit {
-			log.Debugf("Received fewer results than limit (%d < %d), stopping pagination", len(workflows.Results), limit)
-			break
-		}
-
 		offset += limit
 	}
 
-	log.Infof("Successfully fetched all %d workflows", totalCount)
+	fmt.Fprintf(os.Stdout, "Successfully fetched all %d workflows\n", totalCount)
 
 	return &WorkflowsResponse{
 		Results: allWorkflows,

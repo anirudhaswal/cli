@@ -16,6 +16,11 @@ var syncCmd = &cobra.Command{
 	Use:   "sync",
 	Short: "Sync all your SuprSend assests locally",
 	Long:  `Sync all your SuprSend assets locally with the server`,
+	PersistentPreRun: func(cmd *cobra.Command, args []string) {
+		if flag := cmd.InheritedFlags().Lookup("workspace"); flag != nil {
+			flag.Hidden = true
+		}
+	},
 	Run: func(cmd *cobra.Command, args []string) {
 		dirPath := filepath.Join(".", "suprsend", "workflow")
 
@@ -34,7 +39,8 @@ var syncCmd = &cobra.Command{
 		}
 
 		log.Infof("Pulling workflows from %s ... \n", fromWorkspace)
-		if err := workflow.WriteWorkflowsToFiles(*workflows_resp, dirPath); err != nil {
+		_, err = workflow.WriteWorkflowsToFiles(*workflows_resp, dirPath)
+		if err != nil {
 			log.WithError(err).Error("Error saving workflows")
 			return
 		}

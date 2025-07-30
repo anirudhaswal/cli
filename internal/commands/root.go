@@ -34,7 +34,7 @@ func Execute() error {
 
 func init() {
 	conf := config.Cfg
-	rootCmd.PersistentFlags().StringVarP(&conf.Workspace, "workspace", "w", "staging", "Workspace to use")
+	rootCmd.Flags().StringVarP(&conf.Workspace, "workspace", "w", "staging", "Workspace to use")
 	rootCmd.PersistentFlags().StringVar(&conf.CfgFile, "config", "", "config file (default: $HOME/.suprsend.yaml)")
 	rootCmd.PersistentFlags().StringVarP(&conf.OutputType, "output", "o", "pretty", "Output Tyle (pretty, yaml, json)")
 	rootCmd.PersistentFlags().StringVarP(&conf.Verbosity, "verbosity", "v", "info", "Log level (debug, info, warn, error, fatal, panic)")
@@ -55,16 +55,15 @@ func init() {
 		),
 	)
 
-	rootCmd.AddCommand(profiles.ProfilesCmd)
-
 	workflow.WorkflowCmd.PersistentFlags().StringP("mode", "m", "live", "Mode to list workflows (draft, live)")
-
+	workflow.WorkflowCmd.PersistentFlags().StringVarP(&conf.Workspace, "workspace", "w", "staging", "Workspace to use")
 	syncCmd.Flags().StringP("from", "f", "staging", "Source workspace (required)")
-	syncCmd.Flags().StringP("to", "t", "staging", "Destination workspace (required)")
+	syncCmd.Flags().StringP("to", "t", "production", "Destination workspace (required)")
 	syncCmd.Flags().StringP("mode", "m", "live", "Mode to sync workflows (draft, live)")
 	syncCmd.MarkFlagRequired("from")
 	syncCmd.MarkFlagRequired("to")
 
+	rootCmd.AddCommand(profiles.ProfilesCmd)
 	rootCmd.AddCommand(workflow.WorkflowCmd)
 	rootCmd.AddCommand(syncCmd)
 
