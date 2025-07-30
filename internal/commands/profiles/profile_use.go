@@ -47,5 +47,6 @@ var profileUseCmd = &cobra.Command{
 }
 
 func init() {
+	profileUseCmd.Flags().StringVarP(&useName, "name", "", "", "Profile name to set as active.")
 	ProfilesCmd.AddCommand(profileUseCmd)
 }

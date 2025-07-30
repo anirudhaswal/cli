@@ -32,6 +32,5 @@ var workflowCommitCmd = &cobra.Command{
 }
 
 func init() {
-	workflowListCmd.Flags().StringP("commit-message", "c", "", "Commit Message for making a workflow live")
 	WorkflowCmd.AddCommand(workflowCommitCmd)
 }

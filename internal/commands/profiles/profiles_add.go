@@ -55,7 +55,7 @@ func init() {
 	profilesAddCmd.Flags().StringVar(&addName, "name", "", "Name of the profile (required)")
 	profilesAddCmd.Flags().StringVar(&addBaseUrl, "base-url", "", "Base URL")
 	profilesAddCmd.Flags().StringVar(&addMgmntUrl, "mgmnt-url", "", "Management URL")
-	profilesAddCmd.Flags().StringVar(&addServiceToken, "token", "", "Service token")
+	profilesAddCmd.Flags().StringVar(&addServiceToken, "token", "", "Service token (required)")
 	ProfilesCmd.AddCommand(profilesAddCmd)
 }
 

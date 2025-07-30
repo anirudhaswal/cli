@@ -198,7 +198,7 @@ func (c *SS_MgmntClient) ChangeStatusWorkflow(workspace, slug string, commit boo
 
 	if res.IsError() {
 		log.Errorf("%s failed for workflow (slug: %s): %s - %s", action, slug, res.Status(), res.String())
-		return err
+		return fmt.Errorf("%s failed: %s - %s", action, res.Status(), res.String())
 	}
 
 	log.Infof("Successfully %s workflow: %s", strings.TrimSuffix(action, "ing")+"ed", slug)
