@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"os"
 	"strconv"
-	"strings"
 
 	log "github.com/sirupsen/logrus"
 	"github.com/suprsend/cli/internal/client"
@@ -154,7 +153,7 @@ func (c *SS_MgmntClient) PushWorkflow(workspace, slug string, workflow map[strin
 	return nil
 }
 
-func (c *SS_MgmntClient) ChangeStatusWorkflow(workspace, slug string, commit bool) error {
+func (c *SS_MgmntClient) ChangeStatusWorkflow(workspace, slug string, enabled bool) error {
 	if slug == "" {
 		return fmt.Errorf("slug cannot be empty")
 	}
@@ -165,12 +164,12 @@ func (c *SS_MgmntClient) ChangeStatusWorkflow(workspace, slug string, commit boo
 	urlStr := fmt.Sprintf("%sv1/%s/workflow/%s/enable/", c.mgmnt_base_URL, workspace, slug)
 
 	body := map[string]interface{}{
-		"is_enabled": commit,
+		"is_enabled": enabled,
 	}
 
-	action := "resetting"
-	if commit {
-		action = "committing"
+	action := "disabling"
+	if enabled {
+		action = "enabling"
 	}
 
 	log.Debugf("Finalizing workflow (slug: %s) by %s", slug, action)
@@ -192,6 +191,5 @@ func (c *SS_MgmntClient) ChangeStatusWorkflow(workspace, slug string, commit boo
 		return fmt.Errorf("%s failed: %s - %s", action, res.Status(), res.String())
 	}
 
-	log.Infof("Successfully %s workflow: %s", strings.TrimSuffix(action, "ing")+"ed", slug)
 	return nil
 }

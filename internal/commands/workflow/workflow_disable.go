@@ -6,10 +6,10 @@ import (
 	"github.com/suprsend/cli/internal/utils"
 )
 
-var workflowResetCmd = &cobra.Command{
-	Use:   "reset",
-	Short: "Reset a live workflow to draft",
-	Long:  "Commits a live workflow to draft",
+var workflowDisableCmd = &cobra.Command{
+	Use:   "disable",
+	Short: "Disable a workflow",
+	Long:  "Disable a workflow to deactivate.",
 	Run: func(cmd *cobra.Command, args []string) {
 		if len(args) < 1 {
 			log.Error("Category slug is required.")
@@ -23,14 +23,14 @@ var workflowResetCmd = &cobra.Command{
 
 		err := mgmntClient.ChangeStatusWorkflow(workspace, slug, false)
 		if err != nil {
-			log.WithError(err).Errorf("Failed to commit workflow %s", slug)
+			log.WithError(err).Errorf("Failed to disable workflow %s", slug)
 			return
 		}
 
-		log.Printf("Reset workflow: %s\n", slug)
+		log.Printf("Disabled workflow: %s\n", slug)
 	},
 }
 
 func init() {
-	WorkflowCmd.AddCommand(workflowResetCmd)
+	WorkflowCmd.AddCommand(workflowDisableCmd)
 }

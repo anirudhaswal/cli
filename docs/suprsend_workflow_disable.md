@@ -1,21 +1,19 @@
-## suprsend workflow list
+## suprsend workflow disable
 
-List workflows for a workspace
+Disable a workflow
 
 ### Synopsis
 
-List workflows for a workspace
+Disable a workflow to deactivate.
 
 ```
-suprsend workflow list [flags]
+suprsend workflow disable [flags]
 ```
 
 ### Options
 
 ```
-  -h, --help         help for list
-  -l, --limit int    Limit the number of workflows to list (default 20)
-  -f, --offset int   Offset the number of workflows to list (default: 0)
+  -h, --help   help for disable
 ```
 
 ### Options inherited from parent commands

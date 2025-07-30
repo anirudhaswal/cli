@@ -20,7 +20,6 @@ suprsend workflow pull [flags]
 
 ```
       --config string          config file (default: $HOME/.suprsend.yaml)
-  -m, --mode string            Mode to list workflows (draft, live) (default "live")
   -n, --no-color               Disable color output (default: $NO_COLOR)
   -o, --output string          Output Tyle (pretty, yaml, json) (default "pretty")
   -s, --service-token string   Service token (default: $SUPRSEND_SERVICE_TOKEN)

@@ -6,10 +6,10 @@ import (
 	"github.com/suprsend/cli/internal/utils"
 )
 
-var workflowCommitCmd = &cobra.Command{
-	Use:   "commit",
-	Short: "Commit a draft workflow to live.",
-	Long:  "Commits a draft workflow to live",
+var worklowEnableCmd = &cobra.Command{
+	Use:   "enable",
+	Short: "Enables a workflow.",
+	Long:  "Enables a workflow to activate",
 	Run: func(cmd *cobra.Command, args []string) {
 		if len(args) < 1 {
 			log.Error("Category slug is required.")
@@ -23,14 +23,14 @@ var workflowCommitCmd = &cobra.Command{
 
 		err := mgmntClient.ChangeStatusWorkflow(workspace, slug, true)
 		if err != nil {
-			log.WithError(err).Errorf("Failed to commit workflow %s", slug)
+			log.WithError(err).Errorf("Failed to enable workflow %s", slug)
 			return
 		}
 
-		log.Printf("Committed workflow: %s\n", slug)
+		log.Printf("Enabled workflow: %s\n", slug)
 	},
 }
 
 func init() {
-	WorkflowCmd.AddCommand(workflowCommitCmd)
+	WorkflowCmd.AddCommand(worklowEnableCmd)
 }

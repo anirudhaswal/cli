@@ -55,7 +55,6 @@ func init() {
 		),
 	)
 
-	workflow.WorkflowCmd.PersistentFlags().StringP("mode", "m", "live", "Mode to list workflows (draft, live)")
 	workflow.WorkflowCmd.PersistentFlags().StringVarP(&conf.Workspace, "workspace", "w", "staging", "Workspace to use")
 	syncCmd.Flags().StringP("from", "f", "staging", "Source workspace (required)")
 	syncCmd.Flags().StringP("to", "t", "production", "Destination workspace (required)")
