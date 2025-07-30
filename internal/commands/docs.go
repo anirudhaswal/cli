@@ -17,5 +17,15 @@ var genDocsCmd = &cobra.Command{
 }
 
 func init() {
+	genDocsCmd.SetHelpFunc(func(command *cobra.Command, strings []string) {
+		command.Flags().MarkHidden("workspace")
+		command.Flags().MarkHidden("service-token")
+		command.Flags().MarkHidden("output")
+		command.Flags().MarkHidden("verbosity")
+		command.Flags().MarkHidden("no-color")
+		command.Flags().MarkHidden("config")
+		command.Parent().HelpFunc()(command, strings)
+	})
+
 	rootCmd.AddCommand(genDocsCmd)
 }

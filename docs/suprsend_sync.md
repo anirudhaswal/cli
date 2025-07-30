@@ -1,27 +1,22 @@
-## suprsend version
+## suprsend sync
 
-Print the CLI version
+Sync all your SuprSend assests locally
 
-```
-suprsend version [flags]
-```
+### Synopsis
 
-### Examples
+Sync all your SuprSend assets locally with the server
 
 ```
-
-/tmp/go-build3501089619/b001/exe/main version
-/tmp/go-build3501089619/b001/exe/main version -o=json
-/tmp/go-build3501089619/b001/exe/main version -o=yaml
-/tmp/go-build3501089619/b001/exe/main version -o=short
-
+suprsend sync [flags]
 ```
 
 ### Options
 
 ```
-  -h, --help            help for version
-  -o, --output string   Output format. One of: json | pretty | short | yaml (default "pretty")
+  -f, --from string   Source workspace (required) (default "staging")
+  -h, --help          help for sync
+  -m, --mode string   Mode to sync workflows (draft, live) (default "live")
+  -t, --to string     Destination workspace (required) (default "production")
 ```
 
 ### Options inherited from parent commands
@@ -29,6 +24,7 @@ suprsend version [flags]
 ```
       --config string          config file (default: $HOME/.suprsend.yaml)
   -n, --no-color               Disable color output (default: $NO_COLOR)
+  -o, --output string          Output Tyle (pretty, yaml, json) (default "pretty")
   -s, --service-token string   Service token (default: $SUPRSEND_SERVICE_TOKEN)
   -v, --verbosity string       Log level (debug, info, warn, error, fatal, panic) (default "info")
 ```

@@ -21,6 +21,18 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
+// IsOutputPiped checks if os.Stdout is connected to a pipe or redirected.
+func IsOutputPiped() bool {
+	fi, err := os.Stdout.Stat()
+	if err != nil {
+		return false
+	}
+
+	// If ModeCharDevice is NOT set, it means the output is not a character device (terminal).
+	// This implies it's a pipe or redirection.
+	return (fi.Mode() & os.ModeCharDevice) == 0
+}
+
 func supportsColor() bool {
 	// check if output is redirected to a file
 	fileInfo, _ := os.Stdout.Stat()
@@ -28,7 +40,6 @@ func supportsColor() bool {
 		return false
 	}
 
-	// check if stdout is a tty
 	if viper.GetBool("NO_COLOR") {
 		return false
 	}
@@ -67,14 +78,18 @@ func outputJSON(data any) {
 func colorizeYAML(yamlString string) string {
 	lines := []string{}
 	for _, line := range strings.Split(yamlString, "\n") {
-		if strings.Contains(line, ":") {
-			parts := strings.SplitN(line, ":", 2)
-			key := strings.TrimSpace(parts[0])
+		if idx := strings.Index(line, ":"); idx != -1 {
+			// Preserve leading spaces (indentation)
+			leading := line[:idx]
+			keyAndRest := line[idx:]
+			// Find the key (after leading spaces, before colon)
+			key := leading + color.HiBlueString(strings.TrimSpace(line[len(leading):idx]))
+			// Colorize value if present
 			value := ""
-			if len(parts) > 1 {
-				value = parts[1]
+			if len(keyAndRest) > 1 {
+				value = color.GreenString(keyAndRest[1:])
 			}
-			lines = append(lines, color.HiBlueString(key)+":"+color.GreenString(value))
+			lines = append(lines, key+":"+value)
 		} else {
 			lines = append(lines, line)
 		}
@@ -84,13 +99,24 @@ func colorizeYAML(yamlString string) string {
 
 // outputYAML prints data in YAML format
 func outputYAML(data any) {
-	yamlData, err := yaml.Marshal(data)
+	var node yaml.Node
+	err := node.Encode(data)
+	if err != nil {
+		log.Fatal("Error encoding YAML node:", err)
+		return
+	}
+
+	var b strings.Builder
+	encoder := yaml.NewEncoder(&b)
+	encoder.SetIndent(4)
+	err = encoder.Encode(&node)
+	encoder.Close()
 	if err != nil {
 		log.Fatal("Error creating YAML output:", err)
 		return
 	}
 	// trim the yaml data
-	yamlString := strings.TrimSpace(string(yamlData))
+	yamlString := strings.TrimSpace(b.String())
 	if supportsColor() {
 		fmt.Println(colorizeYAML(yamlString))
 	} else {
@@ -142,13 +168,25 @@ func printStructAsTable(values []reflect.Value) {
 
 	table := tablewriter.NewTable(os.Stdout,
 		tablewriter.WithRenderer(renderer.NewBlueprint(tw.Rendition{
+			Borders: tw.Border{
+				Left:   tw.Off,
+				Right:  tw.Off,
+				Top:    tw.Off,
+				Bottom: tw.Off,
+			},
 			Settings: tw.Settings{
-				Separators: tw.Separators{BetweenRows: tw.On},
+				Separators: tw.Separators{BetweenRows: tw.Off, BetweenColumns: tw.On, ShowHeader: tw.Off, ShowFooter: tw.Off},
+				Lines: tw.Lines{
+					ShowTop:        tw.Off,
+					ShowBottom:     tw.Off,
+					ShowHeaderLine: tw.On,
+					ShowFooterLine: tw.Off,
+				},
 			},
 		})),
 		tablewriter.WithConfig(tablewriter.Config{
 			Header: tw.CellConfig{
-				Formatting: tw.CellFormatting{Alignment: tw.AlignCenter},
+				Formatting: tw.CellFormatting{Alignment: tw.AlignLeft},
 			},
 			Row: tw.CellConfig{
 				Formatting: tw.CellFormatting{

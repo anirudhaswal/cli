@@ -13,7 +13,8 @@ import (
 
 type SS_MgmntClient struct {
 	serviceToken     string
-	baseURL          string
+	hub_base_URL     string
+	mgmnt_base_URL   string
 	workspaceClients map[string]*suprsend.Client
 	debug            bool
 }
@@ -38,14 +39,15 @@ func NewClientWithUrls(serviceToken string, baseURL string, mgmntURL string, deb
 		if envUrl := os.Getenv("SUPRSEND_MGMNT_URL"); envUrl != "" {
 			mgmntURL = envUrl
 		} else {
-			mgmntURL = "https://api.suprsend.com"
+			mgmntURL = "https://api.suprsend.com/"
 		}
 	}
 
 	client := &SS_MgmntClient{
-		serviceToken: serviceToken,
-		baseURL:      baseURL,
-		debug:        debug,
+		serviceToken:   serviceToken,
+		hub_base_URL:   baseURL,
+		mgmnt_base_URL: mgmntURL,
+		debug:          debug,
 	}
 	client.workspaceClients = make(map[string]*suprsend.Client)
 	log.Debugf("New management client created with base URL: %s, mgmnt URL: %s, service token: %s and debug: %t", baseURL, mgmntURL, serviceToken, debug)
@@ -60,7 +62,7 @@ func (c *SS_MgmntClient) GetWorkspaceClient(workspace string) (*suprsend.Client,
 		if err != nil {
 			return nil, err
 		}
-		client, err := suprsend.NewClient(key, secret, suprsend.WithBaseUrl(c.baseURL), suprsend.WithDebug(c.debug))
+		client, err := suprsend.NewClient(key, secret, suprsend.WithBaseUrl(c.hub_base_URL), suprsend.WithDebug(c.debug))
 		if err != nil {
 			return nil, err
 		}
@@ -79,7 +81,7 @@ func (c *SS_MgmntClient) GetWorkspaceKeyAndSecret(workspace string) (string, str
 	client := &http.Client{}
 
 	// Create a new GET request
-	req, err := http.NewRequest("GET", c.baseURL+"/v1/"+workspace+"/ws_key/bridge/", nil)
+	req, err := http.NewRequest("GET", c.hub_base_URL+"/v1/"+workspace+"/ws_key/bridge/", nil)
 	if err != nil {
 		log.Info("Error creating request: ", err)
 		return "", "", err
