@@ -142,7 +142,7 @@ func runAddInteractive(cfg *Config, path string) {
 
 	fmt.Println("\n📋 Profile Summary:")
 	fmt.Printf("   Name: %s\n", addName)
-	fmt.Printf("   Service Token: %s...%s\n", addServiceToken[:8], addServiceToken[len(addServiceToken)-4:])
+	fmt.Printf("   Service Token: %s\n", addServiceToken)
 	fmt.Printf("   Base URL: %s\n", addBaseUrl)
 	fmt.Printf("   Management URL: %s\n", addMgmntUrl)
 
