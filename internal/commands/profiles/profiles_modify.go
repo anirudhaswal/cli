@@ -2,7 +2,6 @@ package profiles
 
 import (
 	"fmt"
-	"strings"
 
 	"github.com/sabouaram/cobra_ui"
 	log "github.com/sirupsen/logrus"
@@ -78,7 +77,7 @@ func runModifyInteractive(cfg *Config, path string) {
 	}
 
 	if len(profileNames) == 0 {
-		log.Error("No profiles found")
+		log.Info("No profiles found. Use the command 'suprsend profiles add' to add a profile.")
 		return
 	}
 
@@ -114,14 +113,7 @@ func runModifyInteractive(cfg *Config, path string) {
 		currentMgmntURL = "https://api.suprsend.com"
 	}
 	currentToken := selectedProfile.ServiceToken
-	if currentToken != "" {
-		// Mask the token for security
-		if len(currentToken) > 4 {
-			currentToken = strings.Repeat("*", len(currentToken)-4) + currentToken[len(currentToken)-4:]
-		} else {
-			currentToken = "****"
-		}
-	} else {
+	if currentToken == "" {
 		currentToken = "not set"
 	}
 
@@ -172,6 +164,15 @@ func runModifyInteractive(cfg *Config, path string) {
 	if len(questions) > 0 {
 		ui2.SetQuestions(questions)
 		ui2.RunInteractiveUI()
+	}
+
+	if modifyName == "" {
+		log.Error("Profile name is required")
+		return
+	}
+	if modifyServiceToken == "" {
+		log.Error("Service token is required")
+		return
 	}
 
 	updatedProfile := Profile{

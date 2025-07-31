@@ -16,10 +16,12 @@ var listProfilesCmd = &cobra.Command{
 		path, err := cmd.Flags().GetString("config")
 		if err != nil {
 			log.WithError(err).Error("Couldn't find the path")
+			return
 		}
 		cfg, _, err := EnsureConfig(path)
 		if err != nil {
 			log.WithError(err)
+			return
 		}
 
 		var names []string
@@ -29,7 +31,8 @@ var listProfilesCmd = &cobra.Command{
 		sort.Strings(names)
 
 		if len(names) == 0 {
-			log.Warn("No profiles found.")
+			log.Info("No profiles found. Use 'suprsend profiles add' to add a profile")
+			return
 		}
 
 		outputType, _ := cmd.Flags().GetString("output")

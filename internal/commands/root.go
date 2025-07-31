@@ -4,14 +4,15 @@ Copyright © 2025 SuprSend
 package commands
 
 import (
-	"fmt"
 	"os"
 
 	"github.com/MakeNowJust/heredoc/v2"
+	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"github.com/suprsend/cli/internal/commands/profiles"
 	"github.com/suprsend/cli/internal/commands/schema"
+	workflow "github.com/suprsend/cli/internal/commands/workflow"
 	"github.com/suprsend/cli/internal/config"
 	"github.com/suprsend/cli/internal/utils"
 	"go.szostok.io/version/extension"
@@ -34,10 +35,8 @@ func Execute() error {
 
 func init() {
 	conf := config.Cfg
-	// Here you will define your flags and configuration settings.
-	// Cobra supports persistent flags, which, if defined here,
-	// will be global for your application.
-	rootCmd.PersistentFlags().StringVar(&conf.CfgFile, "config", "", "config file (default: $HOME/suprsend.yaml)")
+	rootCmd.Flags().StringVarP(&conf.Workspace, "workspace", "w", "staging", "Workspace to use")
+	rootCmd.PersistentFlags().StringVar(&conf.CfgFile, "config", "", "config file (default: $HOME/.suprsend.yaml)")
 	rootCmd.PersistentFlags().StringVarP(&conf.OutputType, "output", "o", "pretty", "Output Tyle (pretty, yaml, json)")
 	rootCmd.PersistentFlags().StringVarP(&conf.Verbosity, "verbosity", "v", "info", "Log level (debug, info, warn, error, fatal, panic)")
 	rootCmd.PersistentFlags().StringVarP(&conf.ServiceToken, "service-token", "s", "", "Service token (default: $SUPRSEND_SERVICE_TOKEN)")
@@ -57,7 +56,16 @@ func init() {
 		),
 	)
 
+	workflow.WorkflowCmd.PersistentFlags().StringVarP(&conf.Workspace, "workspace", "w", "staging", "Workspace to use")
+	syncCmd.Flags().StringP("from", "f", "staging", "Source workspace (required)")
+	syncCmd.Flags().StringP("to", "t", "production", "Destination workspace (required)")
+	syncCmd.Flags().StringP("mode", "m", "live", "Mode to sync workflows (draft, live)")
+	syncCmd.MarkFlagRequired("from")
+	syncCmd.MarkFlagRequired("to")
+
 	rootCmd.AddCommand(profiles.ProfilesCmd)
+	rootCmd.AddCommand(workflow.WorkflowCmd)
+	rootCmd.AddCommand(syncCmd)
 
 	rootCmd.AddCommand(schema.SchemaCmd)
 
@@ -65,39 +73,60 @@ func init() {
 		if err := config.SetUpLogs(); err != nil {
 			return err
 		}
-		// check the subcommand and return if it is generate-config or gendocs
-		if cmd.Name() == "generate-config" || cmd.Name() == "gendocs" {
+		// check the subcommand and return if it is gendocs
+		if cmd.Name() == "gendocs" {
 			return nil
 		}
 
-		cfg, _, err := profiles.EnsureConfig(conf.CfgFile)
-		if err != nil {
-			return err
+		if cmd.Name() == "profiles" || (cmd.Parent() != nil && cmd.Parent().Name() == "profiles") {
+			return nil
 		}
 
-		activeProfile, exists := cfg.Profiles[cfg.ActiveProfile]
-		if !exists {
-			return fmt.Errorf("active profile '%s' not found", cfg.ActiveProfile)
-		}
-
-		// flag > profile > env
-		serviceToken := viper.GetString("service_token")
-		if serviceToken == "" {
-			if activeProfile.ServiceToken != "" {
-				serviceToken = activeProfile.ServiceToken
-			} else {
-				serviceToken = os.Getenv("SUPRSEND_SERVICE_TOKEN")
-			}
-		}
-
+		// env > flag > config file -> profile
+		serviceToken := getServiceTokenWithPriority()
 		conf.ServiceToken = serviceToken
 
 		utils.InitSDKWithUrls(
-			viper.GetString("service_token"),
-			activeProfile.GetResolvedBaseUrl(),
-			activeProfile.GetResolvedMgmntUrl(),
+			conf.ServiceToken,
+			profiles.GetResolvedBaseUrl(),
+			profiles.GetResolvedMgmntUrl(),
 			viper.GetBool("debug"),
 		)
 		return nil
 	}
+}
+
+func getServiceTokenWithPriority() string {
+	// ENV Variable
+	if envToken := os.Getenv("SUPRSEND_SERVICE_TOKEN"); envToken != "" {
+		log.Debug("Using service token from environment variable")
+		return envToken
+	}
+
+	// CMD flag
+	if cmdFlagToken := viper.GetString("service_token"); cmdFlagToken != "" {
+		log.Debug("Using service token from command line flag")
+		return cmdFlagToken
+	}
+
+	// Config file
+	configPath := profiles.GetConfigFilePath()
+	if configPath == "" {
+		return ""
+	}
+
+	cfg, err := profiles.LoadConfig(configPath)
+	if err != nil {
+		return ""
+	}
+
+	activeProfile := cfg.Profiles[cfg.ActiveProfile]
+	if activeProfile.ServiceToken != "" {
+		log.Debug("Using service token from config file profile")
+		return activeProfile.ServiceToken
+	}
+
+	// No token found
+	log.Fatalln("No service token found in environment, command line, or config file")
+	return ""
 }

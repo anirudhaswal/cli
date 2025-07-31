@@ -1,7 +1,10 @@
 package profiles
 
 import (
+	"bufio"
 	"fmt"
+	"os"
+	"strings"
 
 	"github.com/sabouaram/cobra_ui"
 	log "github.com/sirupsen/logrus"
@@ -52,11 +55,16 @@ func init() {
 	profilesAddCmd.Flags().StringVar(&addName, "name", "", "Name of the profile (required)")
 	profilesAddCmd.Flags().StringVar(&addBaseUrl, "base-url", "", "Base URL")
 	profilesAddCmd.Flags().StringVar(&addMgmntUrl, "mgmnt-url", "", "Management URL")
-	profilesAddCmd.Flags().StringVar(&addServiceToken, "token", "", "Service token")
+	profilesAddCmd.Flags().StringVar(&addServiceToken, "token", "", "Service token (required)")
 	ProfilesCmd.AddCommand(profilesAddCmd)
 }
 
 func runAddInteractive(cfg *Config, path string) {
+	addName = ""
+	addServiceToken = ""
+	addBaseUrl = ""
+	addMgmntUrl = ""
+
 	ui := cobra_ui.New()
 
 	var questions []cobra_ui.Question
@@ -94,7 +102,11 @@ func runAddInteractive(cfg *Config, path string) {
 		questions = append(questions, cobra_ui.Question{
 			Text: "Base URL (optional, press Enter for default): ",
 			Handler: func(s string) error {
-				addBaseUrl = s
+				if s != "" {
+					addBaseUrl = s
+				} else {
+					addBaseUrl = "https://hub.suprsend.com/"
+				}
 				return nil
 			},
 		})
@@ -104,7 +116,11 @@ func runAddInteractive(cfg *Config, path string) {
 		questions = append(questions, cobra_ui.Question{
 			Text: "Management URL (optional, press Enter for default): ",
 			Handler: func(s string) error {
-				addMgmntUrl = s
+				if s != "" {
+					addMgmntUrl = s
+				} else {
+					addMgmntUrl = "https://api.suprsend.com/"
+				}
 				return nil
 			},
 		})
@@ -113,6 +129,47 @@ func runAddInteractive(cfg *Config, path string) {
 	if len(questions) > 0 {
 		ui.SetQuestions(questions)
 		ui.RunInteractiveUI()
+	}
+
+	if addName == "" {
+		log.Error("Profile name is required")
+		return
+	}
+	if addServiceToken == "" {
+		log.Error("Service token is required")
+		return
+	}
+
+	fmt.Println("\n📋 Profile Summary:")
+	fmt.Printf("   Name: %s\n", addName)
+	fmt.Printf("   Service Token: %s\n", addServiceToken)
+	fmt.Printf("   Base URL: %s\n", addBaseUrl)
+	fmt.Printf("   Management URL: %s\n", addMgmntUrl)
+
+	reader := bufio.NewReader(os.Stdin)
+	for {
+		fmt.Print("\n🤔 Add this profile? (Y/n): ")
+		response, err := reader.ReadString('\n')
+		if err != nil {
+			log.WithError(err).Error("Failed to read input")
+			return
+		}
+
+		response = strings.ToLower(strings.TrimSpace(response))
+		if response == "y" || response == "yes" {
+			break
+		}
+		if response == "n" || response == "no" || response == "" {
+			log.Infof("Profile creation cancelled")
+			return
+		}
+
+		log.Infof("❌ Please enter 'y' for yes or 'n' for no")
+	}
+
+	if cfg.ActiveProfile == "" {
+		cfg.ActiveProfile = addName
+		log.Infof("Set '%s' as the active profile", addName)
 	}
 
 	cfg.Profiles[addName] = Profile{
@@ -127,5 +184,5 @@ func runAddInteractive(cfg *Config, path string) {
 		return
 	}
 
-	log.Infof("Profile %s added successfully", addName)
+	log.Infof("✨Profile %s added successfully!\n", addName)
 }

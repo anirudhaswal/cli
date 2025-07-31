@@ -23,5 +23,7 @@ bin/
 TODO.md
 .air.toml
 tmp/
-/internal/utils/embedded-binaries
+
 /suprsend
+/cmd/suprsend/suprsend
+/internal/utils/embedded-binaries/type-morph

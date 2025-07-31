@@ -15,20 +15,24 @@ var profileRemoveCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		if removeName == "" {
 			log.Error("You must specify the name as --name")
+			return
 		}
 
 		path, err := cmd.Flags().GetString("config")
 		if err != nil {
 			log.WithError(err).Error("Couldn't find the path")
+			return
 		}
 
 		cfg, path, err := EnsureConfig(path)
 		if err != nil {
 			log.WithError(err).Error("Failed to load config")
+			return
 		}
 
 		if _, exists := cfg.Profiles[removeName]; !exists {
-			log.Errorf("Profile %q does not exist.", removeName)
+			log.Infof("Profile %q does not exist. Use the command 'suprsend profiles list' to see all profiles.", removeName)
+			return
 		}
 
 		delete(cfg.Profiles, removeName)
@@ -46,6 +50,7 @@ var profileRemoveCmd = &cobra.Command{
 
 		if err := SaveConfig(cfg, path); err != nil {
 			log.WithError(err).Error("Failed to save")
+			return
 		}
 	},
 }

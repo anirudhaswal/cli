@@ -6,13 +6,14 @@ import (
 	"path/filepath"
 
 	log "github.com/sirupsen/logrus"
+	"github.com/suprsend/cli/internal/config"
 	"gopkg.in/yaml.v3"
 )
 
 type Profile struct {
-	BaseUrl      string `yaml:"SUPRSEND_BASE_URL"`
-	MgmntUrl     string `yaml:"SUPRSEND_MGMNT_URL"`
-	ServiceToken string `yaml:"SUPRSEND_SERVICE_TOKEN"`
+	BaseUrl      string `yaml:"base_url"`
+	MgmntUrl     string `yaml:"mgmnt_url"`
+	ServiceToken string `yaml:"service_token"`
 }
 
 type Config struct {
@@ -58,14 +59,8 @@ func EnsureConfig(path string) (*Config, string, error) {
 		}
 
 		defaultCfg := &Config{
-			ActiveProfile: "default",
-			Profiles: map[string]Profile{
-				"default": {
-					BaseUrl:      "",
-					MgmntUrl:     "",
-					ServiceToken: "",
-				},
-			},
+			ActiveProfile: "",
+			Profiles:      make(map[string]Profile),
 		}
 		if err := SaveConfig(defaultCfg, configPath); err != nil {
 			log.WithError(err).Error("Failed to create default config")
@@ -94,31 +89,76 @@ func SaveConfig(cfg *Config, path string) error {
 func LoadConfig(path string) (*Config, error) {
 	data, err := os.ReadFile(path)
 	if err != nil {
-		log.WithError(err).Errorf("Failed to read config file: %s", path)
 		return nil, err
 	}
 	var cfg Config
 	if err := yaml.Unmarshal(data, &cfg); err != nil {
-		log.WithError(err).Error("Failed to parse YAML config")
 		return nil, err
 	}
 	return &cfg, nil
 }
 
-func (p *Profile) resolveUrl(configValue, envKey, defaultValue string) string {
-	if configValue != "" {
-		return configValue
+func GetConfigFilePath() string {
+	if config.Cfg.CfgFile != "" {
+		return config.Cfg.CfgFile
 	}
-	if envUrl := os.Getenv(envKey); envUrl != "" {
+
+	homeDir, err := os.UserHomeDir()
+	if err != nil {
+		log.WithError(err).Error("Could not get user home directory")
+		return ""
+	}
+	return filepath.Join(homeDir, ".suprsend.yaml")
+}
+
+func GetResolvedBaseUrl() string {
+	// ENV Variable
+	if envUrl := os.Getenv("SUPRSEND_BASE_URL"); envUrl != "" {
 		return envUrl
 	}
-	return defaultValue
+
+	// get the value from the active profile
+	configPath := GetConfigFilePath()
+	if configPath == "" {
+		return "https://hub.suprsend.com/"
+	}
+
+	cfg, err := LoadConfig(configPath)
+	if err != nil {
+		return "https://hub.suprsend.com/"
+	}
+
+	activeProfile := cfg.Profiles[cfg.ActiveProfile]
+	if activeProfile.BaseUrl != "" {
+		return activeProfile.BaseUrl
+	}
+
+	// Default value
+	return "https://hub.suprsend.com/"
 }
 
-func (p *Profile) GetResolvedBaseUrl() string {
-	return p.resolveUrl(p.BaseUrl, "SUPRSEND_BASE_URL", "https://hub.suprsend.com")
-}
+func GetResolvedMgmntUrl() string {
+	// ENV Variable
+	if envUrl := os.Getenv("SUPRSEND_MGMNT_URL"); envUrl != "" {
+		return envUrl
+	}
 
-func (p *Profile) GetResolvedMgmntUrl() string {
-	return p.resolveUrl(p.MgmntUrl, "SUPRSEND_MGMNT_URL", "https://api.suprsend.com")
+	// get the value from the active profile
+	configPath := GetConfigFilePath()
+	if configPath == "" {
+		return "https://api.suprsend.com/"
+	}
+
+	cfg, err := LoadConfig(configPath)
+	if err != nil {
+		return "https://api.suprsend.com/"
+	}
+
+	activeProfile := cfg.Profiles[cfg.ActiveProfile]
+	if activeProfile.MgmntUrl != "" {
+		return activeProfile.MgmntUrl
+	}
+
+	// Default value
+	return "https://api.suprsend.com/"
 }
