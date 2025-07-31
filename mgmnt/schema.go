@@ -2,9 +2,12 @@ package mgmnt
 
 import (
 	"fmt"
+	"os"
+	"strconv"
 	"strings"
 
 	log "github.com/sirupsen/logrus"
+	"github.com/suprsend/cli/internal/client"
 	"resty.dev/v3"
 )
 
@@ -53,10 +56,11 @@ type Property struct {
 }
 
 func (c *SS_MgmntClient) ListSchema(workspace string) (*ListSchemaResponse, error) {
-	client := resty.New()
+	client := client.NewHTTPClient()
 	defer client.Close()
 
-	url := fmt.Sprintf("%s/v1/%s/schema/", c.baseURL, workspace)
+	url := fmt.Sprintf("%sv1/%s/schema/", c.mgmnt_base_URL, workspace)
+	fmt.Println(c.mgmnt_base_URL)
 
 	resp, err := client.R().
 		SetDebug(c.debug).
@@ -77,34 +81,63 @@ func (c *SS_MgmntClient) ListSchema(workspace string) (*ListSchemaResponse, erro
 }
 
 func (c *SS_MgmntClient) GetSchemas(workspace string) (*SchemasResponse, error) {
-	client := resty.New()
+	client := client.NewHTTPClient()
 	defer client.Close()
 
-	url := fmt.Sprintf("%s/v1/%s/schema/", c.baseURL, workspace)
+	limit := 50
+	offset := 0
+	allSchemas := []any{}
+	totalCount := 0
 
-	resp, err := client.R().
-		SetDebug(c.debug).
-		SetHeader("Authorization", "ServiceToken "+c.serviceToken).
-		SetHeader("Content-Type", "application/json").
-		SetResult(&SchemasResponse{}).
-		Get(url)
+	for {
+		res, err := client.R().
+			SetDebug(c.debug).
+			SetHeader("Authorization", "ServiceToken "+c.serviceToken).
+			SetResult(&SchemasResponse{}).
+			Get(c.mgmnt_base_URL + "v1/" + workspace + "/schema/?limit=" + strconv.Itoa(limit) + "&offset=" + strconv.Itoa(offset))
+		if err != nil {
+			fmt.Fprintf(os.Stdout, "Error: Failed to get schemas: %v\n", err)
+			return nil, err
+		}
 
-	if err != nil {
-		return nil, fmt.Errorf("request failed: %w", err)
+		if res.IsError() {
+			fmt.Fprintf(os.Stdout, "Error: Failed to get schemas: %v\n", res.Status())
+			return nil, fmt.Errorf("error getting schemas: %s", res.Status())
+		}
+
+		schemas := res.Result().(*SchemasResponse)
+
+		if len(schemas.Results) == 0 {
+			fmt.Fprintf(os.Stdout, "No more schemas found, stopping pagination\n")
+			break
+		}
+
+		allSchemas = append(allSchemas, schemas.Results...)
+		totalCount += len(schemas.Results)
+		offset += limit
 	}
-	if resp.IsError() {
-		return nil, fmt.Errorf("request failed: %w", err)
-	}
 
-	schemas := resp.Result().(*SchemasResponse)
-	return schemas, nil
+	fmt.Fprintf(os.Stdout, "Success: Successfully fetched all %d schemas\n", totalCount)
+
+	return &SchemasResponse{
+		Results: allSchemas,
+		Meta: struct {
+			Count  int `json:"count"`
+			Limit  int `json:"limit"`
+			Offset int `json:"offset"`
+		}{
+			Count:  totalCount,
+			Limit:  limit,
+			Offset: 0,
+		},
+	}, nil
 }
 
 func (c *SS_MgmntClient) GetSchema(workspace, schemaSlug string) (*SchemaResponse, error) {
-	client := resty.New()
+	client := client.NewHTTPClient()
 	defer client.Close()
 
-	url := fmt.Sprintf("%s/v1/%s/schema/%s/", c.baseURL, workspace, schemaSlug)
+	url := fmt.Sprintf("%sv1/%s/schema/%s/", c.mgmnt_base_URL, workspace, schemaSlug)
 
 	resp, err := client.R().
 		SetDebug(c.debug).
@@ -126,10 +159,10 @@ func (c *SS_MgmntClient) GetSchema(workspace, schemaSlug string) (*SchemaRespons
 }
 
 func (c *SS_MgmntClient) PushSchema(workspace, schemaSlug string, payload map[string]any) error {
-	client := resty.New()
+	client := client.NewHTTPClient()
 	defer client.Close()
 
-	url := fmt.Sprintf("%s/v1/%s/schema/%s/", c.baseURL, workspace, schemaSlug)
+	url := fmt.Sprintf("%sv1/%s/schema/%s/", c.mgmnt_base_URL, workspace, schemaSlug)
 
 	resp, err := client.R().
 		SetDebug(c.debug).
@@ -146,7 +179,7 @@ func (c *SS_MgmntClient) PushSchema(workspace, schemaSlug string, payload map[st
 		return fmt.Errorf("error response: %s", resp.Status())
 	}
 
-	log.Printf("Pushed schema to %s", workspace)
+	fmt.Printf("Pushed schema to %s\n", workspace)
 	return nil
 }
 
@@ -158,8 +191,7 @@ func (c *SS_MgmntClient) FinalizeSchema(workspace, slug string, commit bool) err
 	client := resty.New()
 	defer client.Close()
 
-	urlStr := fmt.Sprintf("%s/v1/%s/schema/%s/toggle_enabled/", c.baseURL, workspace, slug)
-	log.Infof("%s", urlStr)
+	urlStr := fmt.Sprintf("%sv1/%s/schema/%s/toggle_enabled/", c.mgmnt_base_URL, workspace, slug)
 
 	body := map[string]interface{}{
 		"is_enabled": commit,

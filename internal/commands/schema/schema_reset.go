@@ -10,13 +10,14 @@ var schemaResetCmd = &cobra.Command{
 	Use:   "reset",
 	Short: "Reset schema from live to draft",
 	Long:  `Reset schema from live to draft in a workspace`,
-	Args:  cobra.ExactArgs(2),
+	Args:  cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
 		if len(args) < 1 {
-			log.Error("workspace & schema slug argument is required for schemas.")
+			log.Error("schema slug argument is required for schemas.")
 		}
-		workspace := args[0]
-		slug := args[1]
+		slug := args[0]
+
+		workspace, _ := cmd.Flags().GetString("workspace")
 
 		mgmnt_client := utils.GetSuprSendMgmntClient()
 
@@ -25,8 +26,6 @@ var schemaResetCmd = &cobra.Command{
 			log.WithError(err).Error("Couldn't fetch schemas")
 			return
 		}
-
-		log.Printf("Reset schema: %s\n", slug)
 	},
 }
 

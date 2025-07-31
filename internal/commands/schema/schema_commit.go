@@ -10,14 +10,14 @@ var schemaCommitCmd = &cobra.Command{
 	Use:   "commit",
 	Short: "Commit schema from draft to live",
 	Long:  `Commit schema from draft to live in a workspace`,
-	Args:  cobra.ExactArgs(2),
+	Args:  cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
 		if len(args) < 1 {
-			log.Error("workspace & schema slug argument is required for schemas.")
+			log.Error("schema slug argument is required for schemas.")
 		}
-		workspace := args[0]
-		slug := args[1]
+		slug := args[0]
 
+		workspace, _ := cmd.Flags().GetString("workspace")
 		mgmnt_client := utils.GetSuprSendMgmntClient()
 
 		err := mgmnt_client.FinalizeSchema(workspace, slug, true)
@@ -25,8 +25,6 @@ var schemaCommitCmd = &cobra.Command{
 			log.WithError(err).Error("Couldn't fetch schemas")
 			return
 		}
-
-		log.Printf("Committed schema: %s\n", slug)
 	},
 }
 

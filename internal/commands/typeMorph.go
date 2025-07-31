@@ -18,16 +18,14 @@ import (
 var typeMorphCmd = &cobra.Command{
 	Use:   "type-morph",
 	Short: "Generate Types from JSON Schema from a single slug",
-	Args:  cobra.ExactArgs(3),
+	Args:  cobra.ExactArgs(2),
 	Run: func(cmd *cobra.Command, args []string) {
 		if len(args) < 1 {
-			log.Error("Please pass the required arguments [workspace] [schema_name] [target_lang]")
+			log.Error("Please pass the required arguments [schema_name] [target_lang]")
 		}
-
-		workspace := args[0]
-		schemaSlug := args[1]
-		targetLang := args[2]
-
+		schemaSlug := args[0]
+		targetLang := args[1]
+		workspace, _ := cmd.Flags().GetString("workspace")
 		fileName, err := cmd.Flags().GetString("file")
 		if err != nil {
 			log.WithError(err).Error("Could not read file_name flag")
@@ -64,6 +62,7 @@ var typeMorphCmd = &cobra.Command{
 
 func init() {
 	flags := typeMorphCmd.Flags()
+	flags.String("workspace", "staging", "Workspace to get schemas from.")
 	flags.String("file", "", "Target file to generate types into. (required)")
 
 	rootCmd.AddCommand(typeMorphCmd)

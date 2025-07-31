@@ -7,56 +7,87 @@ import (
 	"path/filepath"
 
 	log "github.com/sirupsen/logrus"
+	"github.com/spf13/viper"
 	"github.com/suprsend/cli/mgmnt"
 )
 
-func writeSchemasToFiles(schemasResp *mgmnt.SchemasResponse, dirPath string) error {
+type SchemaWriteStats struct {
+	Total   int
+	Success int
+	Failed  int
+	Errors  []string
+}
+
+func isDebugMode() bool {
+	return viper.GetBool("debug")
+}
+
+func debugLog(format string, args ...interface{}) {
+	if isDebugMode() {
+		log.Infof(format, args...)
+	}
+}
+
+func debugErrorLog(format string, args ...interface{}) {
+	if isDebugMode() {
+		log.Errorf(format, args...)
+	}
+}
+
+func WriteSchemasToFiles(schemasResp *mgmnt.SchemasResponse, dirPath string) (*SchemaWriteStats, error) {
+	stats := &SchemaWriteStats{
+		Total:  len(schemasResp.Results),
+		Errors: []string{},
+	}
+
 	info, err := os.Stat(dirPath)
 	if err != nil {
 		if os.IsNotExist(err) {
 			if err := os.MkdirAll(dirPath, 0755); err != nil {
-				return fmt.Errorf("failed to create directory '%s': %w", dirPath, err)
+				return stats, err
 			}
 		} else {
-			return fmt.Errorf("error accessing '%s': %w", dirPath, err)
+			errMsg := fmt.Sprintf("error accessing '%s': %v", dirPath, err)
+			return stats, fmt.Errorf(errMsg)
 		}
 	} else if !info.IsDir() {
-		return fmt.Errorf("'%s' exists but is not a directory", dirPath)
+		return stats, err
 	}
 
 	for _, schema := range schemasResp.Results {
 		obj, ok := schema.(map[string]any)
 		if !ok {
+			stats.Failed++
+			stats.Errors = append(stats.Errors, "Invalid schema format")
 			continue
 		}
 
 		slug, _ := obj["slug"].(string)
-
 		filename := filepath.Join(dirPath, fmt.Sprintf("%s.json", slug))
-
-		if _, err := os.Stat(filename); err == nil {
-			log.Infof("Skipped (already exists): %s\n", filename)
-			continue
-		} else if err != nil && !os.IsNotExist(err) {
-			log.Errorf("Error checking file '%s': %v\n", filename, err)
-			continue
-		}
 
 		fileData, err := json.MarshalIndent(schema, "", "  ")
 		if err != nil {
-			log.Errorf("Error marshalling schema '%s': %v\n", slug, err)
+			debugErrorLog("Error: %s", err)
+			fmt.Fprintf(os.Stdout, "Error: Failed to marshal schema '%s': %v\n", slug, err)
+			stats.Failed++
+			stats.Errors = append(stats.Errors, fmt.Sprintf("Failed to marshal schema '%s': %v", slug, err))
 			continue
 		}
 
 		if err := os.WriteFile(filename, fileData, 0644); err != nil {
-			log.Errorf("Error writing file '%s': %v\n", filename, err)
+			debugErrorLog("Error: %s", err)
+			fmt.Fprintf(os.Stdout, "Error: Failed to write file '%s': %v\n", filename, err)
+			stats.Failed++
+			stats.Errors = append(stats.Errors, fmt.Sprintf("Failed to write file '%s': %v", filename, err))
 			continue
 		}
 
-		log.Printf("Wrote: %s\n", filename)
+		debugLog("Wrote: %s", filename)
+		fmt.Fprintf(os.Stdout, "Wrote schema to %s\n", filename)
+		stats.Success++
 	}
 
-	return nil
+	return stats, nil
 }
 
 type SchemasResponse struct {
