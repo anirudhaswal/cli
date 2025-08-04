@@ -9,6 +9,7 @@ async function quicktypeJSONSchema(
   targetLanguage: any,
   typeName: string,
   jsonSchemaString: string,
+  rendererOptions: Record<string, string> = {},
 ) {
   const schemaInput = new JSONSchemaInput(new FetchingJSONSchemaStore());
 
@@ -23,7 +24,24 @@ async function quicktypeJSONSchema(
   return await quicktype({
     inputData,
     lang: targetLanguage,
+    rendererOptions: rendererOptions
   });
+}
+
+function extractRendererOptions(args: string[]): Record<string, string> {
+  const options: Record<string, string> = {};
+  for (const arg of args) {
+    if (arg.startsWith("--build-flags=")) {
+      const flags = arg.split("=")[1];
+      for (const flag of flags.split(",")) {
+        const trimmed = flag.trim();
+        if (trimmed) {
+          options[trimmed] = "true";
+        }
+      }
+    }
+  }
+  return options;
 }
 
 async function main() {
@@ -32,9 +50,12 @@ async function main() {
     schemaInput = "./schema.json",
     schemaName = "SchemaType",
     outputPath = "./output.txt",
+    ...extraArgs
   ] = Deno.args;
 
   let text: string;
+
+  const rendererOptions = extractRendererOptions(extraArgs);
 
   try {
     text = await Deno.readTextFile(schemaInput);
@@ -48,7 +69,7 @@ async function main() {
     }
   }
 
-  const { lines } = await quicktypeJSONSchema(language, schemaName, text);
+  const { lines } = await quicktypeJSONSchema(language, schemaName, text, rendererOptions);
 
   const output = lines.join("\n");
   await Deno.writeTextFile(outputPath, output);

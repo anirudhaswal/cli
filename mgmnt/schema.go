@@ -60,7 +60,6 @@ func (c *SS_MgmntClient) ListSchema(workspace string) (*ListSchemaResponse, erro
 	defer client.Close()
 
 	url := fmt.Sprintf("%sv1/%s/schema/", c.mgmnt_base_URL, workspace)
-	fmt.Println(c.mgmnt_base_URL)
 
 	resp, err := client.R().
 		SetDebug(c.debug).

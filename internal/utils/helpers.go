@@ -8,6 +8,28 @@ import (
 	suprsend "github.com/suprsend/suprsend-go"
 )
 
+var LanguageMap = map[string]string{
+	".ts":    "typescript",
+	".js":    "javascript",
+	".py":    "python",
+	".java":  "java",
+	".kt":    "kotlin",
+	".swift": "swift",
+	".go":    "go",
+	".rs":    "rust",
+	".cs":    "csharp",
+	".php":   "php",
+	".rb":    "ruby",
+	".dart":  "dart",
+	".scala": "scala",
+	".cpp":   "cpp",
+	".c":     "c",
+	".h":     "c",
+	".hpp":   "cpp",
+	".cc":    "cpp",
+	".cxx":   "cpp",
+}
+
 func GetStringPtr(m map[string]any, key string) *string {
 	if val, ok := m[key].(string); ok {
 		return &val

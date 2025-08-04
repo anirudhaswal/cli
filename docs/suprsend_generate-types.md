@@ -1,27 +1,18 @@
-## suprsend version
+## suprsend generate-types
 
-Print the CLI version
-
-```
-suprsend version [flags]
-```
-
-### Examples
+Generate Types from JSON Schema from a single slug
 
 ```
-
-/tmp/go-build2036432038/b001/exe/main version
-/tmp/go-build2036432038/b001/exe/main version -o=json
-/tmp/go-build2036432038/b001/exe/main version -o=yaml
-/tmp/go-build2036432038/b001/exe/main version -o=short
-
+suprsend generate-types [flags]
 ```
 
 ### Options
 
 ```
-  -h, --help            help for version
-  -o, --output string   Output format. One of: json | pretty | short | yaml (default "pretty")
+      --build-flags string   Flags to generate types in a certain way.
+  -h, --help                 help for generate-types
+      --mode string          Mode of schema to fetch. (default "live")
+      --workspace string     Workspace to get schemas from. (default "staging")
 ```
 
 ### Options inherited from parent commands
@@ -29,6 +20,7 @@ suprsend version [flags]
 ```
       --config string          config file (default: $HOME/.suprsend.yaml)
   -n, --no-color               Disable color output (default: $NO_COLOR)
+  -o, --output string          Output Tyle (pretty, yaml, json) (default "pretty")
   -s, --service-token string   Service token (default: $SUPRSEND_SERVICE_TOKEN)
   -v, --verbosity string       Log level (debug, info, warn, error, fatal, panic) (default "info")
 ```

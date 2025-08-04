@@ -1,0 +1,160 @@
+package commands
+
+import (
+	_ "embed"
+	"encoding/json"
+	"fmt"
+	"os"
+	"os/exec"
+	"path/filepath"
+	"strings"
+
+	log "github.com/sirupsen/logrus"
+	"github.com/spf13/cobra"
+	"github.com/suprsend/cli/internal/utils"
+	"github.com/suprsend/cli/mgmnt"
+)
+
+var generateTypesCmd = &cobra.Command{
+	Use:   "generate-types",
+	Short: "Generate Types from JSON Schema from a single slug",
+	Args:  cobra.ExactArgs(1),
+	Run: func(cmd *cobra.Command, args []string) {
+		workspace, _ := cmd.Flags().GetString("workspace")
+		buildFlags, _ := cmd.Flags().GetString("build-flags")
+		fileName := args[0]
+		if fileName == "" {
+			log.Error("File argument is required")
+			return
+		}
+
+		schemaSlug := extractSchemaSlugFromFileName(fileName)
+
+		targetLang := detectLanguageFromFile(fileName)
+		if targetLang == "" {
+			log.Error("Could not detect language from file extension.")
+			return
+		}
+
+		mgmntClient := utils.GetSuprSendMgmntClient()
+
+		// Get all schemas instead of a single schema
+		schemasResp, err := mgmntClient.GetSchemas(workspace)
+		if err != nil {
+			log.WithError(err).Error("Couldn't fetch schemas")
+			return
+		}
+
+		var targetSchema *mgmnt.SchemaResponse
+		for _, schema := range schemasResp.Results {
+			schemaMap, ok := schema.(map[string]interface{})
+			if !ok {
+				continue
+			}
+
+			slug, exists := schemaMap["slug"].(string)
+			if !exists || slug != schemaSlug {
+				continue
+			}
+
+			schemaBytes, err := json.Marshal(schema)
+			if err != nil {
+				continue
+			}
+			var schemaResp mgmnt.SchemaResponse
+			if err := json.Unmarshal(schemaBytes, &schemaResp); err != nil {
+				continue
+			}
+
+			targetSchema = &schemaResp
+			break
+		}
+
+		if targetSchema == nil {
+			log.Errorf("Schema with slug '%s' not found", schemaSlug)
+			return
+		}
+
+		schemaName := targetSchema.Name
+
+		schemaJSON := map[string]interface{}{
+			"type":       targetSchema.JSONSchema.Type,
+			"properties": targetSchema.JSONSchema.Properties,
+			"required":   targetSchema.JSONSchema.Required,
+		}
+
+		schemaBytes, err := json.MarshalIndent(schemaJSON, "", "  ")
+		if err != nil {
+			log.Fatalf("Failed to marshal schema: %v", err)
+		}
+
+		err = runTypeMorph(targetLang, string(schemaBytes), schemaName, fileName, buildFlags)
+		if err != nil {
+			log.WithError(err).Error("Could not generate types")
+		}
+	},
+}
+
+func detectLanguageFromFile(fileName string) string {
+	ext := strings.ToLower(filepath.Ext(fileName))
+	return utils.LanguageMap[ext]
+}
+
+func init() {
+	flags := generateTypesCmd.Flags()
+	flags.String("workspace", "staging", "Workspace to get schemas from.")
+	flags.String("mode", "live", "Mode of schema to fetch.")
+	flags.String("build-flags", "", "Flags to generate types in a certain way.")
+
+	rootCmd.AddCommand(generateTypesCmd)
+}
+
+func runTypeMorph(language, schema, schemaName, fileName, buildFlags string) error {
+	binaryPath, err := writeTempExecutable(utils.TypeMorphBin)
+	if err != nil {
+		panic(fmt.Errorf("failed to write temp binary: %w", err))
+	}
+	defer os.Remove(binaryPath)
+
+	args := []string{language, schema, schemaName, fileName}
+	if buildFlags != "" {
+		args = append(args, "--build-flags="+buildFlags)
+	}
+
+	cmd := exec.Command(binaryPath, args...)
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+
+	if err := cmd.Run(); err != nil {
+		return fmt.Errorf("failed to run typemorph: %w", err)
+	}
+	return nil
+}
+
+func writeTempExecutable(data []byte) (string, error) {
+	tmpFile, err := os.CreateTemp("", "typemorph-*")
+	if err != nil {
+		return "", err
+	}
+	defer tmpFile.Close()
+
+	if _, err := tmpFile.Write(data); err != nil {
+		return "", err
+	}
+
+	// Make it executable
+	if err := os.Chmod(tmpFile.Name(), 0755); err != nil {
+		return "", err
+	}
+
+	return tmpFile.Name(), nil
+}
+
+func extractSchemaSlugFromFileName(fileName string) string {
+	baseName := filepath.Base(fileName)
+	ext := filepath.Ext(baseName)
+	if ext != "" {
+		baseName = strings.TrimSuffix(baseName, ext)
+	}
+	return baseName
+}
