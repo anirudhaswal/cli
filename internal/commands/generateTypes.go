@@ -69,7 +69,7 @@ var generateTypesCmd = &cobra.Command{
 			return
 		}
 
-		schemaName := targetSchema.Name
+		schemaName := targetSchema.Name + "Data"
 
 		schemaJSON := map[string]interface{}{
 			"type":       targetSchema.JSONSchema.Type,
@@ -106,7 +106,7 @@ func init() {
 func runTypeMorph(language, schema, schemaName, fileName, buildFlags string) error {
 	binaryPath, err := writeTempExecutable(utils.TypeMorphBin)
 	if err != nil {
-		panic(fmt.Errorf("failed to write temp binary: %w", err))
+		return fmt.Errorf("failed to initialize type generator: %w", err)
 	}
 	defer os.Remove(binaryPath)
 
@@ -120,7 +120,7 @@ func runTypeMorph(language, schema, schemaName, fileName, buildFlags string) err
 	cmd.Stderr = os.Stderr
 
 	if err := cmd.Run(); err != nil {
-		return fmt.Errorf("failed to generate types: %w", err)
+		return fmt.Errorf("type generation failed for %s: %w", fileName, err)
 	}
 	return nil
 }
