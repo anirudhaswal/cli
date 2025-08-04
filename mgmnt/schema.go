@@ -107,7 +107,6 @@ func (c *SS_MgmntClient) GetSchemas(workspace string) (*SchemasResponse, error) 
 		schemas := res.Result().(*SchemasResponse)
 
 		if len(schemas.Results) == 0 {
-			fmt.Fprintf(os.Stdout, "No more schemas found, stopping pagination\n")
 			break
 		}
 
@@ -116,7 +115,7 @@ func (c *SS_MgmntClient) GetSchemas(workspace string) (*SchemasResponse, error) 
 		offset += limit
 	}
 
-	fmt.Fprintf(os.Stdout, "Success: Successfully fetched all %d schemas\n", totalCount)
+	fmt.Fprintln(os.Stdout, "Success: Fetched all schemas")
 
 	return &SchemasResponse{
 		Results: allSchemas,

@@ -21,10 +21,18 @@ async function quicktypeJSONSchema(
   const inputData = new InputData();
   inputData.addInput(schemaInput);
 
+  const renderOptions = {
+    "just-types": "true",
+    "no-extra-properties": "true", 
+    "no-optional-null": "true",
+    ...rendererOptions
+  };
+
+
   return await quicktype({
     inputData,
     lang: targetLanguage,
-    rendererOptions: rendererOptions
+    rendererOptions: renderOptions
   });
 }
 

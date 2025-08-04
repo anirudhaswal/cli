@@ -30,7 +30,8 @@ var generateTypesCmd = &cobra.Command{
 
 		targetLang := detectLanguageFromFile(fileName)
 		if targetLang == "" {
-			log.Error("Could not detect language from file extension.")
+			fileExtension := strings.ToLower(filepath.Ext(fileName))
+			log.Errorf("Unsupported file extension: %s. We currently support .ts, .go, .py, .kt, .swift files only.", fileExtension)
 			return
 		}
 
