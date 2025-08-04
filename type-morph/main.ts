@@ -61,7 +61,7 @@ async function main() {
     text = await Deno.readTextFile(schemaInput);
   } catch (_) {
     try {
-      JSON.parse(schemaInput); // validate it's valid JSON
+      JSON.parse(schemaInput);
       text = schemaInput;
     } catch (err) {
       console.error(err);

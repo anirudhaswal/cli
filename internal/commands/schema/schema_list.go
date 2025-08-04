@@ -46,8 +46,5 @@ var schemaListCmd = &cobra.Command{
 
 func init() {
 	SchemaCmd.Flags().StringP("workspace", "w", "staging", "Workspace to pull the schemas from")
-	SchemaCmd.SetHelpFunc(func(cmd *cobra.Command, args []string) {
-		cmd.Parent().HelpFunc()(cmd, args)
-	})
 	SchemaCmd.AddCommand(schemaListCmd)
 }

@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/suprsend/cli/mgmnt"
 	suprsend "github.com/suprsend/suprsend-go"
 )
 
@@ -28,6 +29,10 @@ var LanguageMap = map[string]string{
 	".hpp":   "cpp",
 	".cc":    "cpp",
 	".cxx":   "cpp",
+}
+
+func IsEmptySchema(properties map[string]mgmnt.Property) bool {
+	return properties == nil || len(properties) == 0
 }
 
 func GetStringPtr(m map[string]any, key string) *string {

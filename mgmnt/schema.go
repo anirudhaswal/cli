@@ -132,31 +132,6 @@ func (c *SS_MgmntClient) GetSchemas(workspace string) (*SchemasResponse, error) 
 	}, nil
 }
 
-func (c *SS_MgmntClient) GetSchema(workspace, schemaSlug string) (*SchemaResponse, error) {
-	client := client.NewHTTPClient()
-	defer client.Close()
-
-	url := fmt.Sprintf("%sv1/%s/schema/%s/", c.mgmnt_base_URL, workspace, schemaSlug)
-
-	resp, err := client.R().
-		SetDebug(c.debug).
-		SetHeader("Authorization", "ServiceToken "+c.serviceToken).
-		SetHeader("Content-Type", "application/json").
-		SetResult(&SchemaResponse{}).
-		Get(url)
-
-	if err != nil {
-		return nil, fmt.Errorf("request failed: %w", err)
-	}
-
-	if resp.IsError() {
-		return nil, fmt.Errorf("error response: %s", resp.Status())
-	}
-
-	schema := resp.Result().(*SchemaResponse)
-	return schema, nil
-}
-
 func (c *SS_MgmntClient) PushSchema(workspace, schemaSlug string, payload map[string]any) error {
 	client := client.NewHTTPClient()
 	defer client.Close()

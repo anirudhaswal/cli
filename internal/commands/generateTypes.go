@@ -28,8 +28,6 @@ var generateTypesCmd = &cobra.Command{
 			return
 		}
 
-		schemaSlug := extractSchemaSlugFromFileName(fileName)
-
 		targetLang := detectLanguageFromFile(fileName)
 		if targetLang == "" {
 			log.Error("Could not detect language from file extension.")
@@ -47,16 +45,6 @@ var generateTypesCmd = &cobra.Command{
 
 		var targetSchema *mgmnt.SchemaResponse
 		for _, schema := range schemasResp.Results {
-			schemaMap, ok := schema.(map[string]interface{})
-			if !ok {
-				continue
-			}
-
-			slug, exists := schemaMap["slug"].(string)
-			if !exists || slug != schemaSlug {
-				continue
-			}
-
 			schemaBytes, err := json.Marshal(schema)
 			if err != nil {
 				continue
@@ -66,12 +54,17 @@ var generateTypesCmd = &cobra.Command{
 				continue
 			}
 
+			if utils.IsEmptySchema(schemaResp.JSONSchema.Properties) {
+				fmt.Printf("Skipping schema '%s': Empty properties field in JSON schema\n", schemaResp.Name)
+				continue
+			}
+
 			targetSchema = &schemaResp
 			break
 		}
 
 		if targetSchema == nil {
-			log.Errorf("Schema with slug '%s' not found", schemaSlug)
+			fmt.Println("No valid schemas found with meaningful JSON schema content")
 			return
 		}
 
@@ -148,13 +141,4 @@ func writeTempExecutable(data []byte) (string, error) {
 	}
 
 	return tmpFile.Name(), nil
-}
-
-func extractSchemaSlugFromFileName(fileName string) string {
-	baseName := filepath.Base(fileName)
-	ext := filepath.Ext(baseName)
-	if ext != "" {
-		baseName = strings.TrimSuffix(baseName, ext)
-	}
-	return baseName
 }
