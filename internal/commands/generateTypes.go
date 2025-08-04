@@ -84,7 +84,7 @@ var generateTypesCmd = &cobra.Command{
 
 		err = runTypeMorph(targetLang, string(schemaBytes), schemaName, fileName, buildFlags)
 		if err != nil {
-			log.WithError(err).Error("Could not generate types")
+			log.WithError(err).Errorln("Could not generate types")
 		}
 	},
 }
@@ -120,7 +120,7 @@ func runTypeMorph(language, schema, schemaName, fileName, buildFlags string) err
 	cmd.Stderr = os.Stderr
 
 	if err := cmd.Run(); err != nil {
-		return fmt.Errorf("failed to run typemorph: %w", err)
+		return fmt.Errorf("failed to generate types: %w", err)
 	}
 	return nil
 }
