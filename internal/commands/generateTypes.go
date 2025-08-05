@@ -37,14 +37,13 @@ var generateTypesCmd = &cobra.Command{
 
 		mgmntClient := utils.GetSuprSendMgmntClient()
 
-		// Get all schemas instead of a single schema
 		schemasResp, err := mgmntClient.GetSchemas(workspace)
 		if err != nil {
 			log.WithError(err).Error("Couldn't fetch schemas")
 			return
 		}
 
-		var targetSchema *mgmnt.SchemaResponse
+		var validSchemas []*mgmnt.SchemaResponse
 		for _, schema := range schemasResp.Results {
 			schemaBytes, err := json.Marshal(schema)
 			if err != nil {
@@ -56,35 +55,42 @@ var generateTypesCmd = &cobra.Command{
 			}
 
 			if utils.IsEmptySchema(schemaResp.JSONSchema.Properties) {
-				fmt.Printf("Skipping schema '%s': Empty properties field in JSON schema\n", schemaResp.Name)
+				fmt.Printf("Skipping schema '%s': Empty JSON schema\n", schemaResp.Name)
 				continue
 			}
 
-			targetSchema = &schemaResp
-			break
+			validSchemas = append(validSchemas, &schemaResp)
 		}
 
-		if targetSchema == nil {
+		if len(validSchemas) == 0 {
 			fmt.Println("No valid schemas found with meaningful JSON schema content")
 			return
 		}
 
-		schemaName := targetSchema.Name + "Data"
+		for _, targetSchema := range validSchemas {
+			schemaName := targetSchema.Name + "Data"
 
-		schemaJSON := map[string]interface{}{
-			"type":       targetSchema.JSONSchema.Type,
-			"properties": targetSchema.JSONSchema.Properties,
-			"required":   targetSchema.JSONSchema.Required,
-		}
+			schemaJSON := map[string]interface{}{
+				"type":       targetSchema.JSONSchema.Type,
+				"properties": targetSchema.JSONSchema.Properties,
+			}
+			if targetSchema.JSONSchema.Required != nil {
+				schemaJSON["required"] = targetSchema.JSONSchema.Required
+			}
+			if targetSchema.JSONSchema.Defs != nil {
+				schemaJSON["$defs"] = targetSchema.JSONSchema.Defs
+			}
+			schemaBytes, err := json.MarshalIndent(schemaJSON, "", "  ")
+			if err != nil {
+				log.Fatalf("Failed to marshal schema: %v", err)
+			}
 
-		schemaBytes, err := json.MarshalIndent(schemaJSON, "", "  ")
-		if err != nil {
-			log.Fatalf("Failed to marshal schema: %v", err)
-		}
-
-		err = runTypeMorph(targetLang, string(schemaBytes), schemaName, fileName, buildFlags)
-		if err != nil {
-			log.WithError(err).Errorln("Could not generate types")
+			err = runTypeMorph(targetLang, string(schemaBytes), schemaName, fileName, buildFlags)
+			if err != nil {
+				log.WithError(err).Errorln("Could not generate types for schema: " + targetSchema.Name)
+			} else {
+				fmt.Printf("Generated types for %s at %s\n", schemaName, fileName)
+			}
 		}
 	},
 }

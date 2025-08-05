@@ -3,7 +3,10 @@ import {
   JSONSchemaInput,
   FetchingJSONSchemaStore,
   InputData,
+  JSONInput,
 } from "npm:quicktype-core@23.2.6";
+import $RefParser from "npm:@apidevtools/json-schema-ref-parser";
+
 
 async function quicktypeJSONSchema(
   targetLanguage: any,
@@ -12,10 +15,21 @@ async function quicktypeJSONSchema(
   rendererOptions: Record<string, string> = {},
 ) {
   const schemaInput = new JSONSchemaInput(new FetchingJSONSchemaStore());
+   
+  let flattenedSchema;
+  try {
+    const dereferencedSchema = await $RefParser.dereference(JSON.parse(jsonSchemaString), {
+      dereference: { circular: "ignore" },
+    });
+    flattenedSchema = dereferencedSchema
+  } catch (error) {
+    console.error("Error parsing or dereferencing schema:", error);
+    throw new Error("Invalid JSON schema or failed to resolve references");
+  }
 
   await schemaInput.addSource({
     name: typeName,
-    schema: jsonSchemaString,
+    schema: JSON.stringify(flattenedSchema),
   });
 
   const inputData = new InputData();
@@ -80,9 +94,17 @@ async function main() {
   const { lines } = await quicktypeJSONSchema(language, schemaName, text, rendererOptions);
 
   const output = lines.join("\n");
-  await Deno.writeTextFile(outputPath, output);
+  let existingContent = "";
+  try {
+    existingContent = await Deno.readTextFile(outputPath);
+  } catch(_) {}
 
-  console.log(`Generated ${language} types written to ${outputPath}`);
+  const finalOutput = existingContent 
+    ? existingContent + "\n\n" + output 
+    : output;
+
+  await Deno.writeTextFile(outputPath, finalOutput);
+
 }
 
 main();

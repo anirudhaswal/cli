@@ -45,14 +45,16 @@ type SchemaPayload struct {
 }
 
 type JSONSchema struct {
-	Type       string              `json:"type"`
-	Title      string              `json:"title"`
-	Required   []string            `json:"required"`
-	Properties map[string]Property `json:"properties"`
+	Type       string                 `json:"type"`
+	Defs       map[string]interface{} `json:"$defs"`
+	Title      string                 `json:"title"`
+	Required   *[]string              `json:"required,omitempty"`
+	Properties map[string]Property    `json:"properties"`
 }
 
 type Property struct {
-	Type string `json:"type"`
+	Type *string `json:"type,omitempty"`
+	Ref  *string `json:"$ref,omitempty"`
 }
 
 func (c *SS_MgmntClient) ListSchema(workspace string) (*ListSchemaResponse, error) {
