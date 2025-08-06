@@ -54,8 +54,10 @@ var generateTypesCmd = &cobra.Command{
 				continue
 			}
 
+			if !schemaResp.IsEnabled {
+				continue
+			}
 			if utils.IsEmptySchema(schemaResp.JSONSchema.Properties) {
-				fmt.Printf("Skipping schema '%s': Empty JSON schema\n", schemaResp.Name)
 				continue
 			}
 

@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/suprsend/cli/mgmnt"
 	suprsend "github.com/suprsend/suprsend-go"
 )
 
@@ -19,7 +18,7 @@ var LanguageMap = map[string]string{
 	".dart":  "dart",
 }
 
-func IsEmptySchema(properties map[string]mgmnt.Property) bool {
+func IsEmptySchema(properties map[string]interface{}) bool {
 	return properties == nil || len(properties) == 0
 }
 

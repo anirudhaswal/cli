@@ -49,7 +49,7 @@ type JSONSchema struct {
 	Defs       map[string]interface{} `json:"$defs"`
 	Title      string                 `json:"title"`
 	Required   *[]string              `json:"required,omitempty"`
-	Properties map[string]Property    `json:"properties"`
+	Properties map[string]interface{} `json:"properties"`
 }
 
 type Property struct {
