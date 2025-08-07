@@ -2,6 +2,7 @@ package workflow
 
 import (
 	"bufio"
+	"context"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -9,6 +10,7 @@ import (
 
 	"github.com/spf13/cobra"
 	"github.com/suprsend/cli/internal/utils"
+	"github.com/yarlson/pin"
 )
 
 var workflowPullCmd = &cobra.Command{
@@ -20,6 +22,16 @@ var workflowPullCmd = &cobra.Command{
 
 		workspace, _ := cmd.Flags().GetString("workspace")
 		mode, _ := cmd.Flags().GetString("mode")
+
+		var p *pin.Pin
+		if !utils.IsOutputPiped() {
+			p = pin.New("Loading...",
+				pin.WithSpinnerColor(pin.ColorCyan),
+				pin.WithTextColor(pin.ColorYellow),
+			)
+			cancel := p.Start(context.Background())
+			defer cancel()
+		}
 
 		if _, err := os.Stat(dirPath); os.IsNotExist(err) {
 			if force {
@@ -47,19 +59,16 @@ var workflowPullCmd = &cobra.Command{
 					return
 				}
 			}
-		} else {
-			fmt.Fprintf(os.Stdout, "Directory already exists: %s\n", dirPath)
 		}
-
 		mgmnt_client := utils.GetSuprSendMgmntClient()
 		workflows_resp, err := mgmnt_client.GetWorkflows(workspace, mode)
-
 		if err != nil {
 			fmt.Fprintf(os.Stdout, "Error: Failed to get workflows: %v\n", err)
 			return
 		}
-
-		fmt.Fprintf(os.Stdout, "Pulling workflows...\n")
+		if p != nil {
+			p.Stop(fmt.Sprintf("Pulled %d workflows from %s", len(workflows_resp.Results), workspace))
+		}
 
 		stats, err := WriteWorkflowsToFiles(*workflows_resp, dirPath)
 		if err != nil {
@@ -79,13 +88,10 @@ var workflowPullCmd = &cobra.Command{
 				fmt.Fprintf(os.Stdout, "  - %s\n", errorMsg)
 			}
 		}
-
-		if stats.Success > 0 {
-			fmt.Fprintf(os.Stdout, "\nSuccess: Workflows pulled successfully to %s\n", dirPath)
-		}
 	},
 }
 
 func init() {
+	workflowPullCmd.PersistentFlags().StringP("mode", "m", "live", "Mode of workflows to pull from")
 	WorkflowCmd.AddCommand(workflowPullCmd)
 }

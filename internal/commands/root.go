@@ -11,6 +11,7 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"github.com/suprsend/cli/internal/commands/profiles"
+	"github.com/suprsend/cli/internal/commands/schema"
 	workflow "github.com/suprsend/cli/internal/commands/workflow"
 	"github.com/suprsend/cli/internal/config"
 	"github.com/suprsend/cli/internal/utils"
@@ -56,15 +57,16 @@ func init() {
 	)
 
 	workflow.WorkflowCmd.PersistentFlags().StringVarP(&conf.Workspace, "workspace", "w", "staging", "Workspace to use")
+	schema.SchemaCmd.PersistentFlags().StringVarP(&conf.Workspace, "workspace", "w", "staging", "Workspace to use")
 	syncCmd.Flags().StringP("from", "f", "staging", "Source workspace (required)")
 	syncCmd.Flags().StringP("to", "t", "production", "Destination workspace (required)")
-	syncCmd.Flags().StringP("mode", "m", "live", "Mode to sync workflows (draft, live)")
-	syncCmd.MarkFlagRequired("from")
-	syncCmd.MarkFlagRequired("to")
+	syncCmd.Flags().StringP("mode", "m", "live", "Mode to sync assets (draft, live)")
+	syncCmd.Flags().StringP("assets", "a", "all", "Assets to sync (all, workflows, schemas)")
 
 	rootCmd.AddCommand(profiles.ProfilesCmd)
 	rootCmd.AddCommand(workflow.WorkflowCmd)
 	rootCmd.AddCommand(syncCmd)
+	rootCmd.AddCommand(schema.SchemaCmd)
 
 	rootCmd.PersistentPreRunE = func(cmd *cobra.Command, args []string) error {
 		if err := config.SetUpLogs(); err != nil {

@@ -1,6 +1,8 @@
 package workflow
 
 import (
+	"fmt"
+
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"github.com/suprsend/cli/internal/utils"
@@ -27,7 +29,7 @@ var workflowDisableCmd = &cobra.Command{
 			return
 		}
 
-		log.Printf("Disabled workflow: %s\n", slug)
+		fmt.Printf("Disabled workflow: %s\n", slug)
 	},
 }
 

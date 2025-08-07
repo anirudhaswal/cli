@@ -1,4 +1,4 @@
-package workflow
+package schema
 
 import (
 	"context"
@@ -14,29 +14,27 @@ import (
 	"github.com/yarlson/pin"
 )
 
-var force bool
-
-var workflowPushCmd = &cobra.Command{
+var schemaPushCmd = &cobra.Command{
 	Use:   "push",
-	Short: "push workflows from local to suprsend",
-	Long:  `push workflows from local to suprsend dashboard`,
+	Short: "Push schemas",
+	Long:  "Push schemas in a workspace",
 	Run: func(cmd *cobra.Command, args []string) {
-		dirPath := filepath.Join(".", "suprsend", "workflow")
 		workspace, _ := cmd.Flags().GetString("workspace")
 
+		dirPath := filepath.Join(".", "suprsend", "schema")
 		if _, err := os.Stat(dirPath); os.IsNotExist(err) {
 			log.WithError(err).Errorf("Directory '%s' does not exist. Exiting.\n", dirPath)
 			return
 		}
+
 		files, err := os.ReadDir(dirPath)
 		if err != nil {
-			log.WithError(err).Errorf("Failed to read local workflows directory")
+			log.WithError(err).Errorf("Failed to read local schema directory")
 			return
 		}
 
-		fmt.Printf("Pushing workflows to %s\n", workspace)
+		fmt.Printf("Pushing schemas to %s\n", workspace)
 		mgmntClient := utils.GetSuprSendMgmntClient()
-
 		hasError := false
 		var p *pin.Pin
 		var cancel context.CancelFunc
@@ -45,7 +43,6 @@ var workflowPushCmd = &cobra.Command{
 			if file.IsDir() || !strings.HasSuffix(file.Name(), ".json") {
 				continue
 			}
-
 			slug := strings.TrimSuffix(file.Name(), ".json")
 			if !hasError && !utils.IsOutputPiped() {
 				p = pin.New(fmt.Sprintf("Pushing %s...", slug),
@@ -68,8 +65,8 @@ var workflowPushCmd = &cobra.Command{
 				continue
 			}
 
-			var workflow map[string]any
-			if err := json.Unmarshal(data, &workflow); err != nil {
+			var schema map[string]any
+			if err := json.Unmarshal(data, &schema); err != nil {
 				if p != nil && cancel != nil {
 					p.Stop("")
 					cancel()
@@ -81,8 +78,9 @@ var workflowPushCmd = &cobra.Command{
 				continue
 			}
 
-			err = mgmntClient.PushWorkflow(workspace, slug, workflow)
+			err = mgmntClient.PushSchema(workspace, slug, schema)
 			if err != nil {
+				// Stop loading screen and mark error
 				if p != nil && cancel != nil {
 					p.Stop("")
 					cancel()
@@ -90,7 +88,7 @@ var workflowPushCmd = &cobra.Command{
 					cancel = nil
 				}
 				hasError = true
-				log.WithError(err).Errorf("Failed to push workflow %s", slug)
+				log.WithError(err).Errorf("Failed to push schema %s", slug)
 				continue
 			}
 
@@ -108,6 +106,5 @@ var workflowPushCmd = &cobra.Command{
 }
 
 func init() {
-	workflowPushCmd.Flags().BoolVarP(&force, "force-dir", "d", false, "Create workflow directory without the permission")
-	WorkflowCmd.AddCommand(workflowPushCmd)
+	SchemaCmd.AddCommand(schemaPushCmd)
 }

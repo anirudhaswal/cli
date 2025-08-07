@@ -8,6 +8,20 @@ import (
 	suprsend "github.com/suprsend/suprsend-go"
 )
 
+var LanguageMap = map[string]string{
+	".ts":    "typescript",
+	".py":    "python",
+	".java":  "java",
+	".kt":    "kotlin",
+	".swift": "swift",
+	".go":    "go",
+	".dart":  "dart",
+}
+
+func IsEmptySchema(properties map[string]interface{}) bool {
+	return properties == nil || len(properties) == 0
+}
+
 func GetStringPtr(m map[string]any, key string) *string {
 	if val, ok := m[key].(string); ok {
 		return &val
