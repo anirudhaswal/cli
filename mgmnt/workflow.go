@@ -142,8 +142,6 @@ func (c *SS_MgmntClient) PushWorkflow(workspace, slug string, workflow map[strin
 		log.Errorf("Push failed: %s - %s", res.Status(), res.String())
 		return fmt.Errorf("push failed: %s", res.Status())
 	}
-
-	fmt.Printf("Successfully pushed workflow: %s\n", slug)
 	return nil
 }
 

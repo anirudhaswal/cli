@@ -1,6 +1,7 @@
 package schema
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"os"
@@ -10,6 +11,7 @@ import (
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"github.com/suprsend/cli/internal/utils"
+	"github.com/yarlson/pin"
 )
 
 var schemaPushCmd = &cobra.Command{
@@ -33,33 +35,72 @@ var schemaPushCmd = &cobra.Command{
 
 		fmt.Printf("Pushing schemas to %s\n", workspace)
 		mgmntClient := utils.GetSuprSendMgmntClient()
+		hasError := false
+		var p *pin.Pin
+		var cancel context.CancelFunc
 
 		for _, file := range files {
 			if file.IsDir() || !strings.HasSuffix(file.Name(), ".json") {
 				continue
 			}
-
 			slug := strings.TrimSuffix(file.Name(), ".json")
+			if !hasError && !utils.IsOutputPiped() {
+				p = pin.New(fmt.Sprintf("Pushing %s...", slug),
+					pin.WithSpinnerColor(pin.ColorCyan),
+					pin.WithTextColor(pin.ColorYellow),
+				)
+				cancel = p.Start(context.Background())
+			}
 			path := filepath.Join(dirPath, file.Name())
 			data, err := os.ReadFile(path)
 			if err != nil {
+				if p != nil && cancel != nil {
+					p.Stop("")
+					cancel()
+					p = nil
+					cancel = nil
+				}
+				hasError = true
 				log.WithError(err).Errorf("Failed to read file %s", file.Name())
-				return
+				continue
 			}
 
 			var schema map[string]any
 			if err := json.Unmarshal(data, &schema); err != nil {
+				if p != nil && cancel != nil {
+					p.Stop("")
+					cancel()
+					p = nil
+					cancel = nil
+				}
+				hasError = true
 				log.WithError(err).Errorf("Failed to parse JSON for %s", file.Name())
-				return
+				continue
 			}
 
 			err = mgmntClient.PushSchema(workspace, slug, schema)
 			if err != nil {
+				// Stop loading screen and mark error
+				if p != nil && cancel != nil {
+					p.Stop("")
+					cancel()
+					p = nil
+					cancel = nil
+				}
+				hasError = true
 				log.WithError(err).Errorf("Failed to push schema %s", slug)
-				return
+				continue
 			}
 
-			fmt.Fprintf(os.Stdout, "Pushed schema: %s\n", slug)
+			if !hasError && p != nil && cancel != nil {
+				p.Stop(fmt.Sprintf("Pushed workflow: %s", slug))
+				cancel()
+				p = nil
+				cancel = nil
+			} else {
+				fmt.Fprintf(os.Stdout, "Pushed workflow: %s\n", slug)
+			}
+			hasError = false
 		}
 	},
 }
