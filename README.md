@@ -51,12 +51,6 @@ After installation, you can use the CLI by running the `suprsend` command. For e
 suprsend --help
 ```
 
-### Generating types
-
-````bash
-suprsend type-morph --language <string> --schema assets/schema/schema.json --schemaName <string> --file <string>
-```
-
 ## Documentation
 Please refer to documentation [here](docs/suprsend.md)
 
