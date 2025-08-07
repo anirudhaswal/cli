@@ -10,7 +10,6 @@ import (
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"github.com/suprsend/cli/internal/utils"
-	"github.com/suprsend/cli/mgmnt"
 	"github.com/yarlson/pin"
 )
 
@@ -46,19 +45,7 @@ var workflowListCmd = &cobra.Command{
 		outputType, _ := cmd.Flags().GetString("output")
 
 		if len(workflows.Results) == 0 && utils.IsOutputPiped() {
-			emptyResponse := mgmnt.WorkflowAPIResponse{
-				Results: []mgmnt.Workflow{},
-				Meta: struct {
-					Count  int `json:"count"`
-					Limit  int `json:"limit"`
-					Offset int `json:"offset"`
-				}{
-					Count:  0,
-					Limit:  limit,
-					Offset: offset,
-				},
-			}
-			utils.OutputData(emptyResponse, outputType)
+			utils.OutputData([]interface{}{}, outputType)
 			return
 		}
 		utils.OutputData(workflows.Results, outputType)
