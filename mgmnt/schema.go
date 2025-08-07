@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"os"
 	"strconv"
-	"strings"
 
 	log "github.com/sirupsen/logrus"
 	"github.com/suprsend/cli/internal/client"
@@ -117,8 +116,6 @@ func (c *SS_MgmntClient) GetSchemas(workspace string) (*SchemasResponse, error) 
 		offset += limit
 	}
 
-	fmt.Fprintln(os.Stdout, "Success: Fetched all schemas")
-
 	return &SchemasResponse{
 		Results: allSchemas,
 		Meta: struct {
@@ -136,7 +133,6 @@ func (c *SS_MgmntClient) GetSchemas(workspace string) (*SchemasResponse, error) 
 func (c *SS_MgmntClient) PushSchema(workspace, schemaSlug string, payload map[string]any) error {
 	client := client.NewHTTPClient()
 	defer client.Close()
-
 	url := fmt.Sprintf("%sv1/%s/schema/%s/", c.mgmnt_base_URL, workspace, schemaSlug)
 
 	resp, err := client.R().
@@ -149,12 +145,9 @@ func (c *SS_MgmntClient) PushSchema(workspace, schemaSlug string, payload map[st
 	if err != nil {
 		return fmt.Errorf("request failed: %w", err)
 	}
-
 	if resp.IsError() {
 		return fmt.Errorf("error response: %s", resp.Status())
 	}
-
-	fmt.Printf("Pushed schema to %s\n", workspace)
 	return nil
 }
 
@@ -166,7 +159,7 @@ func (c *SS_MgmntClient) FinalizeSchema(workspace, slug string, commit bool) err
 	client := resty.New()
 	defer client.Close()
 
-	urlStr := fmt.Sprintf("%sv1/%s/schema/%s/toggle_enabled/", c.mgmnt_base_URL, workspace, slug)
+	urlStr := fmt.Sprintf("%sv1/%s/schema/%s/enabled/", c.mgmnt_base_URL, workspace, slug)
 
 	body := map[string]interface{}{
 		"is_enabled": commit,
@@ -195,7 +188,5 @@ func (c *SS_MgmntClient) FinalizeSchema(workspace, slug string, commit bool) err
 		log.Errorf("%s failed for schema (slug: %s): %s - %s", action, slug, res.Status(), res.String())
 		return err
 	}
-
-	log.Infof("Successfully %s schema: %s", strings.TrimSuffix(action, "ing")+"ed", slug)
 	return nil
 }

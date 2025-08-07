@@ -26,7 +26,6 @@ var workflowPushCmd = &cobra.Command{
 			log.WithError(err).Errorf("Directory '%s' does not exist. Exiting.\n", dirPath)
 			return
 		}
-
 		files, err := os.ReadDir(dirPath)
 		if err != nil {
 			log.WithError(err).Errorf("Failed to read local workflows directory")
@@ -55,11 +54,7 @@ var workflowPushCmd = &cobra.Command{
 				continue
 			}
 
-			err = mgmntClient.PushWorkflow(workspace, slug, workflow)
-			if err != nil {
-				log.WithError(err).Errorf("Failed to push workflow %s", slug)
-				continue
-			}
+			_ = mgmntClient.PushWorkflow(workspace, slug, workflow)
 		}
 	},
 }

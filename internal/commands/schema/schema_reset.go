@@ -1,9 +1,13 @@
 package schema
 
 import (
+	"context"
+	"fmt"
+
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"github.com/suprsend/cli/internal/utils"
+	"github.com/yarlson/pin"
 )
 
 var schemaResetCmd = &cobra.Command{
@@ -21,10 +25,23 @@ var schemaResetCmd = &cobra.Command{
 
 		mgmnt_client := utils.GetSuprSendMgmntClient()
 
+		var p *pin.Pin
+		if !utils.IsOutputPiped() {
+			p = pin.New("Loading...",
+				pin.WithSpinnerColor(pin.ColorCyan),
+				pin.WithTextColor(pin.ColorYellow),
+			)
+			cancel := p.Start(context.Background())
+			defer cancel()
+		}
+
 		err := mgmnt_client.FinalizeSchema(workspace, slug, false)
 		if err != nil {
 			log.WithError(err).Error("Couldn't fetch schemas")
 			return
+		}
+		if p != nil {
+			p.Stop(fmt.Sprintf("Reset schema %s", slug))
 		}
 	},
 }

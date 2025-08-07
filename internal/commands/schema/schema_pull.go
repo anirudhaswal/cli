@@ -2,14 +2,15 @@ package schema
 
 import (
 	"bufio"
+	"context"
 	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
 
-	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"github.com/suprsend/cli/internal/utils"
+	"github.com/yarlson/pin"
 )
 
 var force bool
@@ -49,8 +50,15 @@ var schemaPullCmd = &cobra.Command{
 					return
 				}
 			}
-		} else {
-			log.Infof("Directory already exists: %s\n", dirPath)
+		}
+		var p *pin.Pin
+		if !utils.IsOutputPiped() {
+			p = pin.New("Loading...",
+				pin.WithSpinnerColor(pin.ColorCyan),
+				pin.WithTextColor(pin.ColorYellow),
+			)
+			cancel := p.Start(context.Background())
+			defer cancel()
 		}
 
 		mgmnt_client := utils.GetSuprSendMgmntClient()
@@ -59,8 +67,9 @@ var schemaPullCmd = &cobra.Command{
 			fmt.Fprintf(os.Stdout, "Error: Failed to get schemas: %v\n", err)
 			return
 		}
-
-		fmt.Fprintf(os.Stdout, "Pulling schemas...\n")
+		if p != nil {
+			p.Stop(fmt.Sprintf("Pulled %d schemas", len(schemas.Results)))
+		}
 		stats, err := WriteSchemasToFiles(schemas, dirPath)
 		if err != nil {
 			fmt.Fprintf(os.Stdout, "Error: Failed to save schemas: %v\n", err)

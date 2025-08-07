@@ -1,6 +1,8 @@
 package workflow
 
 import (
+	"fmt"
+
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"github.com/suprsend/cli/internal/utils"
@@ -16,18 +18,16 @@ var worklowEnableCmd = &cobra.Command{
 			return
 		}
 		workspace, _ := cmd.Flags().GetString("workspace")
-
 		slug := args[0]
 
 		mgmntClient := utils.GetSuprSendMgmntClient()
-
 		err := mgmntClient.ChangeStatusWorkflow(workspace, slug, true)
 		if err != nil {
 			log.WithError(err).Errorf("Failed to enable workflow %s", slug)
 			return
 		}
 
-		log.Printf("Enabled workflow: %s\n", slug)
+		fmt.Printf("Enabled workflow: %s\n", slug)
 	},
 }
 

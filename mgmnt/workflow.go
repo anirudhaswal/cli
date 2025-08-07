@@ -53,14 +53,12 @@ func (c *SS_MgmntClient) ListWorkflows(workspace string, limit int, offset int, 
 		log.Errorf("Error getting workflows: %s", err)
 		return nil, err
 	}
-
 	if res.IsError() {
 		log.Errorf("Error getting workflows: %s", res.Status())
 		return nil, fmt.Errorf("error getting workflows: %s", res.Status())
 	}
 
 	workflows := res.Result().(*WorkflowAPIResponse)
-
 	return workflows, nil
 }
 
@@ -96,7 +94,6 @@ func (c *SS_MgmntClient) GetWorkflows(workspace string, mode string) (*Workflows
 		workflows := res.Result().(*WorkflowsResponse)
 
 		if len(workflows.Results) == 0 {
-			fmt.Fprintf(os.Stdout, "No more workflows found, stopping pagination\n")
 			break
 		}
 
@@ -104,8 +101,6 @@ func (c *SS_MgmntClient) GetWorkflows(workspace string, mode string) (*Workflows
 		totalCount += len(workflows.Results)
 		offset += limit
 	}
-
-	fmt.Fprintf(os.Stdout, "Successfully fetched all %d workflows\n", totalCount)
 
 	return &WorkflowsResponse{
 		Results: allWorkflows,
@@ -143,13 +138,12 @@ func (c *SS_MgmntClient) PushWorkflow(workspace, slug string, workflow map[strin
 		log.Errorf("Error pushing workflow: %s", err)
 		return err
 	}
-
 	if res.IsError() {
 		log.Errorf("Push failed: %s - %s", res.Status(), res.String())
 		return fmt.Errorf("push failed: %s", res.Status())
 	}
 
-	log.Infof("Successfully pushed workflow: %s", slug)
+	fmt.Printf("Successfully pushed workflow: %s\n", slug)
 	return nil
 }
 
