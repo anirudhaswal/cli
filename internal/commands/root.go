@@ -10,6 +10,7 @@ import (
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
+	"github.com/suprsend/cli/internal/commands/event"
 	"github.com/suprsend/cli/internal/commands/profiles"
 	"github.com/suprsend/cli/internal/commands/schema"
 	workflow "github.com/suprsend/cli/internal/commands/workflow"
@@ -65,6 +66,7 @@ func init() {
 
 	rootCmd.AddCommand(profiles.ProfilesCmd)
 	rootCmd.AddCommand(workflow.WorkflowCmd)
+	rootCmd.AddCommand(event.EventCmd)
 	rootCmd.AddCommand(syncCmd)
 	rootCmd.AddCommand(schema.SchemaCmd)
 
