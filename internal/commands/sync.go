@@ -9,6 +9,7 @@ import (
 
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
+	"github.com/suprsend/cli/internal/commands/event"
 	"github.com/suprsend/cli/internal/commands/schema"
 	"github.com/suprsend/cli/internal/commands/workflow"
 	"github.com/suprsend/cli/internal/utils"
@@ -33,6 +34,8 @@ var syncCmd = &cobra.Command{
 			assetsToSync = []string{"workflows"}
 		case "schemas":
 			assetsToSync = []string{"schemas"}
+		case "assets":
+			assetsToSync = []string{"assets"}
 		}
 
 		fmt.Printf("Syncing assets from %s to %s ... \n", fromWorkspace, toWorkspace)
@@ -46,6 +49,8 @@ var syncCmd = &cobra.Command{
 				syncWorkflows(fromWorkspace, toWorkspace, mode)
 			case "schemas":
 				syncSchemas(mgmnt_client, fromWorkspace, toWorkspace)
+			case "assets":
+				syncEvents(mgmnt_client, fromWorkspace, toWorkspace)
 			default:
 				log.Errorf("Invalid asset type: %s", assetType)
 			}
@@ -154,5 +159,29 @@ func syncSchemas(mgmnt_client *mgmnt.SS_MgmntClient, fromWorkspace, toWorkspace 
 			log.WithError(err).Errorf("Failed to push schema %s", slug)
 			continue
 		}
+	}
+}
+
+func syncEvents(mgmnt_client *mgmnt.SS_MgmntClient, fromWorkspace, toWorkspace string) {
+	dirPath := filepath.Join(".", "suprsend", "event")
+
+	fmt.Printf("Pulling events from %s ... \n", fromWorkspace)
+	events_resp, err := mgmnt_client.GetEvents(fromWorkspace)
+	if err != nil {
+		log.WithError(err).Error("Error getting events")
+		return
+	}
+
+	_, err = event.WriteEventsToFiles(events_resp, dirPath)
+	if err != nil {
+		log.WithError(err).Error("Error saving events")
+		return
+	}
+
+	fmt.Printf("Pushing events to %s ... \n", toWorkspace)
+	err = mgmnt_client.PushEvents(toWorkspace)
+	if err != nil {
+		log.WithError(err).Error("Failed to push events")
+		return
 	}
 }

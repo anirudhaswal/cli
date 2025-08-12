@@ -27,7 +27,6 @@ var eventListCmd = &cobra.Command{
 		workspace, _ := cmd.Flags().GetString("workspace")
 		limit, _ := cmd.Flags().GetInt("limit")
 		offset, _ := cmd.Flags().GetInt("offset")
-
 		mgmnt_client := utils.GetSuprSendMgmntClient()
 		events, err := mgmnt_client.ListEvents(workspace, limit, offset)
 		if err != nil {
@@ -38,7 +37,6 @@ var eventListCmd = &cobra.Command{
 		if p != nil {
 			p.Stop(fmt.Sprintf("Showing %d events out of %d from workspace %s\n", len(events.Results), events.Meta.Count, workspace))
 		}
-
 		outputType, _ := cmd.Flags().GetString("output")
 		utils.OutputData(events.Results, outputType)
 	},
