@@ -80,9 +80,6 @@ func init() {
 		if cmd.Name() == "profiles" || (cmd.Parent() != nil && cmd.Parent().Name() == "profiles") {
 			return nil
 		}
-		if cmd.Name() == "start-mcp-server" || (cmd.Parent() != nil && cmd.Parent().Name() == "start-mcp-server") {
-			return nil
-		}
 
 		// env > flag > config file -> profile
 		serviceToken := getServiceTokenWithPriority()

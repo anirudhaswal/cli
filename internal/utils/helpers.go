@@ -2,11 +2,59 @@ package utils
 
 import (
 	"context"
+	"crypto/rand"
 	"errors"
 	"fmt"
 
 	suprsend "github.com/suprsend/suprsend-go"
 )
+
+func GenerateUUID() string {
+	uuid := make([]byte, 16)
+	rand.Read(uuid)
+
+	// Set version (4) and variant bits
+	uuid[6] = (uuid[6] & 0x0f) | 0x40
+	uuid[8] = (uuid[8] & 0x3f) | 0x80
+
+	return fmt.Sprintf("%x-%x-%x-%x-%x", uuid[0:4], uuid[4:6], uuid[6:8], uuid[8:10], uuid[10:])
+}
+
+func FetchWorkflowsMcp(workspace string) []map[string]string {
+	mgmntClient := GetSuprSendMgmntClient()
+	if mgmntClient == nil {
+		return nil
+	}
+	workflowsResp, err := mgmntClient.GetWorkflows(workspace, "live")
+	if err != nil {
+		return nil
+	}
+
+	var result []map[string]string
+	for _, workflow := range workflowsResp.Results {
+		workflowMap, ok := workflow.(map[string]any)
+		if !ok {
+			continue
+		}
+		workflowInfo := make(map[string]string)
+		if slug, ok := workflowMap["slug"].(string); ok {
+			workflowInfo["slug"] = slug
+		}
+		if name, ok := workflowMap["name"].(string); ok {
+			workflowInfo["name"] = name
+		} else {
+			workflowInfo["name"] = ""
+		}
+		if description, ok := workflowMap["description"].(string); ok {
+			workflowInfo["description"] = description
+		} else {
+			workflowInfo["description"] = ""
+		}
+
+		result = append(result, workflowInfo)
+	}
+	return result
+}
 
 var LanguageMap = map[string]string{
 	".ts":    "typescript",

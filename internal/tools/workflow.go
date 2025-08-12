@@ -2,34 +2,41 @@ package tools
 
 import (
 	"context"
+	"encoding/json"
+	"fmt"
 
 	"github.com/mark3labs/mcp-go/mcp"
+	log "github.com/sirupsen/logrus"
 	"github.com/suprsend/cli/internal/utils"
 	"github.com/suprsend/suprsend-go"
 	"gopkg.in/yaml.v3"
 )
 
-func triggerWorkflow(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
-	workspace, err := request.RequireString("workspace")
-	if err != nil {
-		return mcp.NewToolResultError(err.Error()), nil
-	}
+func triggerWorkflow(ctx context.Context, request mcp.CallToolRequest, workspace, slug string) (*mcp.CallToolResult, error) {
 	wfRequestRaw, ok := request.GetArguments()["workflow_request_body"]
 	if !ok {
 		return mcp.NewToolResultError("Workflow Request Body is required."), nil
 	}
 	tenantId := request.GetString("tenant_id", "")
+	actor := request.GetArguments()["actor"]
 	wfRequestBody, ok := wfRequestRaw.(map[string]any)
 	if !ok {
 		return mcp.NewToolResultError("Invalid workflow request body"), nil
 	}
+	if slug != "" {
+		wfRequestBody["workflow"] = slug
+	}
+	if actor != nil {
+		wfRequestBody["actor"] = actor
+	}
 	suprsendClient, err := utils.GetSuprSendWorkspaceClient(workspace)
 	if err != nil {
+		log.Error("Error getting workspace client: ", err)
 		return mcp.NewToolResultError(err.Error()), nil
 	}
 	wf := &suprsend.WorkflowTriggerRequest{
 		Body:           wfRequestBody,
-		IdempotencyKey: "",
+		IdempotencyKey: utils.GenerateUUID(),
 		TenantId:       tenantId,
 	}
 
@@ -44,31 +51,63 @@ func triggerWorkflow(ctx context.Context, request mcp.CallToolRequest) (*mcp.Cal
 	return mcp.NewToolResultText(string(yamlResp)), nil
 }
 
-func newWorkflowTools() []*Tool {
-	trigger_suprsend_workflow := &Tool{
-		Name:        "workflow.trigger",
-		Description: "Enables triggering a specific workflow",
-		MCPTool: mcp.NewTool("trigger_suprsend_workflow",
-			mcp.WithDescription("Use this tool to trigger a workflow"),
-			mcp.WithObject("workflow_request_body",
-				mcp.Description("Request body for workflow which will be triggered."),
-				mcp.Required(),
-			),
-			mcp.WithString("workspace",
-				mcp.Description("Suprsend workspace to trigger the workflow from."),
-				mcp.Required(),
-			),
-			mcp.WithString("tenant_id",
-				mcp.Description("The tenant ID to trigger the workflow for."),
-			),
-			mcp.WithDestructiveHintAnnotation(true),
-		),
-		Handler: triggerWorkflow,
+func RegisterDynamicWorkflowTools(workspace string) {
+	workflows := utils.FetchWorkflowsMcp(workspace)
+	if workflows == nil {
+		return
 	}
-	return []*Tool{trigger_suprsend_workflow}
-}
-func init() {
-	for _, w := range newWorkflowTools() {
-		RegisterTool(w, "workflow")
+
+	var inputSchema = json.RawMessage(`{
+		"type": "object",
+		"properties": {
+			"workflow_request_body": {
+				"type": "object",
+				"properties": {
+					"recipients": {
+						"type": "array",
+						"items": {
+							"type": "object",
+							"additionalProperties": true
+						}
+					}
+				},
+				"required": ["recipients"]
+			},
+			"tenant_id": {
+				"type": "string"
+			},
+			"actor": {
+				"type": "object",
+				"properties": {
+					"distinct_id": {
+						"type": "string"
+					},
+					"is_transient": {
+						"type": "boolean"
+					}
+				}
+			}
+		}
+	}`)
+
+	for _, workflow := range workflows {
+		slug := workflow["slug"]
+		name := workflow["name"]
+		description := workflow["description"]
+		if slug == "" {
+			continue
+		}
+		wfTool := &Tool{
+			Name:        "workflow." + slug,
+			Description: fmt.Sprintf("Trigger workflow: %s - %s", name, description),
+			MCPTool: mcp.NewToolWithRawSchema("trigger_workflow_"+slug,
+				fmt.Sprintf("Trigger the workflow '%s': %s", name, description),
+				inputSchema,
+			),
+			Handler: func(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+				return triggerWorkflow(ctx, request, workspace, slug)
+			},
+		}
+		RegisterTool(wfTool, "workflow")
 	}
 }
