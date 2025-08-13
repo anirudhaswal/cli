@@ -70,7 +70,7 @@ func triggerWorkflow(ctx context.Context, request mcp.CallToolRequest, workspace
 
 func RegisterDynamicWorkflowTools(workspace string) error {
 	workflows := utils.FetchWorkflowsMcp(workspace)
-	if workflows == nil {
+	if len(workflows) == 0 {
 		return fmt.Errorf("No workflows present in %s workspace", workspace)
 	}
 
