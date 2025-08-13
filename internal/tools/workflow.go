@@ -51,10 +51,10 @@ func triggerWorkflow(ctx context.Context, request mcp.CallToolRequest, workspace
 	return mcp.NewToolResultText(string(yamlResp)), nil
 }
 
-func RegisterDynamicWorkflowTools(workspace string) {
+func RegisterDynamicWorkflowTools(workspace string) error {
 	workflows := utils.FetchWorkflowsMcp(workspace)
 	if workflows == nil {
-		return
+		return fmt.Errorf("No workflows present in %s workspace", workspace)
 	}
 
 	var inputSchema = json.RawMessage(`{
@@ -110,4 +110,5 @@ func RegisterDynamicWorkflowTools(workspace string) {
 		}
 		RegisterTool(wfTool, "workflow")
 	}
+	return nil
 }

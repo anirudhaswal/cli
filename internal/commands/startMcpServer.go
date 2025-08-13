@@ -70,7 +70,9 @@ This server will handle all the requests from user about SuprSend capabilities a
 			profiles.GetResolvedMgmntUrl(),
 			viper.GetBool("debug"),
 		)
-		toolset.RegisterDynamicWorkflowTools(workspace)
+		if err := toolset.RegisterDynamicWorkflowTools(workspace); err != nil {
+			log.Warnf("Failed to register workflow tools in mcp: %v", err)
+		}
 	},
 	Run: func(cmd *cobra.Command, args []string) {
 		selectedTools, err := getSelectedTools(tools)

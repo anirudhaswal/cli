@@ -2,22 +2,15 @@ package utils
 
 import (
 	"context"
-	"crypto/rand"
 	"errors"
 	"fmt"
 
+	"github.com/google/uuid"
 	suprsend "github.com/suprsend/suprsend-go"
 )
 
 func GenerateUUID() string {
-	uuid := make([]byte, 16)
-	rand.Read(uuid)
-
-	// Set version (4) and variant bits
-	uuid[6] = (uuid[6] & 0x0f) | 0x40
-	uuid[8] = (uuid[8] & 0x3f) | 0x80
-
-	return fmt.Sprintf("%x-%x-%x-%x-%x", uuid[0:4], uuid[4:6], uuid[6:8], uuid[8:10], uuid[10:])
+	return uuid.New().String()
 }
 
 func FetchWorkflowsMcp(workspace string) []map[string]string {
