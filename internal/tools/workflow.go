@@ -9,7 +9,6 @@ import (
 	log "github.com/sirupsen/logrus"
 	"github.com/suprsend/cli/internal/utils"
 	"github.com/suprsend/suprsend-go"
-	"gopkg.in/yaml.v3"
 )
 
 func triggerWorkflow(ctx context.Context, request mcp.CallToolRequest, workspace, slug string) (*mcp.CallToolResult, error) {
@@ -44,11 +43,29 @@ func triggerWorkflow(ctx context.Context, request mcp.CallToolRequest, workspace
 	if err != nil {
 		return mcp.NewToolResultError(err.Error()), nil
 	}
-	yamlResp, err := yaml.Marshal(resp)
+
+	_, ok = wfRequestBody["schema"]
+	if !ok {
+		responseData := map[string]any{
+			"response": resp,
+			"warning":  fmt.Sprintf("Schema is not present for %s workflow", slug),
+		}
+		jsonData, err := json.MarshalIndent(responseData, "", "  ")
+		if err != nil {
+			return mcp.NewToolResultError(err.Error()), nil
+		}
+		return mcp.NewToolResultStructured(responseData, string(jsonData)), nil
+	}
+	responseData := map[string]any{
+		"response": resp,
+	}
+
+	jsonData, err := json.MarshalIndent(responseData, "", "  ")
 	if err != nil {
 		return mcp.NewToolResultError(err.Error()), nil
 	}
-	return mcp.NewToolResultText(string(yamlResp)), nil
+
+	return mcp.NewToolResultStructured(responseData, string(jsonData)), nil
 }
 
 func RegisterDynamicWorkflowTools(workspace string) error {
