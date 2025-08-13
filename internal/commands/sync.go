@@ -34,8 +34,8 @@ var syncCmd = &cobra.Command{
 			assetsToSync = []string{"workflows"}
 		case "schemas":
 			assetsToSync = []string{"schemas"}
-		case "assets":
-			assetsToSync = []string{"assets"}
+		case "events":
+			assetsToSync = []string{"events"}
 		}
 
 		fmt.Printf("Syncing assets from %s to %s ... \n", fromWorkspace, toWorkspace)
@@ -49,7 +49,7 @@ var syncCmd = &cobra.Command{
 				syncWorkflows(fromWorkspace, toWorkspace, mode)
 			case "schemas":
 				syncSchemas(mgmnt_client, fromWorkspace, toWorkspace)
-			case "assets":
+			case "events":
 				syncEvents(mgmnt_client, fromWorkspace, toWorkspace)
 			default:
 				log.Errorf("Invalid asset type: %s", assetType)

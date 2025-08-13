@@ -44,7 +44,7 @@ var eventListCmd = &cobra.Command{
 
 func init() {
 	eventListCmd.PersistentFlags().StringP("workspace", "w", "staging", "Workspace to list events from")
-	eventListCmd.PersistentFlags().IntP("limit", "l", 20, "Limit the number of workflows to list.")
-	eventListCmd.PersistentFlags().IntP("offset", "f", 0, "offset the number of workflows to list(default: 0)")
+	eventListCmd.PersistentFlags().IntP("limit", "l", 20, "Limit the number of events to list.")
+	eventListCmd.PersistentFlags().IntP("offset", "f", 0, "Offset into the list of events(default: 0)")
 	EventCmd.AddCommand(eventListCmd)
 }

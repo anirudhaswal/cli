@@ -77,10 +77,11 @@ func (c *SS_MgmntClient) GetEvents(workspace string) (*EventsResponse, error) {
 
 		if err != nil {
 			log.Errorf("Error getting events: %s", err)
+			return nil, err
 		}
 		if res.IsError() {
 			log.Errorf("Error getting events: %s", res.Status())
-			return nil, fmt.Errorf("error getting events: %s", err)
+			return nil, fmt.Errorf("error getting events: %s", res.Status())
 		}
 		events := res.Result().(*EventsResponse)
 		if len(events.Results) == 0 {

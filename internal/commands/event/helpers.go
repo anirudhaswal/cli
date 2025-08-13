@@ -73,7 +73,7 @@ func WriteEventsToFiles(events_resp *mgmnt.EventsResponse, dirPath string) (*Eve
 		return stats, err
 	}
 
-	debugLog("Successfully wrote %d events to %s", stats.Success, filename)
+	debugLog("Successfully wrote %d events to %s", len(events_resp.Results), filename)
 	fmt.Fprintf(os.Stdout, "Successfully wrote events to %s\n", filename)
 	stats.Success = len(events_resp.Results)
 	return stats, nil
