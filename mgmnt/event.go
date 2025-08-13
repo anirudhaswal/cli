@@ -73,7 +73,7 @@ func (c *SS_MgmntClient) GetEvents(workspace string) (*EventsResponse, error) {
 			SetDebug(c.debug).
 			SetHeader("Authorization", "ServiceToken "+c.serviceToken).
 			SetResult(&EventsResponse{}).
-			Get(c.mgmnt_base_URL + "v1/" + workspace + "/event/?limit=" + strconv.Itoa(limit) + "&offset=" + strconv.Itoa(offset))
+			Get(c.mgmnt_base_URL + "v1/" + workspace + "/event/?limit=" + strconv.Itoa(limit) + "&offset=" + strconv.Itoa(offset) + "&schema=true")
 
 		if err != nil {
 			log.Errorf("Error getting events: %s", err)
