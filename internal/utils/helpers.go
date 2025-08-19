@@ -8,6 +8,41 @@ import (
 	suprsend "github.com/suprsend/suprsend-go"
 )
 
+func FetchEventsMcp(workspace string) []map[string]string {
+	mgmntClient := GetSuprSendMgmntClient()
+	if mgmntClient == nil {
+		return nil
+	}
+	eventsResp, err := mgmntClient.GetEvents(workspace)
+	if err != nil {
+		return nil
+	}
+
+	var result []map[string]string
+	for _, event := range eventsResp.Results {
+		eventMap, ok := event.(map[string]any)
+		if !ok {
+			continue
+		}
+		eventInfo := make(map[string]string)
+		if slug, ok := eventMap["slug"].(string); ok {
+			eventInfo["slug"] = slug
+		}
+		if name, ok := eventMap["name"].(string); ok {
+			eventMap["name"] = name
+		} else {
+			eventInfo["name"] = ""
+		}
+		if description, ok := eventMap["description"].(string); ok {
+			eventInfo["description"] = description
+		} else {
+			eventInfo["description"] = ""
+		}
+		result = append(result, eventInfo)
+	}
+	return result
+}
+
 var LanguageMap = map[string]string{
 	".ts":    "typescript",
 	".py":    "python",

@@ -9,6 +9,9 @@ import (
 	"github.com/mark3labs/mcp-go/server"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
+	"github.com/suprsend/cli/internal/commands/profiles"
+	"github.com/suprsend/cli/internal/config"
 	toolset "github.com/suprsend/cli/internal/tools"
 	"github.com/suprsend/cli/internal/utils"
 	"go.szostok.io/version"
@@ -56,6 +59,21 @@ var startMcpServerCmd = &cobra.Command{
 	Short: "Starts MCP server for SuprSend",
 	Long: `Starts the MCP server for SuprSend.
 This server will handle all the requests from user about SuprSend capabilities and data.`,
+	PersistentPreRun: func(cmd *cobra.Command, args []string) {
+		conf := config.Cfg
+		workspace := conf.Workspace
+		serviceToken := getServiceTokenWithPriority()
+		conf.ServiceToken = serviceToken
+		utils.InitSDKWithUrls(
+			conf.ServiceToken,
+			profiles.GetResolvedBaseUrl(),
+			profiles.GetResolvedMgmntUrl(),
+			viper.GetBool("debug"),
+		)
+		if err := toolset.RegisterDynamicEventsTools(workspace); err != nil {
+			log.Warnf("Failed to register workflow tools in mcp: %v", err)
+		}
+	},
 	Run: func(cmd *cobra.Command, args []string) {
 		selectedTools, err := getSelectedTools(tools)
 		if err != nil {
