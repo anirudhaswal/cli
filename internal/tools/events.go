@@ -7,6 +7,7 @@ import (
 
 	"github.com/mark3labs/mcp-go/mcp"
 	"github.com/suprsend/cli/internal/utils"
+	"github.com/suprsend/suprsend-go"
 )
 
 func triggerEvent(ctx context.Context, request mcp.CallToolRequest, workspace, name string) (*mcp.CallToolResult, error) {
@@ -14,21 +15,25 @@ func triggerEvent(ctx context.Context, request mcp.CallToolRequest, workspace, n
 	if !ok {
 		return mcp.NewToolResultError("payload schema is required"), nil
 	}
-
 	eventRequestBody, ok := eventRequestRaw.(map[string]interface{})
 	if !ok {
 		return mcp.NewToolResultError("payload schema is not a valid object"), nil
 	}
-
-	schema := eventRequestBody["schema"].(string)
-	versionNo := eventRequestBody["version_no"].(string)
+	distinctID := eventRequestBody["distinct_id"].(string)
+	event := &suprsend.Event{
+		DistinctId: distinctID,
+		EventName:  name,
+	}
 	suprsendClient, err := utils.GetSuprSendWorkspaceClient(workspace)
 	if err != nil {
 		return mcp.NewToolResultError(fmt.Sprintf("Failed to get suprsend client: %v", err)), nil
 	}
-
-	// trigger the event thru go sdk
-
+	bulkIns := suprsendClient.BulkEvents.NewInstance()
+	bulkIns.Append(event)
+	_, err = bulkIns.Trigger()
+	if err != nil {
+		return mcp.NewToolResultError("Failed to trigger events"), nil
+	}
 	return mcp.NewToolResultText("Event triggered successfully"), nil
 }
 
@@ -37,24 +42,20 @@ func RegisterDynamicEventsTools(workspace string) error {
 	if len(events) == 0 {
 		return fmt.Errorf("No workflows present in %s workspace", workspace)
 	}
-
 	var inputSchema = json.RawMessage(`{
 		"type": "object",
 		"properties": {
 			"payload_schema": {
 				"type": "object",
 				"properties": {
-					"schema": {
-						"type": "string"
-					},
-					"version_no": {
+					"distinct_id": {
 						"type": "string"
 					}
-				}
+				},
+				"required": ["distinct_id"]
 			}
 		}
 	}`)
-
 	for _, event := range events {
 		name := event["name"]
 		description := event["description"]
@@ -68,6 +69,9 @@ func RegisterDynamicEventsTools(workspace string) error {
 				fmt.Sprintf("Trigger %s event - %s", name, description),
 				inputSchema,
 			),
+			Handler: func(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+				return triggerEvent(ctx, request, workspace, name)
+			},
 		}
 		RegisterTool(eventTool, "event")
 	}

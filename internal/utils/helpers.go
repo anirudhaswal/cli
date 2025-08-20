@@ -17,7 +17,6 @@ func FetchEventsMcp(workspace string) []map[string]string {
 	if err != nil {
 		return nil
 	}
-
 	var result []map[string]string
 	for _, event := range eventsResp.Results {
 		eventMap, ok := event.(map[string]any)
@@ -25,11 +24,8 @@ func FetchEventsMcp(workspace string) []map[string]string {
 			continue
 		}
 		eventInfo := make(map[string]string)
-		if slug, ok := eventMap["slug"].(string); ok {
-			eventInfo["slug"] = slug
-		}
 		if name, ok := eventMap["name"].(string); ok {
-			eventMap["name"] = name
+			eventInfo["name"] = name
 		} else {
 			eventInfo["name"] = ""
 		}
