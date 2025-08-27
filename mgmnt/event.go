@@ -73,7 +73,7 @@ func (c *SS_MgmntClient) GetEvents(workspace string) (*EventsResponse, error) {
 			SetDebug(c.debug).
 			SetHeader("Authorization", "ServiceToken "+c.serviceToken).
 			SetResult(&EventsResponse{}).
-			Get(c.mgmnt_base_URL + "v1/" + workspace + "/event/?limit=" + strconv.Itoa(limit) + "&offset=" + strconv.Itoa(offset) + "&schema=true")
+			Get(c.mgmnt_base_URL + "v1/" + workspace + "/event/?limit=" + strconv.Itoa(limit) + "&offset=" + strconv.Itoa(offset) + "&has_linked_schema=true")
 
 		if err != nil {
 			log.Errorf("Error getting events: %s", err)
@@ -110,7 +110,7 @@ func (c *SS_MgmntClient) PushEvents(workspace string) error {
 		return err
 	}
 
-	url := c.mgmnt_base_URL + "v1/" + workspace + "/event/bulk/"
+	url := c.mgmnt_base_URL + "v1/" + workspace + "/bulk/event/"
 	log.Debugf("Pushing events to workspace: %s, service token: %s", workspace, c.serviceToken)
 	res, err := client.R().
 		SetDebug(c.debug).
