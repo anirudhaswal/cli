@@ -2,8 +2,10 @@ package profiles
 
 import (
 	"bufio"
+	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 
 	log "github.com/sirupsen/logrus"
 	"github.com/suprsend/cli/internal/config"
@@ -32,6 +34,20 @@ type ProfileListItem struct {
 type SimpleProfileListItem struct {
 	Name   string `json:"name" yaml:"name"`
 	Active string `json:"active" yaml:"active"`
+}
+
+func cleanInput(input string) string {
+	input = strings.TrimSpace(input)
+	input = strings.TrimPrefix(input, "[")
+	input = strings.TrimSuffix(input, "]")
+	return input
+}
+
+func promptForProfileName() string {
+	reader := bufio.NewReader(os.Stdin)
+	fmt.Print("Enter profile name to remove: ")
+	name, _ := reader.ReadString('\n')
+	return strings.TrimSpace(name)
 }
 
 func EnsureConfig(path string) (*Config, string, error) {

@@ -24,6 +24,10 @@ var syncCmd = &cobra.Command{
 		fromWorkspace, _ := cmd.Flags().GetString("from")
 		toWorkspace, _ := cmd.Flags().GetString("to")
 		assets, _ := cmd.Flags().GetString("assets")
+		if fromWorkspace == toWorkspace {
+			log.Error("Cannot sync within the same workspace. Source and destination workspaces must be different.")
+			return
+		}
 
 		var assetsToSync []string
 		switch assets {
@@ -33,6 +37,9 @@ var syncCmd = &cobra.Command{
 			assetsToSync = []string{"workflows"}
 		case "schemas":
 			assetsToSync = []string{"schemas"}
+		default:
+			log.Errorf("Invalid asset type: '%s'. Valid options are: all, workflows, schemas", assets)
+			return
 		}
 
 		fmt.Printf("Syncing assets from %s to %s ... \n", fromWorkspace, toWorkspace)
@@ -112,7 +119,7 @@ func syncSchemas(mgmnt_client *mgmnt.SS_MgmntClient, fromWorkspace, toWorkspace 
 	dirPath := filepath.Join(".", "suprsend", "schema")
 
 	fmt.Printf("Pulling schemas from %s ... \n", fromWorkspace)
-	schemas_resp, err := mgmnt_client.GetSchemas(fromWorkspace)
+	schemas_resp, err := mgmnt_client.GetSchemas(fromWorkspace, "")
 	if err != nil {
 		log.WithError(err).Error("Error getting schemas")
 		return

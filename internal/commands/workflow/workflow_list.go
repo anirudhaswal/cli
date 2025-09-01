@@ -39,8 +39,10 @@ var workflowListCmd = &cobra.Command{
 			log.WithError(err).Error("Couldn't fetch workflows")
 			return
 		}
+
+		msg := fmt.Sprintf("Listed %d workflows from %s with offset %d", len(workflows.Results), workspace, offset)
 		if p != nil {
-			p.Stop(fmt.Sprintf("Listed %d workflows from %s", len(workflows.Results), workspace))
+			p.Stop(msg)
 		}
 		outputType, _ := cmd.Flags().GetString("output")
 

@@ -14,7 +14,7 @@ var profileUseCmd = &cobra.Command{
 	Short: "Set the active profile",
 	Run: func(cmd *cobra.Command, args []string) {
 		if useName == "" {
-			log.Error("You must specify --name")
+			log.Error("You must specify --name <profile-name>")
 			return
 		}
 
@@ -48,5 +48,5 @@ var profileUseCmd = &cobra.Command{
 
 func init() {
 	profileUseCmd.Flags().StringVarP(&useName, "name", "", "", "Profile name to set as active.")
-	ProfilesCmd.AddCommand(profileUseCmd)
+	ProfileCmd.AddCommand(profileUseCmd)
 }

@@ -37,7 +37,7 @@ var schemaResetCmd = &cobra.Command{
 
 		err := mgmnt_client.FinalizeSchema(workspace, slug, false)
 		if err != nil {
-			log.WithError(err).Error("Couldn't fetch schemas")
+			log.Error(err.Error())
 			return
 		}
 		if p != nil {

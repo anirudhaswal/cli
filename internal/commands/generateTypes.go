@@ -22,6 +22,7 @@ var generateTypesCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		workspace, _ := cmd.Flags().GetString("workspace")
 		buildFlags, _ := cmd.Flags().GetString("build-flags")
+		mode, _ := cmd.Flags().GetString("mode")
 		fileName := args[0]
 		if fileName == "" {
 			log.Error("File argument is required")
@@ -37,7 +38,7 @@ var generateTypesCmd = &cobra.Command{
 
 		mgmntClient := utils.GetSuprSendMgmntClient()
 
-		schemasResp, err := mgmntClient.GetSchemas(workspace)
+		schemasResp, err := mgmntClient.GetSchemas(workspace, mode)
 		if err != nil {
 			log.WithError(err).Error("Couldn't fetch schemas")
 			return

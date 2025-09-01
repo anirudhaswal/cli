@@ -1,10 +1,12 @@
 package workflow
 
 import (
+	"bufio"
 	"encoding/json"
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
@@ -20,6 +22,38 @@ type WorkflowWriteStats struct {
 
 func isDebugMode() bool {
 	return viper.GetBool("debug")
+}
+
+func promptForOutputDirectory() string {
+	reader := bufio.NewReader(os.Stdin)
+	defaultDir := filepath.Join(".", "suprsend", "workflow")
+	fmt.Fprintf(os.Stdout, "Where would you like to save the workflows?\n")
+	fmt.Fprintf(os.Stdout, "Default: %s\n", defaultDir)
+	fmt.Fprintf(os.Stdout, "Enter directory path (or press Enter for default): ")
+	input, _ := reader.ReadString('\n')
+	input = strings.TrimSpace(input)
+	if input == "" {
+		return defaultDir
+	}
+	return input
+}
+
+func ensureOutputDirectory(dirPath string) error {
+	info, err := os.Stat(dirPath)
+	if err != nil {
+		if os.IsNotExist(err) {
+			fmt.Fprintf(os.Stdout, "Creating directory: %s\n", dirPath)
+			return os.MkdirAll(dirPath, 0755)
+		}
+		return fmt.Errorf("error checking directory: %w", err)
+	}
+	if !info.IsDir() {
+		return fmt.Errorf("path '%s' exists but is not a directory", dirPath)
+	}
+	if info.Mode().Perm()&0200 == 0 {
+		return fmt.Errorf("directory '%s' is not writable", dirPath)
+	}
+	return nil
 }
 
 func debugLog(format string, args ...interface{}) {

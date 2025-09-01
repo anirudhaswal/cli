@@ -14,21 +14,24 @@ import (
 	"github.com/yarlson/pin"
 )
 
-var force bool
-
 var workflowPushCmd = &cobra.Command{
 	Use:   "push",
 	Short: "push workflows from local to suprsend",
 	Long:  `push workflows from local to suprsend dashboard`,
 	Run: func(cmd *cobra.Command, args []string) {
-		dirPath := filepath.Join(".", "suprsend", "workflow")
 		workspace, _ := cmd.Flags().GetString("workspace")
+		outputDir, _ := cmd.Flags().GetString("output-dir")
 
-		if _, err := os.Stat(dirPath); os.IsNotExist(err) {
-			log.WithError(err).Errorf("Directory '%s' does not exist. Exiting.\n", dirPath)
+		if outputDir == "" {
+			outputDir = promptForOutputDirectory()
+		}
+
+		if err := ensureOutputDirectory(outputDir); err != nil {
+			fmt.Fprintf(os.Stdout, "Error with output directory: %v\n", err)
 			return
 		}
-		files, err := os.ReadDir(dirPath)
+
+		files, err := os.ReadDir(outputDir)
 		if err != nil {
 			log.WithError(err).Errorf("Failed to read local workflows directory")
 			return
@@ -54,7 +57,7 @@ var workflowPushCmd = &cobra.Command{
 				)
 				cancel = p.Start(context.Background())
 			}
-			path := filepath.Join(dirPath, file.Name())
+			path := filepath.Join(outputDir, file.Name())
 			data, err := os.ReadFile(path)
 			if err != nil {
 				if p != nil && cancel != nil {
@@ -108,6 +111,6 @@ var workflowPushCmd = &cobra.Command{
 }
 
 func init() {
-	workflowPushCmd.Flags().BoolVarP(&force, "force-dir", "d", false, "Create workflow directory without the permission")
+	workflowPushCmd.PersistentFlags().StringP("output-dir", "d", "", "Output directory for workflows")
 	WorkflowCmd.AddCommand(workflowPushCmd)
 }
