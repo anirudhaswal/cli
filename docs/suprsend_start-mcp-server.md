@@ -16,7 +16,7 @@ suprsend start-mcp-server [flags]
 ```
   -h, --help               help for start-mcp-server
   -T, --tools string       The types of tools to use. Can be either 'all' or comma separated list of tool names. (default "all")
-  -t, --transport string   The transport to use for the MCP server. Can be either 'stdio' or 'sse'. (default "stdio")
+  -t, --transport string   The transport to use for the MCP server. Can be stdio/sse/http. (default "stdio")
 ```
 
 ### Options inherited from parent commands
