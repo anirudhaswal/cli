@@ -14,7 +14,7 @@ require (
 	github.com/sirupsen/logrus v1.9.3
 	github.com/spf13/cobra v1.9.1
 	github.com/spf13/viper v1.20.1
-	github.com/suprsend/suprsend-go v0.7.0
+	github.com/suprsend/suprsend-go v0.8.0
 	github.com/tidwall/pretty v1.2.1
 	github.com/yarlson/pin v0.9.1
 	go.szostok.io/version v1.2.0
