@@ -66,6 +66,13 @@ var generateTypesCmd = &cobra.Command{
 			return
 		}
 
+		if _, err := os.Stat(fileName); err == nil {
+			if err := os.WriteFile(fileName, []byte(""), 0644); err != nil {
+				log.WithError(err).Errorf("Failed to clear existing file: %s", fileName)
+				return
+			}
+		}
+
 		for _, targetSchema := range validSchemas {
 			schemaName := targetSchema.Name + "Data"
 
