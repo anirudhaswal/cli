@@ -54,10 +54,6 @@ var generateTypesCmd = &cobra.Command{
 			if err := json.Unmarshal(schemaBytes, &schemaResp); err != nil {
 				continue
 			}
-
-			if !schemaResp.IsEnabled {
-				continue
-			}
 			if utils.IsEmptySchema(schemaResp.JSONSchema.Properties) {
 				continue
 			}
