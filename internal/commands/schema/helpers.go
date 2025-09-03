@@ -1,10 +1,12 @@
 package schema
 
 import (
+	"bufio"
 	"encoding/json"
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
@@ -16,6 +18,12 @@ type SchemaWriteStats struct {
 	Success int
 	Failed  int
 	Errors  []string
+}
+
+type FilteredSchema struct {
+	Slug        string `json:"slug"`
+	Name        string `json:"name"`
+	Description string `json:"description"`
 }
 
 func isDebugMode() bool {
@@ -32,6 +40,50 @@ func debugErrorLog(format string, args ...interface{}) {
 	if isDebugMode() {
 		log.Errorf(format, args...)
 	}
+}
+
+func promptForOutputDirectory() string {
+	reader := bufio.NewReader(os.Stdin)
+	defaultDir := filepath.Join(".", "suprsend", "schema")
+	fmt.Fprintf(os.Stdout, "Where would you like to save the schema?\n")
+	fmt.Fprintf(os.Stdout, "Default: %s\n", defaultDir)
+	fmt.Fprintf(os.Stdout, "Enter directory path (or press Enter for default): ")
+	input, _ := reader.ReadString('\n')
+	input = strings.TrimSpace(input)
+	if input == "" {
+		return defaultDir
+	}
+	return input
+}
+
+func ensureOutputDirectory(dirPath string) error {
+	info, err := os.Stat(dirPath)
+	if err != nil {
+		if os.IsNotExist(err) {
+			fmt.Fprintf(os.Stdout, "Creating directory: %s\n", dirPath)
+			return os.MkdirAll(dirPath, 0755)
+		}
+		return fmt.Errorf("error checking directory: %w", err)
+	}
+	if !info.IsDir() {
+		return fmt.Errorf("path '%s' exists but is not a directory", dirPath)
+	}
+	if info.Mode().Perm()&0200 == 0 {
+		return fmt.Errorf("directory '%s' is not writable", dirPath)
+	}
+	return nil
+}
+
+func filterSchemaData(schemas []mgmnt.SchemaResponse) []FilteredSchema {
+	filtered := make([]FilteredSchema, len(schemas))
+	for i, schema := range schemas {
+		filtered[i] = FilteredSchema{
+			Slug:        schema.Slug,
+			Name:        schema.Name,
+			Description: schema.Description,
+		}
+	}
+	return filtered
 }
 
 func WriteSchemasToFiles(schemasResp *mgmnt.SchemasResponse, dirPath string) (*SchemaWriteStats, error) {

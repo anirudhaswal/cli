@@ -21,13 +21,17 @@ var schemaPushCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		workspace, _ := cmd.Flags().GetString("workspace")
 
-		dirPath := filepath.Join(".", "suprsend", "schema")
-		if _, err := os.Stat(dirPath); os.IsNotExist(err) {
-			log.WithError(err).Errorf("Directory '%s' does not exist. Exiting.\n", dirPath)
+		outputDir, _ := cmd.Flags().GetString("output-dir")
+		if outputDir == "" {
+			outputDir = promptForOutputDirectory()
+		}
+
+		if err := ensureOutputDirectory(outputDir); err != nil {
+			fmt.Fprintf(os.Stdout, "Error with output directory: %v\n", err)
 			return
 		}
 
-		files, err := os.ReadDir(dirPath)
+		files, err := os.ReadDir(outputDir)
 		if err != nil {
 			log.WithError(err).Errorf("Failed to read local schema directory")
 			return
@@ -51,7 +55,7 @@ var schemaPushCmd = &cobra.Command{
 				)
 				cancel = p.Start(context.Background())
 			}
-			path := filepath.Join(dirPath, file.Name())
+			path := filepath.Join(outputDir, file.Name())
 			data, err := os.ReadFile(path)
 			if err != nil {
 				if p != nil && cancel != nil {
@@ -80,7 +84,6 @@ var schemaPushCmd = &cobra.Command{
 
 			err = mgmntClient.PushSchema(workspace, slug, schema)
 			if err != nil {
-				// Stop loading screen and mark error
 				if p != nil && cancel != nil {
 					p.Stop("")
 					cancel()
@@ -106,5 +109,6 @@ var schemaPushCmd = &cobra.Command{
 }
 
 func init() {
+	schemaPushCmd.PersistentFlags().StringP("output-dir", "d", "", "Output directory for schemas")
 	SchemaCmd.AddCommand(schemaPushCmd)
 }

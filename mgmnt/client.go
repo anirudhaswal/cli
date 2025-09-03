@@ -6,10 +6,21 @@ import (
 	"io"
 	"net/http"
 	"os"
+	"strings"
 
 	log "github.com/sirupsen/logrus"
 	suprsend "github.com/suprsend/suprsend-go"
 )
+
+func normalizeURL(url string) string {
+	if url == "" {
+		return url
+	}
+	if !strings.HasSuffix(url, "/") {
+		return url + "/"
+	}
+	return url
+}
 
 type SS_MgmntClient struct {
 	serviceToken     string
@@ -43,6 +54,8 @@ func NewClientWithUrls(serviceToken string, baseURL string, mgmntURL string, deb
 		}
 	}
 
+	baseURL = normalizeURL(baseURL)
+	mgmntURL = normalizeURL(mgmntURL)
 	client := &SS_MgmntClient{
 		serviceToken:   serviceToken,
 		hub_base_URL:   baseURL,

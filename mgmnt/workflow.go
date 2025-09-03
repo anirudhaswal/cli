@@ -37,34 +37,68 @@ type WorkflowsResponse struct {
 
 func (c *SS_MgmntClient) ListWorkflows(workspace string, limit int, offset int, mode string) (*WorkflowAPIResponse, error) {
 	if mode != "live" && mode != "draft" {
-		return nil, fmt.Errorf("invalid mode: %s", mode)
+		return nil, fmt.Errorf("invalid mode: %s. Available modes are: live, draft", mode)
 	}
 
 	client := client.NewHTTPClient()
 	defer client.Close()
 
-	log.Debugf("Getting workflows for workspace: %s, service token: %s", workspace, c.serviceToken)
-	res, err := client.R().
-		SetDebug(c.debug).
-		SetHeader("Authorization", "ServiceToken "+c.serviceToken).
-		SetResult(&WorkflowAPIResponse{}).
-		Get(c.mgmnt_base_URL + "v1/" + workspace + "/workflow/?limit=" + strconv.Itoa(limit) + "&offset=" + strconv.Itoa(offset) + "&mode=" + mode)
-	if err != nil {
-		log.Errorf("Error getting workflows: %s", err)
-		return nil, err
-	}
-	if res.IsError() {
-		log.Errorf("Error getting workflows: %s", res.Status())
-		return nil, fmt.Errorf("error getting workflows: %s", res.Status())
+	apiLimit := 50
+	allWorkflows := []Workflow{}
+	currentOffset := offset
+	remainingLimit := limit
+
+	for remainingLimit > 0 {
+		currentLimit := apiLimit
+		if remainingLimit < apiLimit {
+			currentLimit = remainingLimit
+		}
+
+		log.Debugf("Getting workflows for workspace: %s, service token: %s, limit: %d, offset: %d", workspace, c.serviceToken, currentLimit, currentOffset)
+		res, err := client.R().
+			SetDebug(c.debug).
+			SetHeader("Authorization", "ServiceToken "+c.serviceToken).
+			SetResult(&WorkflowAPIResponse{}).
+			Get(c.mgmnt_base_URL + "v1/" + workspace + "/workflow/?limit=" + strconv.Itoa(currentLimit) + "&offset=" + strconv.Itoa(currentOffset) + "&mode=" + mode)
+		if err != nil {
+			log.Errorf("Error getting workflows: %s", err)
+			return nil, err
+		}
+		if res.IsError() {
+			log.Errorf("Error getting workflows: %s", res.Status())
+			return nil, fmt.Errorf("error getting workflows: %s", res.Status())
+		}
+
+		workflows := res.Result().(*WorkflowAPIResponse)
+		if len(workflows.Results) == 0 {
+			break
+		}
+
+		allWorkflows = append(allWorkflows, workflows.Results...)
+		remainingLimit -= len(workflows.Results)
+		currentOffset += len(workflows.Results)
+		if len(workflows.Results) < currentLimit {
+			break
+		}
 	}
 
-	workflows := res.Result().(*WorkflowAPIResponse)
-	return workflows, nil
+	return &WorkflowAPIResponse{
+		Results: allWorkflows,
+		Meta: struct {
+			Count  int `json:"count"`
+			Limit  int `json:"limit"`
+			Offset int `json:"offset"`
+		}{
+			Count:  len(allWorkflows),
+			Limit:  limit,
+			Offset: currentOffset,
+		},
+	}, nil
 }
 
-func (c *SS_MgmntClient) GetWorkflows(workspace string, mode string) (*WorkflowsResponse, error) {
+func (c *SS_MgmntClient) GetWorkflows(workspace, mode string) (*WorkflowsResponse, error) {
 	if mode != "live" && mode != "draft" {
-		return nil, fmt.Errorf("invalid mode: %s", mode)
+		return nil, fmt.Errorf("invalid mode: %s, Available modes are: live, draft", mode)
 	}
 
 	client := client.NewHTTPClient()
@@ -174,13 +208,14 @@ func (c *SS_MgmntClient) ChangeStatusWorkflow(workspace, slug string, enabled bo
 		Patch(urlStr)
 
 	if err != nil {
-		log.Errorf("Error %s workflow (slug: %s): %s", action, slug, err)
-		return err
+		return fmt.Errorf("network error: %w", err)
 	}
 
 	if res.IsError() {
-		log.Errorf("%s failed for workflow (slug: %s): %s - %s", action, slug, res.Status(), res.String())
-		return fmt.Errorf("%s failed: %s - %s", action, res.Status(), res.String())
+		if res.StatusCode() == 404 {
+			return fmt.Errorf("workflow not found: %s", slug)
+		}
+		return fmt.Errorf("%s failed: %s", action, res.Status())
 	}
 
 	return nil

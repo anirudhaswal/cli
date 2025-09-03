@@ -56,31 +56,72 @@ type Property struct {
 	Ref  *string `json:"$ref,omitempty"`
 }
 
-func (c *SS_MgmntClient) ListSchema(workspace string) (*ListSchemaResponse, error) {
+func (c *SS_MgmntClient) ListSchema(workspace string, limit, offset int, mode string) (*ListSchemaResponse, error) {
+	if mode != "live" && mode != "draft" {
+		return nil, fmt.Errorf("invalid mode: %s. Available modes are: live, draft", mode)
+	}
 	client := client.NewHTTPClient()
 	defer client.Close()
 
-	url := fmt.Sprintf("%sv1/%s/schema/", c.mgmnt_base_URL, workspace)
+	apiLimit := 50
+	allSchemas := []SchemaResponse{}
+	currentOffset := offset
+	remainingLimit := limit
 
-	resp, err := client.R().
-		SetDebug(c.debug).
-		SetHeader("Authorization", "ServiceToken "+c.serviceToken).
-		SetHeader("Content-Type", "application/json").
-		SetResult(&ListSchemaResponse{}).
-		Get(url)
+	for remainingLimit > 0 {
+		currentLimit := apiLimit
+		if remainingLimit < apiLimit {
+			currentLimit = remainingLimit
+		}
 
-	if err != nil {
-		return nil, fmt.Errorf("request failed: %w", err)
+		url := fmt.Sprintf("%sv1/%s/schema/?limit=%d&offset=%d&mode=%s", c.mgmnt_base_URL, workspace, currentLimit, currentOffset, mode)
+
+		resp, err := client.R().
+			SetDebug(c.debug).
+			SetHeader("Authorization", "ServiceToken "+c.serviceToken).
+			SetHeader("Content-Type", "application/json").
+			SetResult(&ListSchemaResponse{}).
+			Get(url)
+
+		if err != nil {
+			return nil, fmt.Errorf("request failed: %w", err)
+		}
+		if resp.IsError() {
+			return nil, fmt.Errorf("request failed: %w", err)
+		}
+
+		schemas := resp.Result().(*ListSchemaResponse)
+		if len(schemas.Results) == 0 {
+			break
+		}
+
+		allSchemas = append(allSchemas, schemas.Results...)
+		remainingLimit -= len(schemas.Results)
+		currentOffset += len(schemas.Results)
+		if len(schemas.Results) < currentLimit {
+			break
+		}
 	}
-	if resp.IsError() {
-		return nil, fmt.Errorf("request failed: %w", err)
-	}
 
-	schemas := resp.Result().(*ListSchemaResponse)
-	return schemas, nil
+	return &ListSchemaResponse{
+		Results: allSchemas,
+		Meta: struct {
+			Count  int `json:"count"`
+			Limit  int `json:"limit"`
+			Offset int `json:"offset"`
+		}{
+			Count:  len(allSchemas),
+			Limit:  limit,
+			Offset: offset,
+		},
+	}, nil
 }
 
-func (c *SS_MgmntClient) GetSchemas(workspace string) (*SchemasResponse, error) {
+func (c *SS_MgmntClient) GetSchemas(workspace, mode string) (*SchemasResponse, error) {
+	if mode != "live" && mode != "draft" {
+		return nil, fmt.Errorf("invalid mode: %s, Available modes are: live, draft", mode)
+	}
+
 	client := client.NewHTTPClient()
 	defer client.Close()
 
@@ -94,7 +135,7 @@ func (c *SS_MgmntClient) GetSchemas(workspace string) (*SchemasResponse, error) 
 			SetDebug(c.debug).
 			SetHeader("Authorization", "ServiceToken "+c.serviceToken).
 			SetResult(&SchemasResponse{}).
-			Get(c.mgmnt_base_URL + "v1/" + workspace + "/schema/?limit=" + strconv.Itoa(limit) + "&offset=" + strconv.Itoa(offset))
+			Get(c.mgmnt_base_URL + "v1/" + workspace + "/schema/?limit=" + strconv.Itoa(limit) + "&offset=" + strconv.Itoa(offset) + "&mode=" + mode)
 		if err != nil {
 			fmt.Fprintf(os.Stdout, "Error: Failed to get schemas: %v\n", err)
 			return nil, err
@@ -159,7 +200,7 @@ func (c *SS_MgmntClient) FinalizeSchema(workspace, slug string, commit bool) err
 	client := resty.New()
 	defer client.Close()
 
-	urlStr := fmt.Sprintf("%sv1/%s/schema/%s/enabled/", c.mgmnt_base_URL, workspace, slug)
+	urlStr := fmt.Sprintf("%sv1/%s/schema/%s/enable/", c.mgmnt_base_URL, workspace, slug)
 
 	body := map[string]interface{}{
 		"is_enabled": commit,
@@ -180,12 +221,13 @@ func (c *SS_MgmntClient) FinalizeSchema(workspace, slug string, commit bool) err
 		Patch(urlStr)
 
 	if err != nil {
-		log.Errorf("Error %s schema (slug: %s): %s", action, slug, err)
-		return err
+		return fmt.Errorf("request failed: %w", err)
 	}
 
 	if res.IsError() {
-		log.Errorf("%s failed for schema (slug: %s): %s - %s", action, slug, res.Status(), res.String())
+		if res.StatusCode() == 404 {
+			return fmt.Errorf("schema not found: %s", slug)
+		}
 		return err
 	}
 	return nil

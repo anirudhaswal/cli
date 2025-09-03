@@ -23,7 +23,7 @@ var worklowEnableCmd = &cobra.Command{
 		mgmntClient := utils.GetSuprSendMgmntClient()
 		err := mgmntClient.ChangeStatusWorkflow(workspace, slug, true)
 		if err != nil {
-			log.WithError(err).Errorf("Failed to enable workflow %s", slug)
+			log.Error(err.Error())
 			return
 		}
 

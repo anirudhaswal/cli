@@ -22,6 +22,7 @@ var generateTypesCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		workspace, _ := cmd.Flags().GetString("workspace")
 		buildFlags, _ := cmd.Flags().GetString("build-flags")
+		mode, _ := cmd.Flags().GetString("mode")
 		fileName := args[0]
 		if fileName == "" {
 			log.Error("File argument is required")
@@ -37,7 +38,7 @@ var generateTypesCmd = &cobra.Command{
 
 		mgmntClient := utils.GetSuprSendMgmntClient()
 
-		schemasResp, err := mgmntClient.GetSchemas(workspace)
+		schemasResp, err := mgmntClient.GetSchemas(workspace, mode)
 		if err != nil {
 			log.WithError(err).Error("Couldn't fetch schemas")
 			return
@@ -53,10 +54,6 @@ var generateTypesCmd = &cobra.Command{
 			if err := json.Unmarshal(schemaBytes, &schemaResp); err != nil {
 				continue
 			}
-
-			if !schemaResp.IsEnabled {
-				continue
-			}
 			if utils.IsEmptySchema(schemaResp.JSONSchema.Properties) {
 				continue
 			}
@@ -67,6 +64,13 @@ var generateTypesCmd = &cobra.Command{
 		if len(validSchemas) == 0 {
 			fmt.Println("No valid schemas found with meaningful JSON schema content")
 			return
+		}
+
+		if _, err := os.Stat(fileName); err == nil {
+			if err := os.WriteFile(fileName, []byte(""), 0644); err != nil {
+				log.WithError(err).Errorf("Failed to clear existing file: %s", fileName)
+				return
+			}
 		}
 
 		for _, targetSchema := range validSchemas {

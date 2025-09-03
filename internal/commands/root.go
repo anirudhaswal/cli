@@ -63,7 +63,7 @@ func init() {
 	syncCmd.Flags().StringP("mode", "m", "live", "Mode to sync assets (draft, live)")
 	syncCmd.Flags().StringP("assets", "a", "all", "Assets to sync (all, workflows, schemas)")
 
-	rootCmd.AddCommand(profiles.ProfilesCmd)
+	rootCmd.AddCommand(profiles.ProfileCmd)
 	rootCmd.AddCommand(workflow.WorkflowCmd)
 	rootCmd.AddCommand(syncCmd)
 	rootCmd.AddCommand(schema.SchemaCmd)
