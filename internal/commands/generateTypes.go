@@ -1,6 +1,7 @@
 package commands
 
 import (
+	"context"
 	_ "embed"
 	"encoding/json"
 	"fmt"
@@ -13,6 +14,7 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/suprsend/cli/internal/utils"
 	"github.com/suprsend/cli/mgmnt"
+	"github.com/yarlson/pin"
 )
 
 var generateTypesCmd = &cobra.Command{
@@ -51,6 +53,15 @@ var generateTypesJavaCmd = &cobra.Command{
 			log.WithError(err).Errorf("Failed to create output directory: %s", outputDir)
 			return
 		}
+		var p *pin.Pin
+		if !utils.IsOutputPiped() {
+			p = pin.New("Generating Java types...",
+				pin.WithSpinnerColor(pin.ColorCyan),
+				pin.WithTextColor(pin.ColorYellow),
+			)
+			cancel := p.Start(context.Background())
+			defer cancel()
+		}
 		mgmntClient := utils.GetSuprSendMgmntClient()
 		schemasResp, err := mgmntClient.GetSchemas(workspace, mode)
 		if err != nil {
@@ -73,9 +84,14 @@ var generateTypesJavaCmd = &cobra.Command{
 			validSchemas = append(validSchemas, &schemaResp)
 		}
 		if len(validSchemas) == 0 {
+			if p != nil {
+				p.Stop("No valid schemas found")
+			}
 			fmt.Println("No valid schemas found with meaningful JSON schema content")
 			return
 		}
+
+		generatedCount := 0
 		for _, targetSchema := range validSchemas {
 			schemaName := targetSchema.Name + "Data"
 			fileName := filepath.Join(outputDir, schemaName+".java")
@@ -109,8 +125,11 @@ var generateTypesJavaCmd = &cobra.Command{
 			if err != nil {
 				log.WithError(err).Errorln("Could not generate types for schema: " + targetSchema.Name)
 			} else {
-				fmt.Printf("Generated Java types for %s at %s\n", schemaName, fileName)
+				generatedCount++
 			}
+		}
+		if p != nil {
+			p.Stop(fmt.Sprintf("Generated %d Java type files in %s", generatedCount, outputDir))
 		}
 	},
 }
@@ -160,12 +179,24 @@ func generateTypesForLanguage(targetLang string) func(*cobra.Command, []string) 
 			log.Error("File name argument is required")
 			return
 		}
+
 		expectedExt := utils.GetExtensionForLanguage(targetLang)
 		fileExtension := strings.ToLower(filepath.Ext(fileName))
 		if fileExtension != expectedExt {
 			log.Errorf("File extension %s doesn't match expected extension %s for %s", fileExtension, expectedExt, targetLang)
 			return
 		}
+
+		var p *pin.Pin
+		if !utils.IsOutputPiped() {
+			p = pin.New(fmt.Sprintf("Generating %s types...", strings.Title(targetLang)),
+				pin.WithSpinnerColor(pin.ColorCyan),
+				pin.WithTextColor(pin.ColorYellow),
+			)
+			cancel := p.Start(context.Background())
+			defer cancel()
+		}
+
 		mgmntClient := utils.GetSuprSendMgmntClient()
 		schemasResp, err := mgmntClient.GetSchemas(workspace, mode)
 		if err != nil {
@@ -190,6 +221,9 @@ func generateTypesForLanguage(targetLang string) func(*cobra.Command, []string) 
 		}
 
 		if len(validSchemas) == 0 {
+			if p != nil {
+				p.Stop("No valid schemas found")
+			}
 			fmt.Println("No valid schemas found with meaningful JSON schema content")
 			return
 		}
@@ -201,6 +235,7 @@ func generateTypesForLanguage(targetLang string) func(*cobra.Command, []string) 
 			}
 		}
 
+		generatedCount := 0
 		for _, targetSchema := range validSchemas {
 			schemaName := targetSchema.Name + "Data"
 
@@ -223,8 +258,11 @@ func generateTypesForLanguage(targetLang string) func(*cobra.Command, []string) 
 			if err != nil {
 				log.WithError(err).Errorln("Could not generate types for schema: " + targetSchema.Name)
 			} else {
-				fmt.Printf("Generated types for %s at %s\n", schemaName, fileName)
+				generatedCount++
 			}
+		}
+		if p != nil {
+			p.Stop(fmt.Sprintf("Generated %d %s types in %s", generatedCount, targetLang, fileName))
 		}
 	}
 }
