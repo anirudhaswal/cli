@@ -17,33 +17,161 @@ import (
 
 var generateTypesCmd = &cobra.Command{
 	Use:   "generate-types",
-	Short: "Generate Types from JSON Schema from a single slug",
+	Short: "Generate Types from JSON Schema",
+	Long:  "Generate types from JSON schema for various programming languages",
+}
+
+var generateTypesPythonCmd = &cobra.Command{
+	Use:   "python [flags] <output-file>",
+	Short: "Generate Python types from JSON Schema",
+	Args:  cobra.ExactArgs(1),
+	Run:   generateTypesForLanguage("python"),
+}
+
+var generateTypesJavaCmd = &cobra.Command{
+	Use:   "java [flags] <package-name>",
+	Short: "Generate Java types from JSON Schema",
+	Long:  "Generate Java types from JSON Schema with specified package name",
 	Args:  cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
 		workspace, _ := cmd.Flags().GetString("workspace")
 		buildFlags, _ := cmd.Flags().GetString("build-flags")
 		mode, _ := cmd.Flags().GetString("mode")
-		fileName := args[0]
-		if fileName == "" {
-			log.Error("File argument is required")
+		outputDir, _ := cmd.Flags().GetString("output-dir")
+		packageName := args[0]
+		if packageName == "" {
+			log.Error("Package name argument is required")
 			return
 		}
-
-		targetLang := detectLanguageFromFile(fileName)
-		if targetLang == "" {
-			fileExtension := strings.ToLower(filepath.Ext(fileName))
-			log.Errorf("Unsupported file extension: %s. We currently support .ts, .go, .py, .kt, .swift files only.", fileExtension)
+		if outputDir == "" {
+			log.Error("Output directory is required for Java generation")
 			return
 		}
-
+		if err := os.MkdirAll(outputDir, 0755); err != nil {
+			log.WithError(err).Errorf("Failed to create output directory: %s", outputDir)
+			return
+		}
 		mgmntClient := utils.GetSuprSendMgmntClient()
-
 		schemasResp, err := mgmntClient.GetSchemas(workspace, mode)
 		if err != nil {
 			log.WithError(err).Error("Couldn't fetch schemas")
 			return
 		}
+		var validSchemas []*mgmnt.SchemaResponse
+		for _, schema := range schemasResp.Results {
+			schemaBytes, err := json.Marshal(schema)
+			if err != nil {
+				continue
+			}
+			var schemaResp mgmnt.SchemaResponse
+			if err := json.Unmarshal(schemaBytes, &schemaResp); err != nil {
+				continue
+			}
+			if utils.IsEmptySchema(schemaResp.JSONSchema.Properties) {
+				continue
+			}
+			validSchemas = append(validSchemas, &schemaResp)
+		}
+		if len(validSchemas) == 0 {
+			fmt.Println("No valid schemas found with meaningful JSON schema content")
+			return
+		}
+		for _, targetSchema := range validSchemas {
+			schemaName := targetSchema.Name + "Data"
+			fileName := filepath.Join(outputDir, schemaName+".java")
+			if _, err := os.Stat(fileName); err == nil {
+				if err := os.WriteFile(fileName, []byte(""), 0644); err != nil {
+					log.WithError(err).Errorf("Failed to clear existing file: %s", fileName)
+					continue
+				}
+			}
+			schemaJSON := map[string]interface{}{
+				"type":       targetSchema.JSONSchema.Type,
+				"properties": targetSchema.JSONSchema.Properties,
+			}
+			if targetSchema.JSONSchema.Required != nil {
+				schemaJSON["required"] = targetSchema.JSONSchema.Required
+			}
+			if targetSchema.JSONSchema.Defs != nil {
+				schemaJSON["$defs"] = targetSchema.JSONSchema.Defs
+			}
+			schemaBytes, err := json.MarshalIndent(schemaJSON, "", "  ")
+			if err != nil {
+				log.Fatalf("Failed to marshal schema: %v", err)
+			}
+			javaFlags := buildFlags
+			if javaFlags != "" {
+				javaFlags += ",package=" + packageName
+			} else {
+				javaFlags = "package=" + packageName
+			}
+			err = runTypeMorph("java", string(schemaBytes), schemaName, fileName, javaFlags)
+			if err != nil {
+				log.WithError(err).Errorln("Could not generate types for schema: " + targetSchema.Name)
+			} else {
+				fmt.Printf("Generated Java types for %s at %s\n", schemaName, fileName)
+			}
+		}
+	},
+}
 
+var generateTypesTypeScriptCmd = &cobra.Command{
+	Use:   "typescript [flags] <output-file>",
+	Short: "Generate TypeScript types from JSON Schema",
+	Args:  cobra.ExactArgs(1),
+	Run:   generateTypesForLanguage("typescript"),
+}
+
+var generateTypesGoCmd = &cobra.Command{
+	Use:   "go [flags] <output-file>",
+	Short: "Generate Go types from JSON Schema",
+	Args:  cobra.ExactArgs(1),
+	Run:   generateTypesForLanguage("go"),
+}
+
+var generateTypesKotlinCmd = &cobra.Command{
+	Use:   "kotlin [flags] <output-file>",
+	Short: "Generate Kotlin types from JSON Schema",
+	Args:  cobra.ExactArgs(1),
+	Run:   generateTypesForLanguage("kotlin"),
+}
+
+var generateTypesSwiftCmd = &cobra.Command{
+	Use:   "swift [flags] <output-file>",
+	Short: "Generate Swift types from JSON Schema",
+	Args:  cobra.ExactArgs(1),
+	Run:   generateTypesForLanguage("swift"),
+}
+
+var generateTypesDartCmd = &cobra.Command{
+	Use:   "dart [flags] <output-file>",
+	Short: "Generate Dart types from JSON Schema",
+	Args:  cobra.ExactArgs(1),
+	Run:   generateTypesForLanguage("dart"),
+}
+
+func generateTypesForLanguage(targetLang string) func(*cobra.Command, []string) {
+	return func(cmd *cobra.Command, args []string) {
+		workspace, _ := cmd.Flags().GetString("workspace")
+		buildFlags, _ := cmd.Flags().GetString("build-flags")
+		mode, _ := cmd.Flags().GetString("mode")
+		fileName := args[0]
+		if fileName == "" {
+			log.Error("File name argument is required")
+			return
+		}
+		expectedExt := utils.GetExtensionForLanguage(targetLang)
+		fileExtension := strings.ToLower(filepath.Ext(fileName))
+		if fileExtension != expectedExt {
+			log.Errorf("File extension %s doesn't match expected extension %s for %s", fileExtension, expectedExt, targetLang)
+			return
+		}
+		mgmntClient := utils.GetSuprSendMgmntClient()
+		schemasResp, err := mgmntClient.GetSchemas(workspace, mode)
+		if err != nil {
+			log.WithError(err).Error("Couldn't fetch schemas")
+			return
+		}
 		var validSchemas []*mgmnt.SchemaResponse
 		for _, schema := range schemasResp.Results {
 			schemaBytes, err := json.Marshal(schema)
@@ -98,20 +226,35 @@ var generateTypesCmd = &cobra.Command{
 				fmt.Printf("Generated types for %s at %s\n", schemaName, fileName)
 			}
 		}
-	},
-}
-
-func detectLanguageFromFile(fileName string) string {
-	ext := strings.ToLower(filepath.Ext(fileName))
-	return utils.LanguageMap[ext]
+	}
 }
 
 func init() {
-	flags := generateTypesCmd.Flags()
-	flags.String("workspace", "staging", "Workspace to get schemas from.")
-	flags.String("mode", "live", "Mode of schema to fetch.")
-	flags.String("build-flags", "", "Flags to generate types in a certain way.")
+	commonFlags := []*cobra.Command{
+		generateTypesPythonCmd,
+		generateTypesTypeScriptCmd,
+		generateTypesGoCmd,
+		generateTypesKotlinCmd,
+		generateTypesSwiftCmd,
+		generateTypesDartCmd,
+		generateTypesJavaCmd,
+	}
 
+	for _, cmd := range commonFlags {
+		cmd.Flags().String("workspace", "staging", "Workspace to get schemas from.")
+		cmd.Flags().String("mode", "live", "Mode of schema to fetch.")
+		cmd.Flags().String("build-flags", "", "Flags to generate types in a certain way.")
+	}
+
+	generateTypesJavaCmd.Flags().String("output-dir", "", "Output directory for generated Java files (required)")
+	generateTypesJavaCmd.MarkFlagRequired("output-dir")
+	generateTypesCmd.AddCommand(generateTypesJavaCmd)
+	generateTypesCmd.AddCommand(generateTypesPythonCmd)
+	generateTypesCmd.AddCommand(generateTypesTypeScriptCmd)
+	generateTypesCmd.AddCommand(generateTypesGoCmd)
+	generateTypesCmd.AddCommand(generateTypesKotlinCmd)
+	generateTypesCmd.AddCommand(generateTypesSwiftCmd)
+	generateTypesCmd.AddCommand(generateTypesDartCmd)
 	rootCmd.AddCommand(generateTypesCmd)
 }
 

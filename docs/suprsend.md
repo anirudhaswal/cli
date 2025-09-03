@@ -23,7 +23,7 @@ This CLI lets you interact with your SuprSend workspace and do actions like fetc
 ### SEE ALSO
 
 * [suprsend completion](suprsend_completion.md)	 - Generate the autocompletion script for the specified shell
-* [suprsend generate-types](suprsend_generate-types.md)	 - Generate Types from JSON Schema from a single slug
+* [suprsend generate-types](suprsend_generate-types.md)	 - Generate Types from JSON Schema
 * [suprsend profile](suprsend_profile.md)	 - Manage Profile
 * [suprsend schema](suprsend_schema.md)	 - Manage schema
 * [suprsend start-mcp-server](suprsend_start-mcp-server.md)	 - Starts MCP server for SuprSend
