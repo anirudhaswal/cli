@@ -40,6 +40,7 @@ var generateTypesJavaCmd = &cobra.Command{
 		buildFlags, _ := cmd.Flags().GetString("build-flags")
 		mode, _ := cmd.Flags().GetString("mode")
 		outputDir, _ := cmd.Flags().GetString("output-dir")
+		lombok, _ := cmd.Flags().GetString("lombok")
 		packageName := args[0]
 		if packageName == "" {
 			log.Error("Package name argument is required")
@@ -121,6 +122,9 @@ var generateTypesJavaCmd = &cobra.Command{
 			} else {
 				javaFlags = "package=" + packageName
 			}
+			if lombok != "" {
+				javaFlags += `,lombok="true"`
+			}
 			err = runTypeMorph("java", string(schemaBytes), schemaName, fileName, javaFlags)
 			if err != nil {
 				log.WithError(err).Errorln("Could not generate types for schema: " + targetSchema.Name)
@@ -152,21 +156,34 @@ var generateTypesGoCmd = &cobra.Command{
 	Use:   "go [flags] <output-file>",
 	Short: "Generate Go types from JSON Schema",
 	Args:  cobra.ExactArgs(1),
-	Run:   generateTypesForLanguage("go"),
+	Run: func(cmd *cobra.Command, args []string) {
+		packageName, _ := cmd.Flags().GetString("package")
+		cmd.Flags().Set("build-flags", "just-types-package=true,package="+packageName)
+		generateTypesForLanguage("go")(cmd, args)
+	},
 }
 
 var generateTypesKotlinCmd = &cobra.Command{
 	Use:   "kotlin [flags] <output-file>",
 	Short: "Generate Kotlin types from JSON Schema",
 	Args:  cobra.ExactArgs(1),
-	Run:   generateTypesForLanguage("kotlin"),
+	Run: func(cmd *cobra.Command, args []string) {
+		packageName, _ := cmd.Flags().GetString("package")
+		if packageName != "" {
+			cmd.Flags().Set("build-flags", "package="+packageName)
+		}
+		generateTypesForLanguage("kotlin")(cmd, args)
+	},
 }
 
 var generateTypesSwiftCmd = &cobra.Command{
 	Use:   "swift [flags] <output-file>",
 	Short: "Generate Swift types from JSON Schema",
 	Args:  cobra.ExactArgs(1),
-	Run:   generateTypesForLanguage("swift"),
+	Run: func(cmd *cobra.Command, args []string) {
+		cmd.Flags().Set("build-flags", "just-types=false,coding-keys=true")
+		generateTypesForLanguage("swift")(cmd, args)
+	},
 }
 
 var generateTypesDartCmd = &cobra.Command{
@@ -293,11 +310,14 @@ func init() {
 
 	generateTypesJavaCmd.Flags().String("output-dir", "", "Output directory for generated Java files (required)")
 	generateTypesJavaCmd.MarkFlagRequired("output-dir")
+	generateTypesJavaCmd.Flags().String("lombok", "false", "Generate Java Types with Lombok")
 	generateTypesCmd.AddCommand(generateTypesJavaCmd)
 	generateTypesCmd.AddCommand(generateTypesPythonCmd)
 	generateTypesTypeScriptCmd.Flags().String("zod", "false", "Generate Zod types for TypeScript")
 	generateTypesCmd.AddCommand(generateTypesTypeScriptCmd)
+	generateTypesGoCmd.Flags().String("package", "suprsend", "Package name for Go types")
 	generateTypesCmd.AddCommand(generateTypesGoCmd)
+	generateTypesKotlinCmd.Flags().String("package", "suprsend", "Package name for Kotlin types")
 	generateTypesCmd.AddCommand(generateTypesKotlinCmd)
 	generateTypesCmd.AddCommand(generateTypesSwiftCmd)
 	generateTypesCmd.AddCommand(generateTypesDartCmd)
