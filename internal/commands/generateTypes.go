@@ -138,7 +138,14 @@ var generateTypesTypeScriptCmd = &cobra.Command{
 	Use:   "typescript [flags] <output-file>",
 	Short: "Generate TypeScript types from JSON Schema",
 	Args:  cobra.ExactArgs(1),
-	Run:   generateTypesForLanguage("typescript"),
+	Run: func(cmd *cobra.Command, args []string) {
+		zod, _ := cmd.Flags().GetString("zod")
+		if zod == "true" {
+			generateTypesForLanguage("typescript-zod")(cmd, args)
+		} else {
+			generateTypesForLanguage("typescript")(cmd, args)
+		}
+	},
 }
 
 var generateTypesGoCmd = &cobra.Command{
@@ -288,6 +295,7 @@ func init() {
 	generateTypesJavaCmd.MarkFlagRequired("output-dir")
 	generateTypesCmd.AddCommand(generateTypesJavaCmd)
 	generateTypesCmd.AddCommand(generateTypesPythonCmd)
+	generateTypesTypeScriptCmd.Flags().String("zod", "false", "Generate Zod types for TypeScript")
 	generateTypesCmd.AddCommand(generateTypesTypeScriptCmd)
 	generateTypesCmd.AddCommand(generateTypesGoCmd)
 	generateTypesCmd.AddCommand(generateTypesKotlinCmd)

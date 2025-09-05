@@ -10,13 +10,14 @@ import (
 
 func GetExtensionForLanguage(language string) string {
 	extMap := map[string]string{
-		"python":     ".py",
-		"java":       ".java",
-		"typescript": ".ts",
-		"go":         ".go",
-		"kotlin":     ".kt",
-		"swift":      ".swift",
-		"dart":       ".dart",
+		"python":         ".py",
+		"java":           ".java",
+		"typescript":     ".ts",
+		"typescript-zod": ".ts",
+		"go":             ".go",
+		"kotlin":         ".kt",
+		"swift":          ".swift",
+		"dart":           ".dart",
 	}
 	return extMap[language]
 }
