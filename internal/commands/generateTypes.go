@@ -26,7 +26,7 @@ var generateTypesCmd = &cobra.Command{
 var generateTypesPythonCmd = &cobra.Command{
 	Use:   "python [flags] <output-file>",
 	Short: "Generate Python types from JSON Schema",
-	Args:  cobra.ExactArgs(1),
+	Args:  cobra.ExactArgs(0),
 	Run: func(cmd *cobra.Command, args []string) {
 		pydantic, _ := cmd.Flags().GetBool("pydantic")
 		if pydantic {
@@ -149,7 +149,7 @@ var generateTypesJavaCmd = &cobra.Command{
 var generateTypesTypeScriptCmd = &cobra.Command{
 	Use:   "typescript [flags] <output-file>",
 	Short: "Generate TypeScript types from JSON Schema",
-	Args:  cobra.ExactArgs(1),
+	Args:  cobra.ExactArgs(0),
 	Run: func(cmd *cobra.Command, args []string) {
 		zod, _ := cmd.Flags().GetBool("zod")
 		cmd.Flags().Set("build-flags", "just-types=true,prefer-unions=true")
@@ -164,7 +164,7 @@ var generateTypesTypeScriptCmd = &cobra.Command{
 var generateTypesGoCmd = &cobra.Command{
 	Use:   "go [flags] <output-file>",
 	Short: "Generate Go types from JSON Schema",
-	Args:  cobra.ExactArgs(1),
+	Args:  cobra.ExactArgs(0),
 	Run: func(cmd *cobra.Command, args []string) {
 		packageName, _ := cmd.Flags().GetString("package")
 		cmd.Flags().Set("build-flags", "just-types-and-package=true,package="+packageName)
@@ -175,7 +175,7 @@ var generateTypesGoCmd = &cobra.Command{
 var generateTypesKotlinCmd = &cobra.Command{
 	Use:   "kotlin [flags] <output-file>",
 	Short: "Generate Kotlin types from JSON Schema",
-	Args:  cobra.ExactArgs(1),
+	Args:  cobra.ExactArgs(0),
 	Run: func(cmd *cobra.Command, args []string) {
 		packageName, _ := cmd.Flags().GetString("package")
 		if packageName != "" {
@@ -188,7 +188,7 @@ var generateTypesKotlinCmd = &cobra.Command{
 var generateTypesSwiftCmd = &cobra.Command{
 	Use:   "swift [flags] <output-file>",
 	Short: "Generate Swift types from JSON Schema",
-	Args:  cobra.ExactArgs(1),
+	Args:  cobra.ExactArgs(0),
 	Run: func(cmd *cobra.Command, args []string) {
 		cmd.Flags().Set("build-flags", "coding-keys=true,struct-or-class=struct,initializers=false")
 		generateTypesForLanguage("swift")(cmd, args)
@@ -198,7 +198,7 @@ var generateTypesSwiftCmd = &cobra.Command{
 var generateTypesDartCmd = &cobra.Command{
 	Use:   "dart [flags] <output-file>",
 	Short: "Generate Dart types from JSON Schema",
-	Args:  cobra.ExactArgs(1),
+	Args:  cobra.ExactArgs(0),
 	Run: func(cmd *cobra.Command, args []string) {
 		cmd.Flags().Set("build-flags", "just-types=true,null-safety=true")
 		generateTypesForLanguage("dart")(cmd, args)
@@ -210,7 +210,7 @@ func generateTypesForLanguage(targetLang string) func(*cobra.Command, []string) 
 		workspace, _ := cmd.Flags().GetString("workspace")
 		buildFlags, _ := cmd.Flags().GetString("build-flags")
 		mode, _ := cmd.Flags().GetString("mode")
-		fileName := args[0]
+		fileName, _ := cmd.Flags().GetString("output-file")
 		if fileName == "" {
 			log.Error("File name argument is required")
 			return
@@ -320,19 +320,32 @@ func init() {
 		cmd.Flags().String("build-flags", "", "Flags to generate types in a certain way.")
 		cmd.Flags().MarkHidden("build-flags")
 	}
+	// Python
 	generateTypesPythonCmd.Flags().Bool("pydantic", true, "Generate Pydantic types for Python")
+	generateTypesPythonCmd.Flags().String("output-file", "suprsend_types.py", "Output file for generated Python types")
+	generateTypesCmd.AddCommand(generateTypesPythonCmd)
+	// Java
 	generateTypesJavaCmd.Flags().String("output-dir", "", "Output directory for generated Java files (required)")
 	generateTypesJavaCmd.MarkFlagRequired("output-dir")
 	generateTypesJavaCmd.Flags().Bool("lombok", false, "Generate Java Types with Lombok")
 	generateTypesCmd.AddCommand(generateTypesJavaCmd)
-	generateTypesCmd.AddCommand(generateTypesPythonCmd)
+	// TypeScript
 	generateTypesTypeScriptCmd.Flags().Bool("zod", false, "Generate Zod types for TypeScript")
+	generateTypesTypeScriptCmd.Flags().String("output-file", "suprsend-types.ts", "Output file for generated TypeScript types")
 	generateTypesCmd.AddCommand(generateTypesTypeScriptCmd)
+	// Go
 	generateTypesGoCmd.Flags().String("package", "suprsend", "Package name for Go types")
+	generateTypesGoCmd.Flags().String("output-file", "suprsend_types.go", "Output file for generated Go types")
 	generateTypesCmd.AddCommand(generateTypesGoCmd)
+	// Kotlin
 	generateTypesKotlinCmd.Flags().String("package", "suprsend", "Package name for Kotlin types")
+	generateTypesKotlinCmd.Flags().String("output-file", "SuprsendTypes.kt", "Output file for generated Kotlin types")
 	generateTypesCmd.AddCommand(generateTypesKotlinCmd)
+	// Swift
+	generateTypesSwiftCmd.Flags().String("output-file", "SuprsendTypes.swift", "Output file for generated Swift types")
 	generateTypesCmd.AddCommand(generateTypesSwiftCmd)
+	// Dart
+	generateTypesDartCmd.Flags().String("output-file", "suprsend_types.dart", "Output file for generated Dart types")
 	generateTypesCmd.AddCommand(generateTypesDartCmd)
 	rootCmd.AddCommand(generateTypesCmd)
 }
