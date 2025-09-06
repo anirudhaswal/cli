@@ -42,22 +42,15 @@ var generateTypesJavaCmd = &cobra.Command{
 	Use:   "java [flags] <package-name>",
 	Short: "Generate Java types from JSON Schema",
 	Long:  "Generate Java types from JSON Schema with specified package name",
-	Args:  cobra.ExactArgs(1),
+	Args:  cobra.ExactArgs(0),
 	Run: func(cmd *cobra.Command, args []string) {
 		workspace, _ := cmd.Flags().GetString("workspace")
 		buildFlags, _ := cmd.Flags().GetString("build-flags")
 		mode, _ := cmd.Flags().GetString("mode")
-		outputDir, _ := cmd.Flags().GetString("output-dir")
 		lombok, _ := cmd.Flags().GetBool("lombok")
-		packageName := args[0]
-		if packageName == "" {
-			log.Error("Package name argument is required")
-			return
-		}
-		if outputDir == "" {
-			log.Error("Output directory is required for Java generation")
-			return
-		}
+		packageName, _ := cmd.Flags().GetString("package")
+		// Generate output directory from package name
+		outputDir := filepath.Join(strings.ReplaceAll(packageName, ".", string(os.PathSeparator)))
 		if err := os.MkdirAll(outputDir, 0o755); err != nil {
 			log.WithError(err).Errorf("Failed to create output directory: %s", outputDir)
 			return
@@ -325,9 +318,9 @@ func init() {
 	generateTypesPythonCmd.Flags().String("output-file", "suprsend_types.py", "Output file for generated Python types")
 	generateTypesCmd.AddCommand(generateTypesPythonCmd)
 	// Java
-	generateTypesJavaCmd.Flags().String("output-dir", "", "Output directory for generated Java files (required)")
 	generateTypesJavaCmd.MarkFlagRequired("output-dir")
 	generateTypesJavaCmd.Flags().Bool("lombok", false, "Generate Java Types with Lombok")
+	generateTypesJavaCmd.Flags().String("package", "suprsend.types", "Package name for Java types")
 	generateTypesCmd.AddCommand(generateTypesJavaCmd)
 	// TypeScript
 	generateTypesTypeScriptCmd.Flags().Bool("zod", false, "Generate Zod types for TypeScript")
