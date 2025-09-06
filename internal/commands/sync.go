@@ -17,7 +17,7 @@ import (
 
 var syncCmd = &cobra.Command{
 	Use:   "sync",
-	Short: "Sync all your SuprSend assests locally",
+	Short: "Sync all your SuprSend assets locally",
 	Long:  `Sync all your SuprSend assets locally with the server`,
 	Run: func(cmd *cobra.Command, args []string) {
 		mode, _ := cmd.Flags().GetString("mode")
@@ -67,7 +67,6 @@ func syncWorkflows(fromWorkspace, toWorkspace, mode string) {
 
 	mgmnt_client := utils.GetSuprSendMgmntClient()
 	workflows_resp, err := mgmnt_client.GetWorkflows(fromWorkspace, mode)
-
 	if err != nil {
 		log.WithError(err).Error("Error getting workflows")
 		return
