@@ -28,8 +28,8 @@ var generateTypesPythonCmd = &cobra.Command{
 	Short: "Generate Python types from JSON Schema",
 	Args:  cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
-		pydantic, _ := cmd.Flags().GetString("pydantic")
-		if pydantic == "true" {
+		pydantic, _ := cmd.Flags().GetBool("pydantic")
+		if pydantic {
 			cmd.Flags().Set("build-flags", "just-types=true,python-version=3.7,pydantic-base-model=true")
 		} else {
 			cmd.Flags().Set("build-flags", "just-types=true,python-version=3.7")
