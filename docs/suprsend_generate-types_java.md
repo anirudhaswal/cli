@@ -13,11 +13,11 @@ suprsend generate-types java [flags] <package-name>
 ### Options
 
 ```
-  -h, --help                help for java
-      --lombok              Generate Java Types with Lombok
-      --mode string         Mode of schema to fetch. (default "live")
-      --output-dir string   Output directory for generated Java files (required)
-      --workspace string    Workspace to get schemas from. (default "staging")
+  -h, --help               help for java
+      --lombok             Generate Java Types with Lombok
+      --mode string        Mode of schema to fetch. (default "live")
+      --package string     Package name for Java types (default "suprsend.types")
+      --workspace string   Workspace to get schemas from. (default "staging")
 ```
 
 ### Options inherited from parent commands
