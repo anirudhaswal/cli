@@ -3,7 +3,7 @@
 Generate Swift types from JSON Schema
 
 ```
-suprsend generate-types swift [flags] <output-file>
+suprsend generate-types swift [flags]
 ```
 
 ### Options

@@ -3,7 +3,7 @@
 Generate Python types from JSON Schema
 
 ```
-suprsend generate-types python [flags] <output-file>
+suprsend generate-types python [flags]
 ```
 
 ### Options

@@ -3,7 +3,7 @@
 Generate Kotlin types from JSON Schema
 
 ```
-suprsend generate-types kotlin [flags] <output-file>
+suprsend generate-types kotlin [flags]
 ```
 
 ### Options
