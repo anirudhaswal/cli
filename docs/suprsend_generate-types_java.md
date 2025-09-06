@@ -7,7 +7,7 @@ Generate Java types from JSON Schema
 Generate Java types from JSON Schema with specified package name
 
 ```
-suprsend generate-types java [flags] <package-name>
+suprsend generate-types java [flags]
 ```
 
 ### Options

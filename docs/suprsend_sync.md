@@ -1,6 +1,6 @@
 ## suprsend sync
 
-Sync all your SuprSend assests locally
+Sync all your SuprSend assets locally
 
 ### Synopsis
 

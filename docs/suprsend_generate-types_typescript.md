@@ -3,7 +3,7 @@
 Generate TypeScript types from JSON Schema
 
 ```
-suprsend generate-types typescript [flags] <output-file>
+suprsend generate-types typescript [flags]
 ```
 
 ### Options

@@ -3,7 +3,7 @@
 Generate Dart types from JSON Schema
 
 ```
-suprsend generate-types dart [flags] <output-file>
+suprsend generate-types dart [flags]
 ```
 
 ### Options

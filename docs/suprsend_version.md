@@ -10,10 +10,10 @@ suprsend version [flags]
 
 ```
 
-/Users/gaurav/Library/Caches/go-build/56/56d0c809136e1c7dbd08a48ada749a1ef7d71d2a5f8aeb0d811e4df36c1e14c1-d/main version
-/Users/gaurav/Library/Caches/go-build/56/56d0c809136e1c7dbd08a48ada749a1ef7d71d2a5f8aeb0d811e4df36c1e14c1-d/main version -o=json
-/Users/gaurav/Library/Caches/go-build/56/56d0c809136e1c7dbd08a48ada749a1ef7d71d2a5f8aeb0d811e4df36c1e14c1-d/main version -o=yaml
-/Users/gaurav/Library/Caches/go-build/56/56d0c809136e1c7dbd08a48ada749a1ef7d71d2a5f8aeb0d811e4df36c1e14c1-d/main version -o=short
+/var/folders/35/slv292ps5mvdry5g9_1qxmx80000gn/T/go-build2081620659/b001/exe/main version
+/var/folders/35/slv292ps5mvdry5g9_1qxmx80000gn/T/go-build2081620659/b001/exe/main version -o=json
+/var/folders/35/slv292ps5mvdry5g9_1qxmx80000gn/T/go-build2081620659/b001/exe/main version -o=yaml
+/var/folders/35/slv292ps5mvdry5g9_1qxmx80000gn/T/go-build2081620659/b001/exe/main version -o=short
 
 ```
 

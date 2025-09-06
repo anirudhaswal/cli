@@ -3,7 +3,7 @@
 Generate Go types from JSON Schema
 
 ```
-suprsend generate-types go [flags] <output-file>
+suprsend generate-types go [flags]
 ```
 
 ### Options
