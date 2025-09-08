@@ -10,6 +10,7 @@ import (
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
+	"github.com/suprsend/cli/internal/commands/category"
 	"github.com/suprsend/cli/internal/commands/profiles"
 	"github.com/suprsend/cli/internal/commands/schema"
 	workflow "github.com/suprsend/cli/internal/commands/workflow"
@@ -65,8 +66,9 @@ func init() {
 
 	rootCmd.AddCommand(profiles.ProfileCmd)
 	rootCmd.AddCommand(workflow.WorkflowCmd)
-	rootCmd.AddCommand(syncCmd)
+	rootCmd.AddCommand(category.CategoryCmd)
 	rootCmd.AddCommand(schema.SchemaCmd)
+	rootCmd.AddCommand(syncCmd)
 
 	rootCmd.PersistentPreRunE = func(cmd *cobra.Command, args []string) error {
 		if err := config.SetUpLogs(); err != nil {
