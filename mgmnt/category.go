@@ -96,7 +96,7 @@ func (c *SS_MgmntClient) FinalizeCategories(workspace string, commitMsg string) 
 	resp, err := client.R().
 		SetDebug(c.debug).
 		SetHeader("Authorization", "ServiceToken "+c.serviceToken).
-		Post(url)
+		Patch(url)
 
 	if err != nil {
 		return fmt.Errorf("request failed: %w", err)
