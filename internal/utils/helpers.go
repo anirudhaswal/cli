@@ -8,14 +8,18 @@ import (
 	suprsend "github.com/suprsend/suprsend-go"
 )
 
-var LanguageMap = map[string]string{
-	".ts":    "typescript",
-	".py":    "python",
-	".java":  "java",
-	".kt":    "kotlin",
-	".swift": "swift",
-	".go":    "go",
-	".dart":  "dart",
+func GetExtensionForLanguage(language string) string {
+	extMap := map[string]string{
+		"python":         ".py",
+		"java":           ".java",
+		"typescript":     ".ts",
+		"typescript-zod": ".ts",
+		"go":             ".go",
+		"kotlin":         ".kt",
+		"swift":          ".swift",
+		"dart":           ".dart",
+	}
+	return extMap[language]
 }
 
 func IsEmptySchema(properties map[string]interface{}) bool {
