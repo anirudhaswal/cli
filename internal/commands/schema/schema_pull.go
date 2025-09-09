@@ -59,7 +59,6 @@ var schemaPullCmd = &cobra.Command{
 			return
 		}
 
-		fmt.Fprintf(os.Stdout, "Pulled %d schemas\n", stats.Total)
 		fmt.Fprintf(os.Stdout, "%d schemas saved\n", stats.Success)
 		fmt.Fprintf(os.Stdout, "%d schemas failed\n", stats.Failed)
 		fmt.Fprintf(os.Stdout, "%d schemas skipped\n", stats.Total-stats.Success-stats.Failed)
@@ -69,6 +68,6 @@ var schemaPullCmd = &cobra.Command{
 
 func init() {
 	schemaPullCmd.PersistentFlags().StringP("output-dir", "d", "", "Output directory for schemas")
-	schemaPullCmd.PersistentFlags().StringP("mode", "m", "live", "Mode of schemas to pull")
+	schemaPullCmd.PersistentFlags().StringP("mode", "m", "live", "Mode of schemas to pull (draft, live), default: live")
 	SchemaCmd.AddCommand(schemaPullCmd)
 }

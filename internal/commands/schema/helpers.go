@@ -74,6 +74,23 @@ func ensureOutputDirectory(dirPath string) error {
 	return nil
 }
 
+func validateInputDirectory(dirPath string) error {
+	info, err := os.Stat(dirPath)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return fmt.Errorf("directory does not exist: %s", dirPath)
+		}
+		return fmt.Errorf("error checking directory: %w", err)
+	}
+	if !info.IsDir() {
+		return fmt.Errorf("path '%s' exists but is not a directory", dirPath)
+	}
+	if info.Mode().Perm()&0400 == 0 {
+		return fmt.Errorf("directory '%s' is not readable", dirPath)
+	}
+	return nil
+}
+
 func filterSchemaData(schemas []mgmnt.SchemaResponse) []FilteredSchema {
 	filtered := make([]FilteredSchema, len(schemas))
 	for i, schema := range schemas {

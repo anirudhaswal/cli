@@ -309,7 +309,7 @@ func init() {
 
 	for _, cmd := range commonFlags {
 		cmd.Flags().String("workspace", "staging", "Workspace to get schemas from.")
-		cmd.Flags().String("mode", "live", "Mode of schema to fetch.")
+		cmd.Flags().String("mode", "live", "Mode of schema to fetch (draft, live), default: live")
 		cmd.Flags().String("build-flags", "", "Flags to generate types in a certain way.")
 		cmd.Flags().MarkHidden("build-flags")
 	}

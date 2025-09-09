@@ -21,17 +21,17 @@ var schemaPushCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		workspace, _ := cmd.Flags().GetString("workspace")
 
-		outputDir, _ := cmd.Flags().GetString("output-dir")
-		if outputDir == "" {
-			outputDir = promptForOutputDirectory()
+		path, _ := cmd.Flags().GetString("path")
+		if path == "" {
+			path = promptForOutputDirectory()
 		}
 
-		if err := ensureOutputDirectory(outputDir); err != nil {
-			fmt.Fprintf(os.Stdout, "Error with output directory: %v\n", err)
+		if err := validateInputDirectory(path); err != nil {
+			log.Errorf("Error with input directory: %v\n", err)
 			return
 		}
 
-		files, err := os.ReadDir(outputDir)
+		files, err := os.ReadDir(path)
 		if err != nil {
 			log.WithError(err).Errorf("Failed to read local schema directory")
 			return
@@ -55,7 +55,7 @@ var schemaPushCmd = &cobra.Command{
 				)
 				cancel = p.Start(context.Background())
 			}
-			path := filepath.Join(outputDir, file.Name())
+			path := filepath.Join(path, file.Name())
 			data, err := os.ReadFile(path)
 			if err != nil {
 				if p != nil && cancel != nil {
@@ -95,13 +95,13 @@ var schemaPushCmd = &cobra.Command{
 				continue
 			}
 
-			if !hasError && p != nil && cancel != nil {
-				p.Stop(fmt.Sprintf("Pushed workflow: %s", slug))
+			if p != nil && cancel != nil {
+				p.Stop(fmt.Sprintf("Pushed schema: %s", slug))
 				cancel()
 				p = nil
 				cancel = nil
 			} else {
-				fmt.Fprintf(os.Stdout, "Pushed workflow: %s\n", slug)
+				fmt.Fprintf(os.Stdout, "Pushed schema: %s\n", slug)
 			}
 			hasError = false
 		}
@@ -109,6 +109,6 @@ var schemaPushCmd = &cobra.Command{
 }
 
 func init() {
-	schemaPushCmd.PersistentFlags().StringP("output-dir", "d", "", "Output directory for schemas")
+	schemaPushCmd.PersistentFlags().StringP("path", "p", "", "Output directory for schemas")
 	SchemaCmd.AddCommand(schemaPushCmd)
 }

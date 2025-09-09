@@ -14,10 +14,10 @@ var schemaResetCmd = &cobra.Command{
 	Use:   "reset",
 	Short: "Reset schema from live to draft",
 	Long:  `Reset schema from live to draft in a workspace`,
-	Args:  cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
 		if len(args) < 1 {
-			log.Error("schema slug argument is required for schemas.")
+			log.Error("schema slug argument is required for schemas. Example: suprsend schema reset <slug>")
+			return
 		}
 		slug := args[0]
 

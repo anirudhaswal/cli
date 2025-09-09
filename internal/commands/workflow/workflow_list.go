@@ -57,7 +57,7 @@ var workflowListCmd = &cobra.Command{
 func init() {
 	workflowListCmd.PersistentFlags().IntP("limit", "l", 20, "Limit the number of workflows to list")
 	workflowListCmd.PersistentFlags().IntP("offset", "f", 0, "Offset the number of workflows to list (default: 0)")
-	workflowListCmd.PersistentFlags().StringP("mode", "m", "live", "Mode of workflows to list")
+	workflowListCmd.PersistentFlags().StringP("mode", "m", "live", "Mode of workflows to list (draft, live), default: live")
 
 	workflowListCmd.SetHelpFunc(func(cmd *cobra.Command, args []string) {
 		cmd.Parent().HelpFunc()(cmd, args)

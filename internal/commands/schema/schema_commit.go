@@ -14,7 +14,6 @@ var schemaCommitCmd = &cobra.Command{
 	Use:   "commit",
 	Short: "Commit schema from draft to live",
 	Long:  `Commit schema from draft to live in a workspace`,
-	Args:  cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
 		if len(args) < 1 {
 			log.Error("Schema slug argument is required. Example: suprsend schema commit <slug>")

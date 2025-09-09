@@ -71,7 +71,7 @@ var workflowPullCmd = &cobra.Command{
 }
 
 func init() {
-	workflowPullCmd.PersistentFlags().StringP("mode", "m", "live", "Mode of workflows to pull from")
+	workflowPullCmd.PersistentFlags().StringP("mode", "m", "live", "Mode of workflows to pull from (draft, live), default: live")
 	workflowPullCmd.PersistentFlags().StringP("output-dir", "d", "", "Output directory for workflows")
 	WorkflowCmd.AddCommand(workflowPullCmd)
 }

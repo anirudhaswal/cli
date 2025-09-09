@@ -32,6 +32,13 @@ var profilesAddCmd = &cobra.Command{
 		}
 
 		if addName != "" && addServiceToken != "" {
+			if addBaseUrl == "" {
+				addBaseUrl = "https://hub.suprsend.com/"
+			}
+			if addMgmntUrl == "" {
+				addMgmntUrl = "https://api.suprsend.com/"
+			}
+
 			cfg.Profiles[addName] = Profile{
 				BaseUrl:      addBaseUrl,
 				MgmntUrl:     addMgmntUrl,

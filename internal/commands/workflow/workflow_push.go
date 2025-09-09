@@ -20,18 +20,20 @@ var workflowPushCmd = &cobra.Command{
 	Long:  `push workflows from local to suprsend dashboard`,
 	Run: func(cmd *cobra.Command, args []string) {
 		workspace, _ := cmd.Flags().GetString("workspace")
-		outputDir, _ := cmd.Flags().GetString("output-dir")
+		path, _ := cmd.Flags().GetString("path")
+		commit, _ := cmd.Flags().GetBool("commit")
+		commitMessage, _ := cmd.Flags().GetString("commit-message")
 
-		if outputDir == "" {
-			outputDir = promptForOutputDirectory()
+		if path == "" {
+			path = promptForOutputDirectory()
 		}
 
-		if err := ensureOutputDirectory(outputDir); err != nil {
-			fmt.Fprintf(os.Stdout, "Error with output directory: %v\n", err)
+		if err := validateInputDirectory(path); err != nil {
+			log.Errorf("Error with input directory: %v\n", err)
 			return
 		}
 
-		files, err := os.ReadDir(outputDir)
+		files, err := os.ReadDir(path)
 		if err != nil {
 			log.WithError(err).Errorf("Failed to read local workflows directory")
 			return
@@ -57,8 +59,8 @@ var workflowPushCmd = &cobra.Command{
 				)
 				cancel = p.Start(context.Background())
 			}
-			path := filepath.Join(outputDir, file.Name())
-			data, err := os.ReadFile(path)
+			filePath := filepath.Join(path, file.Name())
+			data, err := os.ReadFile(filePath)
 			if err != nil {
 				if p != nil && cancel != nil {
 					p.Stop("")
@@ -84,7 +86,7 @@ var workflowPushCmd = &cobra.Command{
 				continue
 			}
 
-			err = mgmntClient.PushWorkflow(workspace, slug, workflow)
+			err = mgmntClient.PushWorkflow(workspace, slug, workflow, commit, commitMessage)
 			if err != nil {
 				if p != nil && cancel != nil {
 					p.Stop("")
@@ -97,7 +99,7 @@ var workflowPushCmd = &cobra.Command{
 				continue
 			}
 
-			if !hasError && p != nil && cancel != nil {
+			if p != nil && cancel != nil {
 				p.Stop(fmt.Sprintf("Pushed workflow: %s", slug))
 				cancel()
 				p = nil
@@ -111,6 +113,8 @@ var workflowPushCmd = &cobra.Command{
 }
 
 func init() {
-	workflowPushCmd.PersistentFlags().StringP("output-dir", "d", "", "Output directory for workflows")
+	workflowPushCmd.PersistentFlags().StringP("path", "p", "", "Output directory for workflows")
+	workflowPushCmd.PersistentFlags().BoolP("commit", "c", false, "Commit the workflows")
+	workflowPushCmd.PersistentFlags().StringP("commit-message", "m", "", "Commit message for the workflows")
 	WorkflowCmd.AddCommand(workflowPushCmd)
 }
