@@ -47,7 +47,6 @@ func (c *SS_MgmntClient) ListWorkflows(workspace string, limit int, offset int, 
 	allWorkflows := []Workflow{}
 	currentOffset := offset
 	remainingLimit := limit
-
 	for remainingLimit > 0 {
 		currentLimit := apiLimit
 		if remainingLimit < apiLimit {
@@ -150,7 +149,7 @@ func (c *SS_MgmntClient) GetWorkflows(workspace, mode string) (*WorkflowsRespons
 	}, nil
 }
 
-func (c *SS_MgmntClient) PushWorkflow(workspace, slug string, workflow map[string]any) error {
+func (c *SS_MgmntClient) PushWorkflow(workspace, slug string, workflow map[string]any, commit bool, commitMessage string) error {
 	if slug == "" {
 		return fmt.Errorf("slug cannot be empty")
 	}
@@ -158,7 +157,7 @@ func (c *SS_MgmntClient) PushWorkflow(workspace, slug string, workflow map[strin
 	client := client.NewHTTPClient()
 	defer client.Close()
 
-	url := fmt.Sprintf("%sv1/%s/workflow/%s/", c.mgmnt_base_URL, workspace, slug)
+	url := fmt.Sprintf("%sv1/%s/workflow/%s/?commit=%t&commit_message=%s", c.mgmnt_base_URL, workspace, slug, commit, commitMessage)
 	log.Debugf("Pushing workflow to: %s", url)
 
 	res, err := client.R().
