@@ -7,3 +7,7 @@ var CategoryCmd = &cobra.Command{
 	Short: "Manage preference categories",
 	Long:  "Manage preference categories",
 }
+
+func init() {
+	CategoryCmd.PersistentFlags().String("workspace", "staging", "Workspace to push categories to")
+}

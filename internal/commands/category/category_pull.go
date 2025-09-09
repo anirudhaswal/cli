@@ -34,7 +34,11 @@ var categoryPullCmd = &cobra.Command{
 			log.WithError(err).Error("Couldn't fetch categories")
 			return
 		}
-		WriteToFile(categories, "categories_preferences.json")
+		err = WriteToFile(categories, "categories_preferences.json")
+		if err != nil {
+			log.WithError(err).Error("Couldn't write categories to file")
+			return
+		}
 		if p != nil {
 			p.Stop(fmt.Sprintf("Pulled categories from %s", workspace))
 		}

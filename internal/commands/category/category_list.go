@@ -18,7 +18,7 @@ type CategoryDisplayItem struct {
 var categoryListCmd = &cobra.Command{
 	Use:   "list",
 	Short: "List categories",
-	Long:  "List prefrences categories in a workspace",
+	Long:  "List preferences categories in a workspace",
 	Run: func(cmd *cobra.Command, args []string) {
 		workspace, _ := cmd.Flags().GetString("workspace")
 		mode, _ := cmd.Flags().GetString("mode")
@@ -63,7 +63,5 @@ var categoryListCmd = &cobra.Command{
 
 func init() {
 	categoryListCmd.PersistentFlags().StringP("mode", "m", "live", "Mode of preferences to list")
-
-	CategoryCmd.PersistentFlags().StringP("workspace", "w", "staging", "Workspace to use the preferences from")
 	CategoryCmd.AddCommand(categoryListCmd)
 }

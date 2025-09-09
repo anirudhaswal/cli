@@ -4,11 +4,15 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"path/filepath"
 )
 
 func WriteToFile(data interface{}, filename string) error {
-	os.MkdirAll("./suprsend/category", 0755)
-	filename = "./suprsend/category/" + filename
+	baseDir := filepath.Join(".", "suprsend", "category")
+	if err := os.MkdirAll(baseDir, 0o755); err != nil {
+		return fmt.Errorf("failed to ensure directory %s: %w", baseDir, err)
+	}
+	filename = filepath.Join(baseDir, filename)
 	jsonData, err := json.MarshalIndent(data, "", "  ")
 	if err != nil {
 		return fmt.Errorf("failed to marshal data: %w", err)
@@ -21,12 +25,10 @@ func ReadFromFile(filepath string) (interface{}, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to read file: %w", err)
 	}
-
 	var data interface{}
 	err = json.Unmarshal(jsonData, &data)
 	if err != nil {
 		return nil, fmt.Errorf("failed to unmarshal data: %w", err)
 	}
-
 	return data, nil
 }

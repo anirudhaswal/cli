@@ -46,6 +46,5 @@ var categoryPushCmd = &cobra.Command{
 }
 
 func init() {
-	categoryPushCmd.PersistentFlags().String("workspace", "staging", "Workspace to push categories to")
 	CategoryCmd.AddCommand(categoryPushCmd)
 }
