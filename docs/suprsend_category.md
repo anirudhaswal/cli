@@ -1,23 +1,16 @@
-## suprsend sync
+## suprsend category
 
-Sync all your SuprSend assets locally
+Manage preference categories
 
 ### Synopsis
 
-Sync all your SuprSend assets locally with the server
-
-```
-suprsend sync [flags]
-```
+Manage preference categories
 
 ### Options
 
 ```
-  -a, --assets string   Assets to sync (all, workflows, schemas) (default "all")
-  -f, --from string     Source workspace (required) (default "staging")
-  -h, --help            help for sync
-  -m, --mode string     Mode to sync assets (draft, live) (default "live")
-  -t, --to string       Destination workspace (required) (default "production")
+  -h, --help               help for category
+      --workspace string   Workspace to push categories to (default "staging")
 ```
 
 ### Options inherited from parent commands
@@ -33,4 +26,8 @@ suprsend sync [flags]
 ### SEE ALSO
 
 * [suprsend](suprsend.md)	 - CLI to interact with SuprSend, a Notification Infrastructure
+* [suprsend category commit](suprsend_category_commit.md)	 - Commit categories
+* [suprsend category list](suprsend_category_list.md)	 - List categories
+* [suprsend category pull](suprsend_category_pull.md)	 - Pull categories from a workspace
+* [suprsend category push](suprsend_category_push.md)	 - Push categories to a workspace
 

@@ -1,19 +1,21 @@
-## suprsend workflow enable
+## suprsend category commit
 
-Enables a workflow.
+Commit categories
 
 ### Synopsis
 
-Enables a workflow to activate
+Commit categories to a workspace
 
 ```
-suprsend workflow enable [flags]
+suprsend category commit [flags]
 ```
 
 ### Options
 
 ```
-  -h, --help   help for enable
+      --commit-message string   Commit message
+  -h, --help                    help for commit
+      --workspace string        Workspace to commit categories to (default "staging")
 ```
 
 ### Options inherited from parent commands
@@ -24,10 +26,9 @@ suprsend workflow enable [flags]
   -o, --output string          Output Tyle (pretty, yaml, json) (default "pretty")
   -s, --service-token string   Service token (default: $SUPRSEND_SERVICE_TOKEN)
   -v, --verbosity string       Log level (debug, info, warn, error, fatal, panic) (default "info")
-  -w, --workspace string       Workspace to use (default "staging")
 ```
 
 ### SEE ALSO
 
-* [suprsend workflow](suprsend_workflow.md)	 - Manage workflows
+* [suprsend category](suprsend_category.md)	 - Manage preference categories
 

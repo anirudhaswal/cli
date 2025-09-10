@@ -63,7 +63,7 @@ func NewClientWithUrls(serviceToken string, baseURL string, mgmntURL string, deb
 		debug:          debug,
 	}
 	client.workspaceClients = make(map[string]*suprsend.Client)
-	log.Debugf("New management client created with base URL: %s, mgmnt URL: %s, service token: %s and debug: %t", baseURL, mgmntURL, serviceToken, debug)
+	log.Debugf("New management client created with base URL: %s, mgmnt URL: %s and debug: %t", baseURL, mgmntURL, debug)
 	return client
 }
 
