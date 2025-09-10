@@ -35,6 +35,16 @@ type WorkflowsResponse struct {
 	} `json:"meta"`
 }
 
+type WorkflowDetailResponse struct {
+	Slug           string `json:"slug"`
+	Name           string `json:"name"`
+	Description    string `json:"description"`
+	Status         string `json:"status"`
+	Category       string `json:"category"`
+	CommitMessage  string `json:"commit_message"`
+	LastExecutedAt string `json:"last_executed_at"`
+}
+
 func (c *SS_MgmntClient) ListWorkflows(workspace string, limit int, offset int, mode string) (*WorkflowAPIResponse, error) {
 	if mode != "live" && mode != "draft" {
 		return nil, fmt.Errorf("invalid mode: %s. Available modes are: live, draft", mode)
@@ -93,6 +103,28 @@ func (c *SS_MgmntClient) ListWorkflows(workspace string, limit int, offset int, 
 			Offset: currentOffset,
 		},
 	}, nil
+}
+
+func (c *SS_MgmntClient) GetWorkflowDetail(workspace, slug, mode string) (*WorkflowDetailResponse, error) {
+	client := client.NewHTTPClient()
+	defer client.Close()
+
+	url := fmt.Sprintf("%sv1/%s/workflow/%s/?mode=%s", c.mgmnt_base_URL, workspace, slug, mode)
+
+	resp, err := client.R().
+		SetDebug(c.debug).
+		SetHeader("Authorization", "ServiceToken "+c.serviceToken).
+		SetResult(&WorkflowDetailResponse{}).
+		Get(url)
+	if err != nil {
+		return nil, err
+	}
+	if resp.IsError() {
+		return nil, fmt.Errorf("error getting workflow detail: %s", resp.Status())
+	}
+
+	workflowResp := resp.Result().(*WorkflowDetailResponse)
+	return workflowResp, nil
 }
 
 func (c *SS_MgmntClient) GetWorkflows(workspace, mode string) (*WorkflowsResponse, error) {
