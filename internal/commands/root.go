@@ -56,6 +56,7 @@ func init() {
 			extension.WithUpgradeNotice("suprsend", "cli"),
 		),
 	)
+	rootCmd.DisableAutoGenTag = true
 
 	workflow.WorkflowCmd.PersistentFlags().StringVarP(&conf.Workspace, "workspace", "w", "staging", "Workspace to use")
 	schema.SchemaCmd.PersistentFlags().StringVarP(&conf.Workspace, "workspace", "w", "staging", "Workspace to use")
