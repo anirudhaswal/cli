@@ -3,6 +3,7 @@ package category
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
@@ -10,9 +11,12 @@ import (
 	"github.com/yarlson/pin"
 )
 
-type CategoryDisplayItem struct {
-	SerialNo     int    `json:"serial_no"`
-	RootCategory string `json:"root_category"`
+type CategoryTableRow struct {
+	RootCategory             string `json:"root_category"`
+	Section                  string `json:"section"`
+	CategoryName             string `json:"category_name"`
+	DefaultPreference        string `json:"default_preference"`
+	DefaultMandatoryChannels string `json:"default_mandatory_channels"`
 }
 
 var categoryListCmd = &cobra.Command{
@@ -39,25 +43,33 @@ var categoryListCmd = &cobra.Command{
 			log.WithError(err).Error("Couldn't fetch categories")
 			return
 		}
-		if p != nil {
-			p.Stop(fmt.Sprintf("Listed %d categories from %s", len(categories.Categories), workspace))
-		}
-
 		outputType, _ := cmd.Flags().GetString("output")
-		displayItems := make([]CategoryDisplayItem, len(categories.Categories))
-		for i, category := range categories.Categories {
-			displayItems[i] = CategoryDisplayItem{
-				SerialNo:     i + 1,
-				RootCategory: category.RootCategory,
+
+		// Create flattened table rows
+		var tableRows []CategoryTableRow
+		for _, category := range categories.Categories {
+			for _, section := range category.Sections {
+				for _, subcategory := range section.Subcategories {
+					tableRows = append(tableRows, CategoryTableRow{
+						RootCategory:             category.RootCategory,
+						Section:                  section.Name,
+						CategoryName:             subcategory.Name,
+						DefaultPreference:        subcategory.DefaultPreference,
+						DefaultMandatoryChannels: strings.Join(subcategory.DefaultMandatoryChannels, ", "),
+					})
+				}
 			}
 		}
+		if p != nil {
+			p.Stop(fmt.Sprintf("Listed %d categories from %s", len(tableRows), workspace))
+		}
 
-		if len(displayItems) == 0 && utils.IsOutputPiped() {
+		if len(tableRows) == 0 && utils.IsOutputPiped() {
 			utils.OutputData([]interface{}{}, outputType)
 			return
 		}
 
-		utils.OutputData(displayItems, outputType)
+		utils.OutputData(tableRows, outputType)
 	},
 }
 

@@ -22,10 +22,12 @@ type Category struct {
 }
 
 type Section struct {
-	Name          string        `json:"name"`
-	Description   string        `json:"description"`
-	Tags          []string      `json:"tags"`
-	Subcategories []Subcategory `json:"subcategories"`
+	Name              string        `json:"name"`
+	Description       string        `json:"description"`
+	Tags              []string      `json:"tags"`
+	Subcategories     []Subcategory `json:"subcategories"`
+	MandatoryChannels []string      `json:"mandatory_channels"`
+	DefaultPreference string        `json:"default_preference"`
 }
 
 type Subcategory struct {
@@ -52,7 +54,6 @@ func (c *SS_MgmntClient) ListCategories(workspace, mode string) (*PreferenceCate
 		SetHeader("Content-Type", "application/json").
 		SetResult(PreferenceCategoryResponse{}).
 		Get(url)
-
 	if err != nil {
 		return nil, fmt.Errorf("request failed: %w", err)
 	}
@@ -76,7 +77,6 @@ func (c *SS_MgmntClient) PushCategories(workspace string, categories interface{}
 		SetHeader("Content-Type", "application/json").
 		SetBody(categories).
 		Post(url)
-
 	if err != nil {
 		return fmt.Errorf("request failed: %w", err)
 	}
@@ -97,7 +97,6 @@ func (c *SS_MgmntClient) FinalizeCategories(workspace string, commitMsg string) 
 		SetDebug(c.debug).
 		SetHeader("Authorization", "ServiceToken "+c.serviceToken).
 		Patch(url)
-
 	if err != nil {
 		return fmt.Errorf("request failed: %w", err)
 	}
