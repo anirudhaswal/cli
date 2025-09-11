@@ -190,7 +190,7 @@ func printStructAsTable(values []reflect.Value) {
 			},
 			Row: tw.CellConfig{
 				Formatting: tw.CellFormatting{
-					MergeMode: tw.MergeHierarchical,
+					MergeMode: tw.MergeNone,
 					Alignment: tw.AlignLeft,
 				},
 			},

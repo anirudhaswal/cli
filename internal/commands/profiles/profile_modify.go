@@ -65,7 +65,7 @@ func init() {
 	profilesModifyCmd.Flags().StringVar(&modifyBaseUrl, "base-url", "", "Base URL")
 	profilesModifyCmd.Flags().StringVar(&modifyMgmntUrl, "mgmnt-url", "", "Management URL")
 	profilesModifyCmd.Flags().StringVar(&modifyServiceToken, "token", "", "Service Token")
-	ProfilesCmd.AddCommand(profilesModifyCmd)
+	ProfileCmd.AddCommand(profilesModifyCmd)
 }
 
 func runModifyInteractive(cfg *Config, path string) {
@@ -86,6 +86,7 @@ func runModifyInteractive(cfg *Config, path string) {
 			{
 				Text: "Select a profile to modify: ",
 				Handler: func(s string) error {
+					s = cleanInput(s)
 					modifyName = s
 					return nil
 				},
@@ -123,6 +124,7 @@ func runModifyInteractive(cfg *Config, path string) {
 		questions = append(questions, cobra_ui.Question{
 			Text: fmt.Sprintf("Base URL (current: %s, press Enter to keep): ", currentBaseURL),
 			Handler: func(s string) error {
+				s = cleanInput(s)
 				if s != "" {
 					modifyBaseUrl = s
 				} else {
@@ -137,6 +139,7 @@ func runModifyInteractive(cfg *Config, path string) {
 		questions = append(questions, cobra_ui.Question{
 			Text: fmt.Sprintf("Management URL (current: %s, press Enter to keep): ", currentMgmntURL),
 			Handler: func(s string) error {
+				s = cleanInput(s)
 				if s != "" {
 					modifyMgmntUrl = s
 				} else {
@@ -151,6 +154,7 @@ func runModifyInteractive(cfg *Config, path string) {
 		questions = append(questions, cobra_ui.Question{
 			Text: fmt.Sprintf("Service Token (current: %s, press Enter to keep): ", currentToken),
 			Handler: func(s string) error {
+				s = cleanInput(s)
 				if s != "" {
 					modifyServiceToken = s
 				} else {

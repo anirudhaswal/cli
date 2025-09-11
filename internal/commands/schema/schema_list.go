@@ -16,6 +16,9 @@ var schemaListCmd = &cobra.Command{
 	Long:  `List schemas in a workspace`,
 	Run: func(cmd *cobra.Command, args []string) {
 		workspace, _ := cmd.Flags().GetString("workspace")
+		limit, _ := cmd.Flags().GetInt("limit")
+		offset, _ := cmd.Flags().GetInt("offset")
+		mode, _ := cmd.Flags().GetString("mode")
 
 		var p *pin.Pin
 		if !utils.IsOutputPiped() {
@@ -28,14 +31,13 @@ var schemaListCmd = &cobra.Command{
 		}
 
 		mgmnt_client := utils.GetSuprSendMgmntClient()
-
-		schemas, err := mgmnt_client.ListSchema(workspace)
+		schemas, err := mgmnt_client.ListSchema(workspace, limit, offset, mode)
 		if err != nil {
 			log.WithError(err).Error("Couldn't fetch schemas")
 			return
 		}
 		if p != nil {
-			p.Stop(fmt.Sprintf("Listed %d schemas from %s", len(schemas.Results), workspace))
+			p.Stop(fmt.Sprintf("Listed %d schemas from %s with offset %d", len(schemas.Results), workspace, offset))
 		}
 
 		outputType, _ := cmd.Flags().GetString("output")
@@ -43,11 +45,16 @@ var schemaListCmd = &cobra.Command{
 			utils.OutputData([]interface{}{}, outputType)
 			return
 		}
-		utils.OutputData(schemas.Results, outputType)
+		filteredSchemas := filterSchemaData(schemas.Results)
+		utils.OutputData(filteredSchemas, outputType)
 	},
 }
 
 func init() {
-	SchemaCmd.Flags().StringP("workspace", "w", "staging", "Workspace to pull the schemas from")
+	schemaListCmd.PersistentFlags().IntP("limit", "l", 20, "Limit the number of schemas to list")
+	schemaListCmd.PersistentFlags().IntP("offset", "f", 0, "Offset the number of schemas to list (default: 0)")
+	schemaListCmd.PersistentFlags().StringP("mode", "m", "live", "Mode of schemas to list")
+
+	SchemaCmd.Flags().StringP("workspace", "w", "staging", "Workspace to use the schemas from")
 	SchemaCmd.AddCommand(schemaListCmd)
 }

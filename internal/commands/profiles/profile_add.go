@@ -55,8 +55,8 @@ func init() {
 	profilesAddCmd.Flags().StringVar(&addName, "name", "", "Name of the profile (required)")
 	profilesAddCmd.Flags().StringVar(&addBaseUrl, "base-url", "", "Base URL")
 	profilesAddCmd.Flags().StringVar(&addMgmntUrl, "mgmnt-url", "", "Management URL")
-	profilesAddCmd.Flags().StringVar(&addServiceToken, "token", "", "Service token (required)")
-	ProfilesCmd.AddCommand(profilesAddCmd)
+	profilesAddCmd.Flags().StringVar(&addServiceToken, "service-token", "", "Service token (required)")
+	ProfileCmd.AddCommand(profilesAddCmd)
 }
 
 func runAddInteractive(cfg *Config, path string) {
@@ -73,6 +73,7 @@ func runAddInteractive(cfg *Config, path string) {
 		questions = append(questions, cobra_ui.Question{
 			Text: "Name: ",
 			Handler: func(s string) error {
+				s = cleanInput(s)
 				if s == "" {
 					return fmt.Errorf("profile name cannot be empty")
 				}
@@ -89,6 +90,7 @@ func runAddInteractive(cfg *Config, path string) {
 		questions = append(questions, cobra_ui.Question{
 			Text: "Service Token: ",
 			Handler: func(s string) error {
+				s = cleanInput(s)
 				if s == "" {
 					return fmt.Errorf("service token cannot be empty")
 				}
@@ -102,6 +104,7 @@ func runAddInteractive(cfg *Config, path string) {
 		questions = append(questions, cobra_ui.Question{
 			Text: "Base URL (optional, press Enter for default): ",
 			Handler: func(s string) error {
+				s = cleanInput(s)
 				if s != "" {
 					addBaseUrl = s
 				} else {
@@ -116,6 +119,7 @@ func runAddInteractive(cfg *Config, path string) {
 		questions = append(questions, cobra_ui.Question{
 			Text: "Management URL (optional, press Enter for default): ",
 			Handler: func(s string) error {
+				s = cleanInput(s)
 				if s != "" {
 					addMgmntUrl = s
 				} else {

@@ -10,6 +10,7 @@ import (
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
+	"github.com/suprsend/cli/internal/commands/category"
 	"github.com/suprsend/cli/internal/commands/event"
 	"github.com/suprsend/cli/internal/commands/profiles"
 	"github.com/suprsend/cli/internal/commands/schema"
@@ -56,6 +57,7 @@ func init() {
 			extension.WithUpgradeNotice("suprsend", "cli"),
 		),
 	)
+	rootCmd.DisableAutoGenTag = true
 
 	workflow.WorkflowCmd.PersistentFlags().StringVarP(&conf.Workspace, "workspace", "w", "staging", "Workspace to use")
 	schema.SchemaCmd.PersistentFlags().StringVarP(&conf.Workspace, "workspace", "w", "staging", "Workspace to use")
@@ -64,11 +66,13 @@ func init() {
 	syncCmd.Flags().StringP("mode", "m", "live", "Mode to sync assets (draft, live)")
 	syncCmd.Flags().StringP("assets", "a", "all", "Assets to sync (all, workflows, schemas, events)")
 
-	rootCmd.AddCommand(profiles.ProfilesCmd)
+	rootCmd.AddCommand(profiles.ProfileCmd)
 	rootCmd.AddCommand(workflow.WorkflowCmd)
+	rootCmd.AddCommand(category.CategoryCmd)
 	rootCmd.AddCommand(event.EventCmd)
 	rootCmd.AddCommand(syncCmd)
 	rootCmd.AddCommand(schema.SchemaCmd)
+	rootCmd.AddCommand(syncCmd)
 
 	rootCmd.PersistentPreRunE = func(cmd *cobra.Command, args []string) error {
 		if err := config.SetUpLogs(); err != nil {

@@ -9,6 +9,7 @@ import (
 
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
+	"github.com/suprsend/cli/internal/commands/category"
 	"github.com/suprsend/cli/internal/commands/event"
 	"github.com/suprsend/cli/internal/commands/schema"
 	"github.com/suprsend/cli/internal/commands/workflow"
@@ -18,13 +19,17 @@ import (
 
 var syncCmd = &cobra.Command{
 	Use:   "sync",
-	Short: "Sync all your SuprSend assests locally",
+	Short: "Sync all your SuprSend assets locally",
 	Long:  `Sync all your SuprSend assets locally with the server`,
 	Run: func(cmd *cobra.Command, args []string) {
 		mode, _ := cmd.Flags().GetString("mode")
 		fromWorkspace, _ := cmd.Flags().GetString("from")
 		toWorkspace, _ := cmd.Flags().GetString("to")
 		assets, _ := cmd.Flags().GetString("assets")
+		if fromWorkspace == toWorkspace {
+			log.Error("Cannot sync within the same workspace. Source and destination workspaces must be different.")
+			return
+		}
 
 		var assetsToSync []string
 		switch assets {
@@ -34,6 +39,11 @@ var syncCmd = &cobra.Command{
 			assetsToSync = []string{"workflows"}
 		case "schemas":
 			assetsToSync = []string{"schemas"}
+		case "categories":
+			assetsToSync = []string{"categories"}
+		default:
+			log.Errorf("Invalid asset type: '%s'. Valid options are: all, workflows, schemas", assets)
+			return
 		case "events":
 			assetsToSync = []string{"events"}
 		}
@@ -48,7 +58,9 @@ var syncCmd = &cobra.Command{
 			case "workflows":
 				syncWorkflows(fromWorkspace, toWorkspace, mode)
 			case "schemas":
-				syncSchemas(mgmnt_client, fromWorkspace, toWorkspace)
+				syncSchemas(mgmnt_client, fromWorkspace, toWorkspace, mode)
+			case "categories":
+				syncCategories(mgmnt_client, fromWorkspace, toWorkspace, mode)
 			case "events":
 				syncEvents(mgmnt_client, fromWorkspace, toWorkspace)
 			default:
@@ -65,7 +77,6 @@ func syncWorkflows(fromWorkspace, toWorkspace, mode string) {
 
 	mgmnt_client := utils.GetSuprSendMgmntClient()
 	workflows_resp, err := mgmnt_client.GetWorkflows(fromWorkspace, mode)
-
 	if err != nil {
 		log.WithError(err).Error("Error getting workflows")
 		return
@@ -113,11 +124,11 @@ func syncWorkflows(fromWorkspace, toWorkspace, mode string) {
 	}
 }
 
-func syncSchemas(mgmnt_client *mgmnt.SS_MgmntClient, fromWorkspace, toWorkspace string) {
+func syncSchemas(mgmnt_client *mgmnt.SS_MgmntClient, fromWorkspace, toWorkspace, mode string) {
 	dirPath := filepath.Join(".", "suprsend", "schema")
 
 	fmt.Printf("Pulling schemas from %s ... \n", fromWorkspace)
-	schemas_resp, err := mgmnt_client.GetSchemas(fromWorkspace)
+	schemas_resp, err := mgmnt_client.GetSchemas(fromWorkspace, mode)
 	if err != nil {
 		log.WithError(err).Error("Error getting schemas")
 		return
@@ -184,4 +195,31 @@ func syncEvents(mgmnt_client *mgmnt.SS_MgmntClient, fromWorkspace, toWorkspace s
 		log.WithError(err).Error("Failed to push events")
 		return
 	}
+}
+
+func syncCategories(mgmnt_client *mgmnt.SS_MgmntClient, fromWorkspace, toWorkspace, mode string) {
+	dirPath := filepath.Join(".", "suprsend", "category")
+	categoriesResp, err := mgmnt_client.ListCategories(fromWorkspace, mode)
+	if err != nil {
+		log.WithError(err).Error("Error getting categories")
+		return
+	}
+	log.Infof("Pulling categories from %s ... \n", fromWorkspace)
+	err = category.WriteToFile(categoriesResp, "categories_preferences.json")
+	if err != nil {
+		log.WithError(err).Error("Error saving categories")
+		return
+	}
+	filePath := filepath.Join(dirPath, "categories_preferences.json")
+	categories, err := category.ReadFromFile(filePath)
+	if err != nil {
+		log.WithError(err).Error("Error reading categories file")
+		return
+	}
+	err = mgmnt_client.PushCategories(toWorkspace, categories)
+	if err != nil {
+		log.WithError(err).Error("Error pushing categories")
+		return
+	}
+	log.Printf("Pushed categories to %s\n", toWorkspace)
 }

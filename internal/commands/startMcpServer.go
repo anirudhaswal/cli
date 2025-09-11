@@ -101,17 +101,27 @@ This server will handle all the requests from user about SuprSend capabilities a
 			mcpServer.AddTool(t.MCPTool, t.Handler)
 		}
 
-		if transport == "sse" {
-			utils.Banner(info.Version)
-			sseServer := server.NewSSEServer(mcpServer)
-			log.Printf("SSE server listening on :8080")
-			if err := sseServer.Start(":8080"); err != nil {
-				log.Fatalf("Server error: %v", err)
-			}
-		} else {
+		switch transport {
+		case "stdio":
 			if err := server.ServeStdio(mcpServer); err != nil {
 				log.Fatalf("Server error: %v", err)
 			}
+		case "sse":
+			utils.Banner(info.Version)
+			sseServer := server.NewSSEServer(mcpServer)
+			log.Printf("SSE server listening on :8080/sse")
+			if err := sseServer.Start(":8080"); err != nil {
+				log.Fatalf("Server error: %v", err)
+			}
+		case "http":
+			utils.Banner(info.Version)
+			httpServer := server.NewStreamableHTTPServer(mcpServer, server.WithEndpointPath("/sse"))
+			log.Printf("HTTP server listening on :8080/sse")
+			if err := httpServer.Start(":8080"); err != nil {
+				log.Fatalf("Server error: %v", err)
+			}
+		default:
+			log.Fatalf("Invalid transport: %s. Valid transports are stdio/sse/http", transport)
 		}
 	},
 }
@@ -139,6 +149,6 @@ func init() {
 	startMcpServerCmd.AddCommand(listToolsCmd)
 	rootCmd.AddCommand(startMcpServerCmd)
 
-	startMcpServerCmd.Flags().StringVarP(&transport, "transport", "t", "stdio", "The transport to use for the MCP server. Can be either 'stdio' or 'sse'.")
+	startMcpServerCmd.Flags().StringVarP(&transport, "transport", "t", "stdio", "The transport to use for the MCP server. Can be stdio/sse/http.")
 	startMcpServerCmd.Flags().StringVarP(&tools, "tools", "T", "all", "The types of tools to use. Can be either 'all' or comma separated list of tool names.")
 }
