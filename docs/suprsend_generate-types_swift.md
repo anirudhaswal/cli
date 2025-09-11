@@ -1,19 +1,18 @@
-## suprsend workflow enable
+## suprsend generate-types swift
 
-Enables a workflow.
-
-### Synopsis
-
-Enables a workflow to activate
+Generate Swift types from JSON Schema
 
 ```
-suprsend workflow enable [flags]
+suprsend generate-types swift [flags]
 ```
 
 ### Options
 
 ```
-  -h, --help   help for enable
+  -h, --help                 help for swift
+      --mode string          Mode of schema to fetch. (default "live")
+      --output-file string   Output file for generated Swift types (default "SuprsendTypes.swift")
+      --workspace string     Workspace to get schemas from. (default "staging")
 ```
 
 ### Options inherited from parent commands
@@ -24,10 +23,9 @@ suprsend workflow enable [flags]
   -o, --output string          Output Tyle (pretty, yaml, json) (default "pretty")
   -s, --service-token string   Service token (default: $SUPRSEND_SERVICE_TOKEN)
   -v, --verbosity string       Log level (debug, info, warn, error, fatal, panic) (default "info")
-  -w, --workspace string       Workspace to use (default "staging")
 ```
 
 ### SEE ALSO
 
-* [suprsend workflow](suprsend_workflow.md)	 - Manage workflows
+* [suprsend generate-types](suprsend_generate-types.md)	 - Generate Types from JSON Schema
 

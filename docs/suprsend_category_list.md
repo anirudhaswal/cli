@@ -1,19 +1,20 @@
-## suprsend workflow enable
+## suprsend category list
 
-Enables a workflow.
+List categories
 
 ### Synopsis
 
-Enables a workflow to activate
+List preferences categories in a workspace
 
 ```
-suprsend workflow enable [flags]
+suprsend category list [flags]
 ```
 
 ### Options
 
 ```
-  -h, --help   help for enable
+  -h, --help          help for list
+  -m, --mode string   Mode of preferences to list (default "live")
 ```
 
 ### Options inherited from parent commands
@@ -24,10 +25,10 @@ suprsend workflow enable [flags]
   -o, --output string          Output Tyle (pretty, yaml, json) (default "pretty")
   -s, --service-token string   Service token (default: $SUPRSEND_SERVICE_TOKEN)
   -v, --verbosity string       Log level (debug, info, warn, error, fatal, panic) (default "info")
-  -w, --workspace string       Workspace to use (default "staging")
+      --workspace string       Workspace to push categories to (default "staging")
 ```
 
 ### SEE ALSO
 
-* [suprsend workflow](suprsend_workflow.md)	 - Manage workflows
+* [suprsend category](suprsend_category.md)	 - Manage preference categories
 

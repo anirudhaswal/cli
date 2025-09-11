@@ -96,5 +96,5 @@ var listProfilesCmd = &cobra.Command{
 }
 
 func init() {
-	ProfilesCmd.AddCommand(listProfilesCmd)
+	ProfileCmd.AddCommand(listProfilesCmd)
 }

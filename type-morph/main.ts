@@ -1,9 +1,10 @@
+// deno-lint-ignore-file
 import {
   quicktype,
+  quicktypeMultiFile,
   JSONSchemaInput,
   FetchingJSONSchemaStore,
   InputData,
-  JSONInput,
 } from "npm:quicktype-core@23.2.6";
 import $RefParser from "npm:@apidevtools/json-schema-ref-parser";
 
@@ -15,7 +16,6 @@ async function quicktypeJSONSchema(
   rendererOptions: Record<string, string> = {},
 ) {
   const schemaInput = new JSONSchemaInput(new FetchingJSONSchemaStore());
-   
   let flattenedSchema;
   try {
     const dereferencedSchema = await $RefParser.dereference(JSON.parse(jsonSchemaString), {
@@ -26,23 +26,31 @@ async function quicktypeJSONSchema(
     console.error("Error parsing or dereferencing schema:", error);
     throw new Error("Invalid JSON schema or failed to resolve references");
   }
-
   await schemaInput.addSource({
     name: typeName,
     schema: JSON.stringify(flattenedSchema),
   });
-
   const inputData = new InputData();
   inputData.addInput(schemaInput);
-
   const renderOptions = {
-    "just-types": "true",
-    "no-extra-properties": "true", 
+    "just-types-package": "true",
+    "no-extra-properties": "true",
     "no-optional-null": "true",
+    "framework": "just-types",
     ...rendererOptions
   };
-
-
+  if (targetLanguage.toLowerCase() === 'java') {
+    const result = await quicktypeMultiFile({
+      inputData,
+      lang: targetLanguage,
+      rendererOptions: renderOptions
+    });
+    const schema: Record<string, string[]> = {};
+    result.forEach((content, fileName) => {
+      schema[fileName] = content.lines
+    });
+    return schema
+  }
   return await quicktype({
     inputData,
     lang: targetLanguage,
@@ -54,11 +62,18 @@ function extractRendererOptions(args: string[]): Record<string, string> {
   const options: Record<string, string> = {};
   for (const arg of args) {
     if (arg.startsWith("--build-flags=")) {
-      const flags = arg.split("=")[1];
+      const flags = arg.substring("--build-flags=".length);
       for (const flag of flags.split(",")) {
         const trimmed = flag.trim();
         if (trimmed) {
-          options[trimmed] = "true";
+          if (trimmed.includes("=")) {
+            const equalIndex = trimmed.indexOf("=");
+            const key = trimmed.substring(0, equalIndex);
+            const value = trimmed.substring(equalIndex + 1);
+            options[key] = value;
+          } else {
+            options[trimmed] = "true";
+          }
         }
       }
     }
@@ -67,7 +82,7 @@ function extractRendererOptions(args: string[]): Record<string, string> {
 }
 
 async function main() {
-    const [
+  const [
     language = "typescript",
     schemaInput = "./schema.json",
     schemaName = "SchemaType",
@@ -76,9 +91,7 @@ async function main() {
   ] = Deno.args;
 
   let text: string;
-
   const rendererOptions = extractRendererOptions(extraArgs);
-
   try {
     text = await Deno.readTextFile(schemaInput);
   } catch (_) {
@@ -90,21 +103,249 @@ async function main() {
       Deno.exit(1);
     }
   }
-
-  const { lines } = await quicktypeJSONSchema(language, schemaName, text, rendererOptions);
-
-  const output = lines.join("\n");
-  let existingContent = "";
+  let schema: Record<string, any>;
   try {
-    existingContent = await Deno.readTextFile(outputPath);
-  } catch(_) {}
-
-  const finalOutput = existingContent 
-    ? existingContent + "\n\n" + output 
-    : output;
-
-  await Deno.writeTextFile(outputPath, finalOutput);
-
+    schema = JSON.parse(text);
+  } catch (err) {
+    console.error("Error parsing schema JSON:", err);
+    Deno.exit(1);
+  }
+  const transformedSchema = transformSchema(schema);
+  const transformedText = JSON.stringify(transformedSchema, null, 2);
+  let output;
+  if (language.toLowerCase() === "java") {
+    const schema = await quicktypeJSONSchema(language, schemaName, transformedText, rendererOptions);
+    for (const [fileName, content] of Object.entries(schema)) {
+      output = content.join("\n");
+      const directory = outputPath.replace(/[^/\\]+$/, '');
+      await writeGeneratedTypes(output, language, directory + fileName, rendererOptions, true); 
+    }
+  } else {
+    const { lines } = await quicktypeJSONSchema(language, schemaName, transformedText, rendererOptions);
+    output = lines.join("\n");
+    await writeGeneratedTypes(output, language, outputPath, rendererOptions);
+  }
 }
 
+async function writeGeneratedTypes(
+  output: string,
+  language: string,
+  outputPath: string,
+  rendererOptions: Record<string, string> = {},
+  forceOverwrite: boolean = false
+): Promise<void> {
+  const directory = outputPath.substring(0, outputPath.lastIndexOf('/'));
+  if (directory && directory !== outputPath) {
+    try {
+      await Deno.mkdir(directory, { recursive: true });
+    } catch (_) {
+    }
+  }
+
+  const getCommentPrefix = (lang: string) => {
+    switch (lang.toLowerCase()) {
+      case 'python':
+        return '#';
+      default:
+        return '//';
+    }
+  };
+  const commentPrefix = getCommentPrefix(language);
+  const currentDateTime = new Date().toISOString().replace('T', ' ').replace(/\.\d{3}Z$/, ' UTC');
+  let packageDeclaration = "";
+  if (language.toLowerCase() === 'java' && rendererOptions.package) {
+    packageDeclaration = "";
+  } 
+  const autoGeneratedComment = `${commentPrefix} This file is generated automatically by SuprSend based on available schema. DO NOT MODIFY IT.\n${commentPrefix} Generated on ${currentDateTime}\n\n`;
+  let existingContent = "";
+  if (!forceOverwrite) {
+    try {
+      existingContent = await Deno.readTextFile(outputPath);
+    } catch (_) { }
+  }
+  
+  if (existingContent === "" || forceOverwrite) {
+    const finalOutput = packageDeclaration + autoGeneratedComment + output;
+    await Deno.writeTextFile(outputPath, finalOutput);
+  } else {
+    let processedOutput = output;
+    processedOutput = removeDuplicateImports(existingContent, output, language);
+    const finalOutput = existingContent + "\n\n" + processedOutput;
+    await Deno.writeTextFile(outputPath, finalOutput);
+  }
+}
+
+function removeDuplicateImports(existingContent: string, newContent: string, language: string): string {
+  const existingLines = existingContent.split('\n');
+  const newLines = newContent.split('\n');
+  const existingImports = new Map<string, Set<string>>();
+  existingLines.forEach(line => {
+    const trimmed = line.trim();
+    if (isImportLine(trimmed, language)) {
+      const parsed = parseImportLine(trimmed, language);
+      if (parsed) {
+        if (!existingImports.has(parsed.module)) {
+          existingImports.set(parsed.module, new Set());
+        }
+        parsed.items.forEach(item => existingImports.get(parsed.module)!.add(item));
+      }
+    }
+  });
+  const filteredNewLines = newLines.filter(line => {
+    const trimmed = line.trim();
+    if (isImportLine(trimmed, language)) {
+      const parsed = parseImportLine(trimmed, language);
+      if (parsed) {
+        const existingItems = existingImports.get(parsed.module) || new Set();
+        const allItemsExist = parsed.items.every(item => existingItems.has(item));
+        return !allItemsExist;
+      }
+    }
+    return true;
+  });
+  const finalLines = cleanupEmptyLines(filteredNewLines.join('\n'));
+  return finalLines;
+}
+
+function cleanupEmptyLines(content: string): string {
+  const lines = content.split('\n');
+  const cleanedLines: string[] = [];
+  let consecutiveEmptyLines = 0;
+  for (const line of lines) {
+    if (line.trim() === '') {
+      consecutiveEmptyLines++;
+      if (consecutiveEmptyLines <= 1) {
+        cleanedLines.push(line);
+      }
+    } else {
+      consecutiveEmptyLines = 0;
+      cleanedLines.push(line);
+    }
+  }
+  while (cleanedLines.length > 0 && cleanedLines[cleanedLines.length - 1].trim() === '') {
+    cleanedLines.pop();
+  }
+  return cleanedLines.join('\n');
+}
+
+function parseImportLine(line: string, language: string): { module: string; items: string[] } | null {
+  const lang = language.toLowerCase();
+  switch (lang) {
+    case 'python':
+      const fromMatch = line.match(/^from\s+(\S+)\s+import\s+(.+)$/);
+      if (fromMatch) {
+        const module = fromMatch[1];
+        const items = fromMatch[2].split(',').map(item => item.trim());
+        return { module, items };
+      }
+      const importMatch = line.match(/^import\s+(\S+)$/);
+      if (importMatch) {
+        return { module: importMatch[1], items: [importMatch[1]] };
+      }
+      break;
+    case 'typescript':
+    case 'typescript-zod':
+    case 'javascript':
+      const namedMatch = line.match(/^import\s+\{([^}]+)\}\s+from\s+['"]([^'"]+)['"]/);
+      if (namedMatch) {
+        const items = namedMatch[1].split(',').map(item => item.trim());
+        const module = namedMatch[2];
+        return { module, items };
+      }
+      const starMatch = line.match(/^import\s+\*\s+as\s+(\S+)\s+from\s+['"]([^'"]+)['"]/);
+      if (starMatch) {
+        return { module: starMatch[2], items: [starMatch[1]] };
+      }
+      break;
+    case 'java':
+      const langMatch = line.match(/^import\s+([^;]+);$/);
+      if (langMatch) {
+        const fullPath = langMatch[1];
+        const parts = fullPath.split('.');
+        const className = parts[parts.length - 1];
+        return { module: fullPath, items: [className] };
+      }
+      break;
+    case 'kotlin':
+      const kotlinMatch = line.match(/^import\s+(\S+)$/);
+      if (kotlinMatch) {
+        const module = kotlinMatch[1];
+        return { module, items: [module] };
+      }
+      break;
+    case 'go':
+      const goSingleMatch = line.match(/^import\s+"([^"]+)"$/);
+      if (goSingleMatch) {
+        const module = goSingleMatch[1];
+        const parts = module.split('/');
+        const packageName = parts[parts.length - 1];
+        return { module, items: [packageName] };
+      }
+      const goAliasMatch = line.match(/^import\s+(\S+)\s+"([^"]+)"$/);
+      if (goAliasMatch) {
+        const alias = goAliasMatch[1];
+        const module = goAliasMatch[2];
+        return { module, items: [alias] };
+      }
+      break;
+    case 'swift':
+      const swiftMatch = line.match(/^import\s+(\S+)$/);
+      if (swiftMatch) {
+        const module = swiftMatch[1];
+        return { module, items: [module] };
+      }
+      break;
+    case 'dart':
+      const dartMatch = line.match(/^import\s+['"]([^'"]+)['"];?$/);
+      if (dartMatch) {
+        const module = dartMatch[1];
+        return { module, items: [module] };
+      }
+      break;
+  }
+  return null;
+}
+
+function isImportLine(line: string, language: string): boolean {
+  const lang = language.toLowerCase();
+  switch (lang) {
+    case 'python':
+      return line.startsWith('from ') || line.startsWith('import ');
+    case 'typescript':
+    case 'typescript-zod':
+    case 'javascript':
+      return line.startsWith('import ') && (line.includes(' from ') || line.includes(';'));
+    case 'java':
+      return line.startsWith('import ') && line.endsWith(';');
+    case 'kotlin':
+      return line.startsWith('import ') && !line.endsWith(';'); // Kotlin doesn't require semicolons
+    case 'go':
+      return line.startsWith('import ') && (line.includes('"') || line.includes("'"));
+    case 'dart':
+      return line.startsWith('import ') && (line.includes("'") || line.includes('"'));
+    case 'swift':
+      return line.startsWith('import ');
+    default:
+      return false;
+  }
+}
+
+export function transformSchema(
+  schema: Record<string, any>,
+): Record<string, any> {
+  if (schema.type === "object" && !schema.additionalProperties) {
+    schema.additionalProperties = false;
+  }
+
+  for (const key of Object.keys(schema.properties ?? {})) {
+    const property = schema.properties[key];
+
+    if (property.type === "object") {
+      const transformedProperty = transformSchema(property);
+      schema.properties[key] = transformedProperty;
+    }
+  }
+
+  return schema;
+}
 main();

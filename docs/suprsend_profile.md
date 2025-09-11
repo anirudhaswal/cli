@@ -1,23 +1,15 @@
-## suprsend sync
+## suprsend profile
 
-Sync all your SuprSend assets locally
+Manage Profile
 
 ### Synopsis
 
-Sync all your SuprSend assets locally with the server
-
-```
-suprsend sync [flags]
-```
+Manage Profile and store credentials
 
 ### Options
 
 ```
-  -a, --assets string   Assets to sync (all, workflows, schemas) (default "all")
-  -f, --from string     Source workspace (required) (default "staging")
-  -h, --help            help for sync
-  -m, --mode string     Mode to sync assets (draft, live) (default "live")
-  -t, --to string       Destination workspace (required) (default "production")
+  -h, --help   help for profile
 ```
 
 ### Options inherited from parent commands
@@ -33,4 +25,9 @@ suprsend sync [flags]
 ### SEE ALSO
 
 * [suprsend](suprsend.md)	 - CLI to interact with SuprSend, a Notification Infrastructure
+* [suprsend profile add](suprsend_profile_add.md)	 - Add a new profile
+* [suprsend profile list](suprsend_profile_list.md)	 - Lists all profiles
+* [suprsend profile modify](suprsend_profile_modify.md)	 - Modify a profile
+* [suprsend profile remove](suprsend_profile_remove.md)	 - Remove a profile
+* [suprsend profile use](suprsend_profile_use.md)	 - Set the active profile
 

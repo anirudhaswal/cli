@@ -14,8 +14,11 @@ var profileRemoveCmd = &cobra.Command{
 	Short: "Remove a profile",
 	Run: func(cmd *cobra.Command, args []string) {
 		if removeName == "" {
-			log.Error("You must specify the name as --name")
-			return
+			removeName = promptForProfileName()
+			if removeName == "" {
+				log.Error("No profile name provided")
+				return
+			}
 		}
 
 		path, err := cmd.Flags().GetString("config")
@@ -44,7 +47,7 @@ var profileRemoveCmd = &cobra.Command{
 				log.Warn("Active profile was removed. Falling back to 'default'.")
 			} else {
 				cfg.ActiveProfile = ""
-				log.Warn("Active profile was remove. No active profile set.")
+				log.Warn("Active profile was removed. No active profile set.")
 			}
 		}
 
@@ -57,5 +60,5 @@ var profileRemoveCmd = &cobra.Command{
 
 func init() {
 	profileRemoveCmd.Flags().StringVar(&removeName, "name", "", "Name of the profile to remove")
-	ProfilesCmd.AddCommand(profileRemoveCmd)
+	ProfileCmd.AddCommand(profileRemoveCmd)
 }
