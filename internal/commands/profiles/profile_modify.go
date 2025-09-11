@@ -105,52 +105,26 @@ func runModifyInteractive(cfg *Config, path string) {
 
 	ui2 := cobra_ui.New()
 
-	currentBaseURL := selectedProfile.BaseUrl
-	if currentBaseURL == "" {
-		currentBaseURL = "https://hub.suprsend.com"
+	if modifyBaseUrl == "" {
+		modifyBaseUrl = selectedProfile.BaseUrl
+		if modifyBaseUrl == "" {
+			modifyBaseUrl = "https://hub.suprsend.com/"
+		}
 	}
-	currentMgmntURL := selectedProfile.MgmntUrl
-	if currentMgmntURL == "" {
-		currentMgmntURL = "https://api.suprsend.com"
-	}
-	currentToken := selectedProfile.ServiceToken
-	if currentToken == "" {
-		currentToken = "not set"
+	if modifyMgmntUrl == "" {
+		modifyMgmntUrl = selectedProfile.MgmntUrl
+		if modifyMgmntUrl == "" {
+			modifyMgmntUrl = "https://api.suprsend.com/"
+		}
 	}
 
 	var questions []cobra_ui.Question
 
-	if modifyBaseUrl == "" {
-		questions = append(questions, cobra_ui.Question{
-			Text: fmt.Sprintf("Base URL (current: %s, press Enter to keep): ", currentBaseURL),
-			Handler: func(s string) error {
-				s = cleanInput(s)
-				if s != "" {
-					modifyBaseUrl = s
-				} else {
-					modifyBaseUrl = selectedProfile.BaseUrl
-				}
-				return nil
-			},
-		})
-	}
-
-	if modifyMgmntUrl == "" {
-		questions = append(questions, cobra_ui.Question{
-			Text: fmt.Sprintf("Management URL (current: %s, press Enter to keep): ", currentMgmntURL),
-			Handler: func(s string) error {
-				s = cleanInput(s)
-				if s != "" {
-					modifyMgmntUrl = s
-				} else {
-					modifyMgmntUrl = selectedProfile.MgmntUrl
-				}
-				return nil
-			},
-		})
-	}
-
 	if modifyServiceToken == "" {
+		currentToken := selectedProfile.ServiceToken
+		if currentToken == "" {
+			currentToken = "not set"
+		}
 		questions = append(questions, cobra_ui.Question{
 			Text: fmt.Sprintf("Service Token (current: %s, press Enter to keep): ", currentToken),
 			Handler: func(s string) error {

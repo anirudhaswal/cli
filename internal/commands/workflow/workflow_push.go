@@ -23,9 +23,15 @@ var workflowPushCmd = &cobra.Command{
 		path, _ := cmd.Flags().GetString("path")
 		commit, _ := cmd.Flags().GetBool("commit")
 		commitMessage, _ := cmd.Flags().GetString("commit-message")
+		slug, _ := cmd.Flags().GetString("slug")
 
 		if path == "" {
-			path = promptForOutputDirectory()
+			path = filepath.Join(".", "suprsend", "workflow")
+		}
+
+		if _, err := os.Stat(path); os.IsNotExist(err) {
+			log.Errorf("Directory %s does not exist", path)
+			return
 		}
 
 		if err := validateInputDirectory(path); err != nil {
@@ -39,12 +45,55 @@ var workflowPushCmd = &cobra.Command{
 			return
 		}
 
-		fmt.Printf("Pushing workflows to %s\n", workspace)
 		mgmntClient := utils.GetSuprSendMgmntClient()
 
 		hasError := false
 		var p *pin.Pin
 		var cancel context.CancelFunc
+
+		if slug != "" {
+			fileName := fmt.Sprintf("%s.json", slug)
+			filePath := filepath.Join(path, fileName)
+
+			if _, err := os.Stat(filePath); err != nil {
+				log.WithError(err).Errorf("Failed to find workflow file %s", filePath)
+				return
+			}
+
+			data, err := os.ReadFile(filePath)
+			if err != nil {
+				log.WithError(err).Errorf("Failed to read workflow file %s", filePath)
+			}
+
+			if !hasError && !utils.IsOutputPiped() {
+				p = pin.New(fmt.Sprintf("Pushing %s...", slug),
+					pin.WithSpinnerColor(pin.ColorCyan),
+					pin.WithTextColor(pin.ColorYellow),
+				)
+				cancel = p.Start(context.Background())
+			}
+			var workflow map[string]any
+			if err := json.Unmarshal(data, &workflow); err != nil {
+				log.WithError(err).Errorf("Failed to parse JSON for %s", filePath)
+				return
+			}
+
+			err = mgmntClient.PushWorkflow(workspace, slug, workflow, commit, commitMessage)
+			if err != nil {
+				log.WithError(err).Errorf("Failed to push workflow %s", slug)
+				return
+			}
+
+			if p != nil && cancel != nil {
+				p.Stop(fmt.Sprintf("Pushed workflow: %s", slug))
+				cancel()
+				p = nil
+				cancel = nil
+			} else {
+				fmt.Fprintf(os.Stdout, "Pushed workflow: %s\n", slug)
+			}
+			return
+		}
 
 		for _, file := range files {
 			if file.IsDir() || !strings.HasSuffix(file.Name(), ".json") {
@@ -116,5 +165,6 @@ func init() {
 	workflowPushCmd.PersistentFlags().StringP("path", "p", "", "Output directory for workflows")
 	workflowPushCmd.PersistentFlags().BoolP("commit", "c", false, "Commit the workflows")
 	workflowPushCmd.PersistentFlags().StringP("commit-message", "m", "", "Commit message for the workflows")
+	workflowPushCmd.PersistentFlags().StringP("slug", "g", "", "Slug of the workflow to push")
 	WorkflowCmd.AddCommand(workflowPushCmd)
 }

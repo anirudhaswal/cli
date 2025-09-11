@@ -108,33 +108,10 @@ func runAddInteractive(cfg *Config, path string) {
 	}
 
 	if addBaseUrl == "" {
-		questions = append(questions, cobra_ui.Question{
-			Text: "Base URL (optional, press Enter for default): ",
-			Handler: func(s string) error {
-				s = cleanInput(s)
-				if s != "" {
-					addBaseUrl = s
-				} else {
-					addBaseUrl = "https://hub.suprsend.com/"
-				}
-				return nil
-			},
-		})
+		addBaseUrl = "https://hub.suprsend.com/"
 	}
-
 	if addMgmntUrl == "" {
-		questions = append(questions, cobra_ui.Question{
-			Text: "Management URL (optional, press Enter for default): ",
-			Handler: func(s string) error {
-				s = cleanInput(s)
-				if s != "" {
-					addMgmntUrl = s
-				} else {
-					addMgmntUrl = "https://api.suprsend.com/"
-				}
-				return nil
-			},
-		})
+		addMgmntUrl = "https://api.suprsend.com/"
 	}
 
 	if len(questions) > 0 {
@@ -151,7 +128,7 @@ func runAddInteractive(cfg *Config, path string) {
 		return
 	}
 
-	fmt.Println("\n📋 Profile Summary:")
+	fmt.Println("\n Profile Summary:")
 	fmt.Printf("   Name: %s\n", addName)
 	fmt.Printf("   Service Token: %s\n", addServiceToken)
 	fmt.Printf("   Base URL: %s\n", addBaseUrl)
@@ -159,7 +136,7 @@ func runAddInteractive(cfg *Config, path string) {
 
 	reader := bufio.NewReader(os.Stdin)
 	for {
-		fmt.Print("\n🤔 Add this profile? (Y/n): ")
+		fmt.Print("\n Add this profile? (Y/n): ")
 		response, err := reader.ReadString('\n')
 		if err != nil {
 			log.WithError(err).Error("Failed to read input")
@@ -175,7 +152,7 @@ func runAddInteractive(cfg *Config, path string) {
 			return
 		}
 
-		log.Infof("❌ Please enter 'y' for yes or 'n' for no")
+		log.Infof(" Please enter 'y' for yes or 'n' for no")
 	}
 
 	if cfg.ActiveProfile == "" {
@@ -195,5 +172,5 @@ func runAddInteractive(cfg *Config, path string) {
 		return
 	}
 
-	log.Infof("✨Profile %s added successfully!\n", addName)
+	log.Infof("Profile %s added successfully!\n", addName)
 }

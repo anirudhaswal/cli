@@ -20,10 +20,15 @@ var schemaPushCmd = &cobra.Command{
 	Long:  "Push schemas in a workspace",
 	Run: func(cmd *cobra.Command, args []string) {
 		workspace, _ := cmd.Flags().GetString("workspace")
-
+		slug, _ := cmd.Flags().GetString("slug")
 		path, _ := cmd.Flags().GetString("path")
 		if path == "" {
-			path = promptForOutputDirectory()
+			path = filepath.Join(".", "suprsend", "schema")
+		}
+
+		if _, err := os.Stat(path); os.IsNotExist(err) {
+			log.Errorf("Directory %s does not exist", path)
+			return
 		}
 
 		if err := validateInputDirectory(path); err != nil {
@@ -37,11 +42,56 @@ var schemaPushCmd = &cobra.Command{
 			return
 		}
 
-		fmt.Printf("Pushing schemas to %s\n", workspace)
 		mgmntClient := utils.GetSuprSendMgmntClient()
 		hasError := false
 		var p *pin.Pin
 		var cancel context.CancelFunc
+
+		if slug != "" {
+			fileName := fmt.Sprintf("%s.json", slug)
+			filePath := filepath.Join(path, fileName)
+
+			if _, err := os.Stat(filePath); err != nil {
+				log.WithError(err).Errorf("Failed to find schema file %s", filePath)
+				return
+			}
+
+			data, err := os.ReadFile(filePath)
+			if err != nil {
+				log.WithError(err).Errorf("Failed to read schema file %s", filePath)
+				return
+			}
+
+			if !hasError && !utils.IsOutputPiped() {
+				p = pin.New(fmt.Sprintf("Pushing %s...", slug),
+					pin.WithSpinnerColor(pin.ColorCyan),
+					pin.WithTextColor(pin.ColorYellow),
+				)
+				cancel = p.Start(context.Background())
+			}
+
+			var schema map[string]any
+			if err := json.Unmarshal(data, &schema); err != nil {
+				log.WithError(err).Errorf("Failed to parse JSON for %s", filePath)
+				return
+			}
+
+			err = mgmntClient.PushSchema(workspace, slug, schema)
+			if err != nil {
+				log.WithError(err).Errorf("Failed to push schema %s", slug)
+				return
+			}
+
+			if p != nil && cancel != nil {
+				p.Stop(fmt.Sprintf("Pushed schema: %s", slug))
+				cancel()
+				p = nil
+				cancel = nil
+			} else {
+				fmt.Fprintf(os.Stdout, "Pushed schema: %s\n", slug)
+			}
+			return
+		}
 
 		for _, file := range files {
 			if file.IsDir() || !strings.HasSuffix(file.Name(), ".json") {
@@ -110,5 +160,6 @@ var schemaPushCmd = &cobra.Command{
 
 func init() {
 	schemaPushCmd.PersistentFlags().StringP("path", "p", "", "Output directory for schemas")
+	schemaPushCmd.PersistentFlags().StringP("slug", "g", "", "Slug of schema to push")
 	SchemaCmd.AddCommand(schemaPushCmd)
 }

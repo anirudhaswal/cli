@@ -36,8 +36,6 @@ var listProfilesCmd = &cobra.Command{
 		}
 
 		outputType, _ := cmd.Flags().GetString("output")
-
-		// Check if any profile has BaseUrl, MgmntUrl, or ServiceToken values
 		hasBaseUrl := false
 		hasMgmntUrl := false
 		hasServiceToken := false

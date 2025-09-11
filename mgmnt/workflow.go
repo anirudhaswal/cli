@@ -105,6 +105,26 @@ func (c *SS_MgmntClient) ListWorkflows(workspace string, limit int, offset int, 
 	}, nil
 }
 
+func (c *SS_MgmntClient) GetWorkflowDetailBySlug(workspace, slug, mode string) (*map[string]any, error) {
+	client := client.NewHTTPClient()
+	defer client.Close()
+
+	url := fmt.Sprintf("%sv1/%s/workflow/%s/?mode=%s", c.mgmnt_base_URL, workspace, slug, mode)
+
+	resp, err := client.R().
+		SetDebug(c.debug).
+		SetHeader("Authorization", "ServiceToken "+c.serviceToken).
+		SetResult(&map[string]any{}).
+		Get(url)
+	if err != nil {
+		return nil, err
+	}
+	if resp.IsError() {
+		return nil, fmt.Errorf("error getting workflow detail: %s", resp.Status())
+	}
+	return resp.Result().(*map[string]any), nil
+}
+
 func (c *SS_MgmntClient) GetWorkflowDetail(workspace, slug, mode string) (*WorkflowDetailResponse, error) {
 	client := client.NewHTTPClient()
 	defer client.Close()

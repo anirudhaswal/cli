@@ -117,6 +117,27 @@ func (c *SS_MgmntClient) ListSchema(workspace string, limit, offset int, mode st
 	}, nil
 }
 
+func (c *SS_MgmntClient) GetSchemaBySlug(workspace, slug string) (*map[string]any, error) {
+	client := client.NewHTTPClient()
+	defer client.Close()
+	url := fmt.Sprintf("%sv1/%s/schema/%s/", c.mgmnt_base_URL, workspace, slug)
+
+	resp, err := client.R().
+		SetDebug(c.debug).
+		SetHeader("Authorization", "ServiceToken "+c.serviceToken).
+		SetResult(&map[string]any{}).
+		Get(url)
+
+	if err != nil {
+		return nil, fmt.Errorf("request failed: %w", err)
+	}
+	if resp.IsError() {
+		return nil, fmt.Errorf("request failed: %w", err)
+	}
+
+	return resp.Result().(*map[string]any), nil
+}
+
 func (c *SS_MgmntClient) GetSchemas(workspace, mode string) (*SchemasResponse, error) {
 	if mode != "live" && mode != "draft" {
 		return nil, fmt.Errorf("invalid mode: %s, Available modes are: live, draft", mode)
