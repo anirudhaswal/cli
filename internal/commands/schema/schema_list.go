@@ -54,6 +54,7 @@ func init() {
 	schemaListCmd.PersistentFlags().IntP("limit", "l", 20, "Limit the number of schemas to list")
 	schemaListCmd.PersistentFlags().IntP("offset", "f", 0, "Offset the number of schemas to list (default: 0)")
 	schemaListCmd.PersistentFlags().StringP("mode", "m", "live", "Mode of schemas to list (draft, live), default: live")
+	schemaListCmd.PersistentFlags().StringP("output", "o", "pretty", "Output Style (pretty, yaml, json)")
 
 	SchemaCmd.Flags().StringP("workspace", "w", "staging", "Workspace to use the schemas from")
 	SchemaCmd.AddCommand(schemaListCmd)
