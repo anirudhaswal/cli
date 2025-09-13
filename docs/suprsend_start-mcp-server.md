@@ -14,9 +14,11 @@ suprsend start-mcp-server [flags]
 ### Options
 
 ```
+  -e, --events string      The types of events to use. Can be either 'all'/'none' or comma separated list of event slugs. (default "none")
   -h, --help               help for start-mcp-server
-  -T, --tools string       The types of tools to use. Can be either 'all' or comma separated list of tool names. (default "all")
+  -T, --tools string       The types of tools to use. Can be either 'all'/'none' or comma separated list of tool names. (default "all")
   -t, --transport string   The transport to use for the MCP server. Can be stdio/sse/http. (default "stdio")
+  -W, --workflows string   The types of workflows to use. Can be either 'all'/'none' or comma separated list of workflow slugs. (default "none")
 ```
 
 ### Options inherited from parent commands

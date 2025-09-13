@@ -10,10 +10,10 @@ suprsend version [flags]
 
 ```
 
-/tmp/go-build4229812682/b001/exe/main version
-/tmp/go-build4229812682/b001/exe/main version -o=json
-/tmp/go-build4229812682/b001/exe/main version -o=yaml
-/tmp/go-build4229812682/b001/exe/main version -o=short
+/Users/gaurav/Library/Caches/go-build/8c/8c3755e3687779410a1634bee45f2150f0413ce12d31b91f42292eb5784aff91-d/main version
+/Users/gaurav/Library/Caches/go-build/8c/8c3755e3687779410a1634bee45f2150f0413ce12d31b91f42292eb5784aff91-d/main version -o=json
+/Users/gaurav/Library/Caches/go-build/8c/8c3755e3687779410a1634bee45f2150f0413ce12d31b91f42292eb5784aff91-d/main version -o=yaml
+/Users/gaurav/Library/Caches/go-build/8c/8c3755e3687779410a1634bee45f2150f0413ce12d31b91f42292eb5784aff91-d/main version -o=short
 
 ```
 
