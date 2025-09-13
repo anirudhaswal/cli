@@ -4,11 +4,42 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"slices"
+	"strings"
 
 	suprsend "github.com/suprsend/suprsend-go"
 )
 
-func FetchEventsMcp(workspace string) []map[string]string {
+type EventPayloadSchema struct {
+	Schema string `json:"schema"`
+	// version_no is optional and can be nil
+	Version string `json:"version_no,omitempty"`
+}
+
+type EventInfo struct {
+	Name          string
+	Description   string
+	PayloadSchema EventPayloadSchema
+}
+
+func FetchEventsMcp(workspace string, eventsFlag string) []EventInfo {
+	// eventFlag can be `none` or `all` or a comma separated list of event slugs
+	if eventsFlag == "none" {
+		return nil
+	}
+	var eventsToBeFetched []string
+	if eventsFlag != "all" {
+		eventsToBeFetched = strings.Split(eventsFlag, ",")
+		// trim the events
+		for i, event := range eventsToBeFetched {
+			eventsToBeFetched[i] = strings.TrimSpace(event)
+		}
+	}
+
+	if len(eventsToBeFetched) == 0 && eventsFlag != "all" {
+		return nil
+	}
+
 	mgmntClient := GetSuprSendMgmntClient()
 	if mgmntClient == nil {
 		return nil
@@ -17,24 +48,37 @@ func FetchEventsMcp(workspace string) []map[string]string {
 	if err != nil {
 		return nil
 	}
-	var result []map[string]string
+	var result []EventInfo
 	for _, event := range eventsResp.Results {
 		eventMap, ok := event.(map[string]any)
 		if !ok {
 			continue
 		}
-		eventInfo := make(map[string]string)
+		eventInfo := EventInfo{}
 		if name, ok := eventMap["name"].(string); ok {
-			eventInfo["name"] = name
+			eventInfo.Name = name
 		} else {
-			eventInfo["name"] = ""
+			eventInfo.Name = ""
 		}
 		if description, ok := eventMap["description"].(string); ok {
-			eventInfo["description"] = description
+			eventInfo.Description = description
 		} else {
-			eventInfo["description"] = ""
+			eventInfo.Description = ""
 		}
-		result = append(result, eventInfo)
+		if payloadSchema, ok := eventMap["payload_schema"].(map[string]any); ok {
+			eventInfo.PayloadSchema.Schema = payloadSchema["schema"].(string)
+			// check if version_no is nil
+			if versionNo, ok := payloadSchema["version_no"].(string); ok {
+				eventInfo.PayloadSchema.Version = versionNo
+			} else {
+				eventInfo.PayloadSchema.Version = ""
+			}
+		}
+
+		// add th event to the result only if either eventsFlag is "all" or the event is in the eventsToBeFetched list
+		if eventsFlag == "all" || slices.Contains(eventsToBeFetched, eventInfo.Name) {
+			result = append(result, eventInfo)
+		}
 	}
 	return result
 }
@@ -51,10 +95,6 @@ func GetExtensionForLanguage(language string) string {
 		"dart":           ".dart",
 	}
 	return extMap[language]
-}
-
-func IsEmptySchema(properties map[string]interface{}) bool {
-	return properties == nil || len(properties) == 0
 }
 
 func GetStringPtr(m map[string]any, key string) *string {
