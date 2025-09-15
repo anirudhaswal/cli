@@ -27,7 +27,7 @@ func triggerEvent(_ context.Context, request mcp.CallToolRequest, workspace, nam
 		}
 	}
 
-	log.Infof("Event request body: %s, distinct_id: %s", eventRequestBody, distinctID)
+	log.Debugf("Event request body: %s, distinct_id: %s", eventRequestBody, distinctID)
 
 	suprsendClient, err := utils.GetSuprSendWorkspaceClient(workspace)
 	if err != nil {
@@ -85,15 +85,16 @@ func RegisterDynamicEventsTools(workspace string, eventsFlag string) error {
 		} else {
 			description = fmt.Sprintf("Use this tool to trigger event with name: \"%s\" with description: \"%s\"", name, description)
 		}
+		eventName := name
 		eventTool := &Tool{
-			Name:        "trigger_" + name + "_event",
+			Name:        "trigger_" + eventName + "_event",
 			Description: description,
-			MCPTool: mcp.NewToolWithRawSchema("trigger_"+name+"_event",
+			MCPTool: mcp.NewToolWithRawSchema("trigger_"+eventName+"_event",
 				description,
 				mergedSchema,
 			),
 			Handler: func(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
-				return triggerEvent(ctx, request, workspace, name)
+				return triggerEvent(ctx, request, workspace, eventName)
 			},
 		}
 		RegisterEvent(eventTool)
