@@ -151,6 +151,9 @@ var listToolsCmd = &cobra.Command{
 		for _, t := range toolset.GetAllTools() {
 			resp = append(resp, toolListResponse{Tool_Type: t.Type, Tool_Name: t.Name, Tool_Description: t.Description})
 		}
+		for _, t := range toolset.GetAllEvents() {
+			resp = append(resp, toolListResponse{Tool_Type: t.Type, Tool_Name: t.Name, Tool_Description: t.Description})
+		}
 		outputType, _ := cmd.Flags().GetString("output")
 		utils.OutputData(resp, outputType)
 	},
@@ -160,8 +163,8 @@ func init() {
 	startMcpServerCmd.AddCommand(listToolsCmd)
 	rootCmd.AddCommand(startMcpServerCmd)
 
-	startMcpServerCmd.Flags().StringVarP(&transport, "transport", "t", "stdio", "The transport to use for the MCP server. Can be stdio/sse/http.")
-	startMcpServerCmd.Flags().StringVarP(&tools, "tools", "T", "all", "The types of tools to use. Can be either 'all'/'none' or comma separated list of tool names.")
-	startMcpServerCmd.Flags().StringVarP(&events, "events", "e", "none", "The types of events to use. Can be either 'all'/'none' or comma separated list of event slugs.")
-	startMcpServerCmd.Flags().StringVarP(&workflows, "workflows", "W", "none", "The types of workflows to use. Can be either 'all'/'none' or comma separated list of workflow slugs.")
+	startMcpServerCmd.PersistentFlags().StringVarP(&transport, "transport", "t", "stdio", "The transport to use for the MCP server. Can be stdio/sse/http.")
+	startMcpServerCmd.PersistentFlags().StringVarP(&tools, "tools", "T", "all", "The types of tools to use. Can be either 'all'/'none' or comma separated list of tool names.")
+	startMcpServerCmd.PersistentFlags().StringVarP(&events, "events", "e", "none", "The types of events to use. Can be either 'all'/'none' or comma separated list of event slugs.")
+	startMcpServerCmd.PersistentFlags().StringVarP(&workflows, "workflows", "W", "none", "The types of workflows to use. Can be either 'all'/'none' or comma separated list of workflow slugs.")
 }
