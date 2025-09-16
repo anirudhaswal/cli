@@ -1,19 +1,20 @@
-## suprsend schema commit
+## suprsend event push
 
-Commit schema from draft to live
+Push linked events
 
 ### Synopsis
 
-Commit schema from draft to live in a workspace
+Push linked events in schemas
 
 ```
-suprsend schema commit [flags]
+suprsend event push [flags]
 ```
 
 ### Options
 
 ```
-  -h, --help   help for commit
+  -h, --help               help for push
+  -w, --workspace string   Workspace to push events to (default "staging")
 ```
 
 ### Options inherited from parent commands
@@ -24,10 +25,9 @@ suprsend schema commit [flags]
   -o, --output string          Output Style (pretty, yaml, json) (default "pretty")
   -s, --service-token string   Service token (default: $SUPRSEND_SERVICE_TOKEN)
   -v, --verbosity string       Log level (debug, info, warn, error, fatal, panic) (default "info")
-  -w, --workspace string       Workspace to use (default "staging")
 ```
 
 ### SEE ALSO
 
-* [suprsend schema](suprsend_schema.md)	 - Manage schema
+* [suprsend event](suprsend_event.md)	 - Manage events
 

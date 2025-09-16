@@ -1,23 +1,19 @@
-## suprsend sync
+## suprsend event
 
-Sync all your SuprSend assets locally
+Manage events
 
 ### Synopsis
 
-Sync all your SuprSend assets locally with the server
+Manage events
 
 ```
-suprsend sync [flags]
+suprsend event [flags]
 ```
 
 ### Options
 
 ```
-  -a, --assets string   Assets to sync (all, workflows, schemas, events) (default "all")
-  -f, --from string     Source workspace (required) (default "staging")
-  -h, --help            help for sync
-  -m, --mode string     Mode to sync assets (draft, live) (default "live")
-  -t, --to string       Destination workspace (required) (default "production")
+  -h, --help   help for event
 ```
 
 ### Options inherited from parent commands
@@ -33,4 +29,7 @@ suprsend sync [flags]
 ### SEE ALSO
 
 * [suprsend](suprsend.md)	 - CLI to interact with SuprSend, a Notification Infrastructure
+* [suprsend event list](suprsend_event_list.md)	 - List events
+* [suprsend event pull](suprsend_event_pull.md)	 - Pull events from workspace to local directory
+* [suprsend event push](suprsend_event_push.md)	 - Push linked events
 

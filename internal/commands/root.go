@@ -11,6 +11,7 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"github.com/suprsend/cli/internal/commands/category"
+	"github.com/suprsend/cli/internal/commands/event"
 	"github.com/suprsend/cli/internal/commands/profiles"
 	"github.com/suprsend/cli/internal/commands/schema"
 	workflow "github.com/suprsend/cli/internal/commands/workflow"
@@ -38,7 +39,7 @@ func init() {
 	conf := config.Cfg
 	rootCmd.Flags().StringVarP(&conf.Workspace, "workspace", "w", "staging", "Workspace to use")
 	rootCmd.PersistentFlags().StringVar(&conf.CfgFile, "config", "", "config file (default: $HOME/.suprsend.yaml)")
-	rootCmd.PersistentFlags().StringVarP(&conf.OutputType, "output", "o", "pretty", "Output Tyle (pretty, yaml, json)")
+	rootCmd.PersistentFlags().StringVarP(&conf.OutputType, "output", "o", "pretty", "Output Style (pretty, yaml, json)")
 	rootCmd.PersistentFlags().StringVarP(&conf.Verbosity, "verbosity", "v", "info", "Log level (debug, info, warn, error, fatal, panic)")
 	rootCmd.PersistentFlags().StringVarP(&conf.ServiceToken, "service-token", "s", "", "Service token (default: $SUPRSEND_SERVICE_TOKEN)")
 	rootCmd.PersistentFlags().BoolVarP(&conf.NoColorOutput, "no-color", "n", false, "Disable color output (default: $NO_COLOR)")
@@ -63,11 +64,13 @@ func init() {
 	syncCmd.Flags().StringP("from", "f", "staging", "Source workspace (required)")
 	syncCmd.Flags().StringP("to", "t", "production", "Destination workspace (required)")
 	syncCmd.Flags().StringP("mode", "m", "live", "Mode to sync assets (draft, live)")
-	syncCmd.Flags().StringP("assets", "a", "all", "Assets to sync (all, workflows, schemas)")
+	syncCmd.Flags().StringP("assets", "a", "all", "Assets to sync (all, workflows, schemas, events)")
 
 	rootCmd.AddCommand(profiles.ProfileCmd)
 	rootCmd.AddCommand(workflow.WorkflowCmd)
 	rootCmd.AddCommand(category.CategoryCmd)
+	rootCmd.AddCommand(event.EventCmd)
+	rootCmd.AddCommand(syncCmd)
 	rootCmd.AddCommand(schema.SchemaCmd)
 	rootCmd.AddCommand(syncCmd)
 
