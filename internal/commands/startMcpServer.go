@@ -75,7 +75,10 @@ This server will handle all the requests from user about SuprSend capabilities a
 			profiles.GetResolvedMgmntUrl(),
 			viper.GetBool("debug"),
 		)
-		if err := toolset.RegisterDynamicWorkflowTools(workspace); err != nil {
+		if err := toolset.RegisterDynamicEventsTools(workspace, events); err != nil {
+			log.Warnf("Failed to register event tools in mcp: %v", err)
+		}
+		if err := toolset.RegisterDynamicWorkflowTools(workspace, workflows); err != nil {
 			log.Warnf("Failed to register workflow tools in mcp: %v", err)
 		}
 	},
@@ -152,6 +155,9 @@ var listToolsCmd = &cobra.Command{
 			resp = append(resp, toolListResponse{Tool_Type: t.Type, Tool_Name: t.Name, Tool_Description: t.Description})
 		}
 		for _, t := range toolset.GetAllEvents() {
+			resp = append(resp, toolListResponse{Tool_Type: t.Type, Tool_Name: t.Name, Tool_Description: t.Description})
+		}
+		for _, t := range toolset.GetAllWorkflows() {
 			resp = append(resp, toolListResponse{Tool_Type: t.Type, Tool_Name: t.Name, Tool_Description: t.Description})
 		}
 		outputType, _ := cmd.Flags().GetString("output")

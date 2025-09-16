@@ -11,11 +11,38 @@ import (
 	suprsend "github.com/suprsend/suprsend-go"
 )
 
+type WorkflowPayloadSchema struct {
+	Schema string `json:"schema"`
+	// version_no is optional and can be nil
+	Version string `json:"version_no,omitempty"`
+}
+
+type WorkflowInfo struct {
+	Slug          string
+	Name          string
+	Description   string
+	PayloadSchema WorkflowPayloadSchema
+}
+
 func GenerateUUID() string {
 	return uuid.New().String()
 }
 
-func FetchWorkflowsMcp(workspace string) []map[string]string {
+func FetchWorkflowsMcp(workspace, workflowsFlag string) []WorkflowInfo {
+	if workflowsFlag == "none" {
+		return nil
+	}
+	var workflowsToBeFetched []string
+	if workflowsFlag != "all" {
+		workflowsToBeFetched = strings.Split(workflowsFlag, ",")
+		for i, workflow := range workflowsToBeFetched {
+			workflowsToBeFetched[i] = strings.TrimSpace(workflow)
+		}
+	}
+
+	if len(workflowsToBeFetched) == 0 && workflowsFlag != "all" {
+		return nil
+	}
 	mgmntClient := GetSuprSendMgmntClient()
 	if mgmntClient == nil {
 		return nil
@@ -25,28 +52,38 @@ func FetchWorkflowsMcp(workspace string) []map[string]string {
 		return nil
 	}
 
-	var result []map[string]string
+	var result []WorkflowInfo
 	for _, workflow := range workflowsResp.Results {
 		workflowMap, ok := workflow.(map[string]any)
 		if !ok {
 			continue
 		}
-		workflowInfo := make(map[string]string)
+		workflowInfo := WorkflowInfo{}
 		if slug, ok := workflowMap["slug"].(string); ok {
-			workflowInfo["slug"] = slug
+			workflowInfo.Slug = slug
 		}
 		if name, ok := workflowMap["name"].(string); ok {
-			workflowInfo["name"] = name
+			workflowInfo.Name = name
 		} else {
-			workflowInfo["name"] = ""
+			workflowInfo.Name = ""
 		}
 		if description, ok := workflowMap["description"].(string); ok {
-			workflowInfo["description"] = description
+			workflowInfo.Description = description
 		} else {
-			workflowInfo["description"] = ""
+			workflowInfo.Description = ""
+		}
+		if payloadSchema, ok := workflowMap["payload_schema"].(map[string]any); ok {
+			workflowInfo.PayloadSchema.Schema = payloadSchema["schema"].(string)
+			if versionNo, ok := payloadSchema["version_no"].(string); ok {
+				workflowInfo.PayloadSchema.Version = versionNo
+			} else {
+				workflowInfo.PayloadSchema.Version = ""
+			}
 		}
 
-		result = append(result, workflowInfo)
+		if workflowsFlag == "all" || slices.Contains(workflowsToBeFetched, workflowInfo.Name) {
+			result = append(result, workflowInfo)
+		}
 	}
 	return result
 }
