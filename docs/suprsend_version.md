@@ -10,10 +10,10 @@ suprsend version [flags]
 
 ```
 
-/Users/gaurav/Library/Caches/go-build/51/51fd54096a5f133d3313b9662feaa0f63c8618f0f2a74ed28c60eee7ee8a8281-d/main version
-/Users/gaurav/Library/Caches/go-build/51/51fd54096a5f133d3313b9662feaa0f63c8618f0f2a74ed28c60eee7ee8a8281-d/main version -o=json
-/Users/gaurav/Library/Caches/go-build/51/51fd54096a5f133d3313b9662feaa0f63c8618f0f2a74ed28c60eee7ee8a8281-d/main version -o=yaml
-/Users/gaurav/Library/Caches/go-build/51/51fd54096a5f133d3313b9662feaa0f63c8618f0f2a74ed28c60eee7ee8a8281-d/main version -o=short
+/Users/gaurav/Library/Caches/go-build/8c/8c3755e3687779410a1634bee45f2150f0413ce12d31b91f42292eb5784aff91-d/main version
+/Users/gaurav/Library/Caches/go-build/8c/8c3755e3687779410a1634bee45f2150f0413ce12d31b91f42292eb5784aff91-d/main version -o=json
+/Users/gaurav/Library/Caches/go-build/8c/8c3755e3687779410a1634bee45f2150f0413ce12d31b91f42292eb5784aff91-d/main version -o=yaml
+/Users/gaurav/Library/Caches/go-build/8c/8c3755e3687779410a1634bee45f2150f0413ce12d31b91f42292eb5784aff91-d/main version -o=short
 
 ```
 

@@ -1,19 +1,17 @@
-## suprsend schema commit
+## suprsend event pull
 
-Commit schema from draft to live
-
-### Synopsis
-
-Commit schema from draft to live in a workspace
+Pull events from workspace to local directory
 
 ```
-suprsend schema commit [flags]
+suprsend event pull [flags]
 ```
 
 ### Options
 
 ```
-  -h, --help   help for commit
+  -f, --force              Force overwrite existing directory
+  -h, --help               help for pull
+  -w, --workspace string   Workspace to pull events from (default "staging")
 ```
 
 ### Options inherited from parent commands
@@ -24,10 +22,9 @@ suprsend schema commit [flags]
   -o, --output string          Output Style (pretty, yaml, json) (default "pretty")
   -s, --service-token string   Service token (default: $SUPRSEND_SERVICE_TOKEN)
   -v, --verbosity string       Log level (debug, info, warn, error, fatal, panic) (default "info")
-  -w, --workspace string       Workspace to use (default "staging")
 ```
 
 ### SEE ALSO
 
-* [suprsend schema](suprsend_schema.md)	 - Manage schema
+* [suprsend event](suprsend_event.md)	 - Manage events
 
