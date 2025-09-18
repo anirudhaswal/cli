@@ -209,6 +209,17 @@ func MergeUnderDataAndValidate(baseSchemaStr string, dSchemaJSON any) ([]byte, e
 		return nil, fmt.Errorf("decode D: %w", err)
 	}
 
+	// Hoist $defs/definitions from D to R root so `#/$defs/...` refs continue to resolve
+	if dDefs := getMap(D["$defs"]); len(dDefs) > 0 {
+		R["$defs"] = mergeStringKeyedSchemas(getMap(R["$defs"]), dDefs)
+		delete(D, "$defs")
+	}
+	if dDefsOld := getMap(D["definitions"]); len(dDefsOld) > 0 { // legacy draft support
+		// Normalize legacy `definitions` into root $defs
+		R["$defs"] = mergeStringKeyedSchemas(getMap(R["$defs"]), dDefsOld)
+		delete(D, "definitions")
+	}
+
 	// Ensure R.properties.data is an object schema we can merge into
 	dataSchema := ensureDataObjectSchema(R) // returns the map at R.properties.data
 
