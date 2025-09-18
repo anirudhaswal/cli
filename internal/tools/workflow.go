@@ -154,16 +154,17 @@ func RegisterDynamicWorkflowTools(workspace, workflowsFlag string) error {
 			description = fmt.Sprintf("Use this tool to trigger workflow with name: \"%s\" with description:\"%s\"", name, description)
 		}
 		cleanSlug := strings.ReplaceAll(slug, "-", "_")
-		wfTool := &Tool{
-			Name:        "trigger_" + cleanSlug + "_workflow",
-			Description: fmt.Sprintf("Trigger workflow: %s - %s", name, description),
-			MCPTool: mcp.NewToolWithRawSchema("trigger_"+cleanSlug+"_workflow",
-				description,
-				mergedSchema,
-			),
-			Handler: func(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
-				return triggerWorkflow(ctx, request, workspace, slug)
-			},
+        slugLocal := slug
+        wfTool := &Tool{
+            Name:        "trigger_" + cleanSlug + "_workflow",
+            Description: fmt.Sprintf("Trigger workflow: %s - %s", name, description),
+            MCPTool: mcp.NewToolWithRawSchema("trigger_"+cleanSlug+"_workflow",
+                description,
+                mergedSchema,
+            ),
+            Handler: func(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+                return triggerWorkflow(ctx, request, workspace, slugLocal)
+            },
 		}
 		RegisterWorkflow(wfTool)
 	}
