@@ -31,10 +31,11 @@ func triggerWorkflow(_ context.Context, request mcp.CallToolRequest, workspace, 
 	// actor: object { distinct_id: string }
 	if actorVal, ok := wfRequestRaw["actor"]; ok {
 		if actorMap, ok := actorVal.(map[string]any); ok {
-			if _, ok := actorMap["distinct_id"].(string); !ok {
+			if actorDistinctId, ok := actorMap["distinct_id"].(string); !ok {
 				return mcp.NewToolResultError("invalid 'actor': 'distinct_id' must be a string"), nil
+			} else if actorDistinctId != "" {
+				wfRequestBody["actor"] = actorMap
 			}
-			wfRequestBody["actor"] = actorMap
 		} else {
 			return mcp.NewToolResultError("invalid 'actor': must be an object"), nil
 		}
@@ -78,7 +79,6 @@ func RegisterDynamicWorkflowTools(workspace, workflowsFlag string) error {
 	if len(workflows) == 0 {
 		return fmt.Errorf("no workflows present in %s workspace", workspace)
 	}
-
 	patchSchema := json.RawMessage(`{
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "title": "TenantActorRecipientsSchema",
@@ -124,6 +124,11 @@ func RegisterDynamicWorkflowTools(workspace, workflowsFlag string) error {
 		name := workflow.Name
 		description := workflow.Description
 		mgmntClient := utils.GetSuprSendMgmntClient()
+		// if schema is empty, skip
+		if workflow.PayloadSchema.Schema == "" {
+			continue
+		}
+		log.Debugf("Getting schema for workflow %s, schema: %s, version: %s", slug, workflow.PayloadSchema.Schema, workflow.PayloadSchema.Version)
 		payloadSchema, err := mgmntClient.GetSchema(workspace, workflow.PayloadSchema.Schema, workflow.PayloadSchema.Version)
 		if err != nil {
 			return fmt.Errorf("failed to get schema: %s", err)
