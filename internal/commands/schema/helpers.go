@@ -195,6 +195,107 @@ func MergeAndValidate(baseSchemaStr string, patchJSON any) ([]byte, error) {
 	return pretty(mergedBytes)
 }
 
+// Merge D into R under "properties.data" and validate the result.
+// baseSchemaStr: R as JSON string
+// dSchemaJSON:   D as map[string]any, string, or []byte
+func MergeUnderDataAndValidate(baseSchemaStr string, dSchemaJSON any) ([]byte, error) {
+	// Parse inputs
+	var R map[string]any
+	if err := json.Unmarshal([]byte(baseSchemaStr), &R); err != nil {
+		return nil, fmt.Errorf("unmarshal R: %w", err)
+	}
+	D, err := toMapAny(dSchemaJSON)
+	if err != nil {
+		return nil, fmt.Errorf("decode D: %w", err)
+	}
+
+	// Ensure R.properties.data is an object schema we can merge into
+	dataSchema := ensureDataObjectSchema(R) // returns the map at R.properties.data
+
+	// Merge D into the existing data schema
+	mergedData := MergeJSONSchemas(dataSchema, D)
+
+	// Write back
+	mustSetAt(R, []string{"properties", "data"}, mergedData)
+
+	// Hygiene + validate
+	R = pruneNulls(R).(map[string]any)
+	normalizeObjectFields(R) // ensures $defs/properties/etc are {} not null
+	ensureDraft(R)
+
+	out, err := json.Marshal(R)
+	if err != nil {
+		return nil, err
+	}
+	if err := compileSchema(out); err != nil {
+		return nil, fmt.Errorf("merged schema invalid: %w", err)
+	}
+	return pretty(out)
+}
+
+// ensureDataObjectSchema ensures R.properties.data exists and is an object schema map.
+func ensureDataObjectSchema(R map[string]any) map[string]any {
+	props := getMap(R["properties"])
+	R["properties"] = props
+
+	data := getMap(props["data"])
+	if len(data) == 0 {
+		data = map[string]any{}
+		props["data"] = data
+	}
+	// Make it an object if not already typed
+	if _, ok := data["type"]; !ok {
+		data["type"] = "object"
+	}
+	// Ensure "properties" container exists for object schemas
+	if _, ok := data["properties"]; !ok {
+		data["properties"] = map[string]any{}
+	}
+	return data
+}
+
+// --- helpers specific to this "data" use-case ---
+var objectFields = map[string]struct{}{
+	"properties": {}, "patternProperties": {}, "$defs": {},
+	"definitions": {}, "dependentSchemas": {}, "dependencies": {},
+}
+
+func normalizeObjectFields(m map[string]any) {
+	for k, v := range m {
+		switch vv := v.(type) {
+		case map[string]any:
+			normalizeObjectFields(vv)
+		case []any:
+			for i := range vv {
+				if mm, ok := vv[i].(map[string]any); ok {
+					normalizeObjectFields(mm)
+				}
+			}
+		default:
+		}
+		// If an object-typed field is null/missing, coerce to empty object
+		if _, isObj := objectFields[k]; isObj {
+			if v == nil {
+				m[k] = map[string]any{}
+			}
+		}
+	}
+}
+
+// mustSetAt sets R[path...] = v, creating intermediate maps as needed.
+func mustSetAt(m map[string]any, path []string, v any) {
+	cur := m
+	for i, k := range path {
+		if i == len(path)-1 {
+			cur[k] = v
+			return
+		}
+		nxt := getMap(cur[k])
+		cur[k] = nxt
+		cur = nxt
+	}
+}
+
 // --- Schema compile (this validates the schema itself) ---
 func compileSchema(schemaBytes []byte) error {
 	c := jsonschema.NewCompiler()

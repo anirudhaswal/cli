@@ -14,27 +14,30 @@ import (
 )
 
 func triggerWorkflow(_ context.Context, request mcp.CallToolRequest, workspace, slug string) (*mcp.CallToolResult, error) {
-	wfRequestRaw, ok := request.GetArguments()["workflow_request_body"]
-	if !ok {
-		return mcp.NewToolResultError("Workflow Request Body is required."), nil
-	}
+	wfRequestRaw := request.GetArguments()
 	tenantId := request.GetString("tenant_id", "")
-	actor := request.GetArguments()["actor"]
-	wfRequestBody, ok := wfRequestRaw.(map[string]any)
-	if !ok {
-		return mcp.NewToolResultError("Invalid workflow request body"), nil
-	}
-	if slug != "" {
-		wfRequestBody["workflow"] = slug
-	}
-	if actor != nil {
-		wfRequestBody["actor"] = actor
-	}
 	suprsendClient, err := utils.GetSuprSendWorkspaceClient(workspace)
 	if err != nil {
 		log.Error("Error getting workspace client: ", err)
 		return mcp.NewToolResultError(err.Error()), nil
 	}
+	// add workflow slug to the request body
+	wfRequestBody := map[string]any{}
+	wfRequestBody["workflow"] = slug
+	// if tenant id is present, add it to the request body
+	if tenantId != "" {
+		wfRequestBody["tenant_id"] = tenantId
+	}
+	// if actor.distinct_id is present, add it to the request body
+	if actorDistinctId, ok := wfRequestRaw["actor.distinct_id"]; ok {
+		wfRequestBody["actor.distinct_id"] = actorDistinctId
+	}
+	// if recipients is present, add it to the request body
+	if recipients, ok := wfRequestRaw["recipients"]; ok {
+		wfRequestBody["recipients"] = recipients
+	}
+	// Add data to the request body
+	wfRequestBody["data"] = wfRequestRaw["data"]
 	wf := &suprsend.WorkflowTriggerRequest{
 		Body:           wfRequestBody,
 		IdempotencyKey: utils.GenerateUUID(),
@@ -45,23 +48,9 @@ func triggerWorkflow(_ context.Context, request mcp.CallToolRequest, workspace, 
 	if err != nil {
 		return mcp.NewToolResultError(err.Error()), nil
 	}
-
-	_, ok = wfRequestBody["schema"]
-	if !ok {
-		responseData := map[string]any{
-			"response": resp,
-			"warning":  fmt.Sprintf("Schema is not present for %s workflow", slug),
-		}
-		jsonData, err := json.MarshalIndent(responseData, "", "  ")
-		if err != nil {
-			return mcp.NewToolResultError(err.Error()), nil
-		}
-		return mcp.NewToolResultStructured(responseData, string(jsonData)), nil
-	}
 	responseData := map[string]any{
 		"response": resp,
 	}
-
 	jsonData, err := json.MarshalIndent(responseData, "", "  ")
 	if err != nil {
 		return mcp.NewToolResultError(err.Error()), nil
@@ -73,41 +62,45 @@ func triggerWorkflow(_ context.Context, request mcp.CallToolRequest, workspace, 
 func RegisterDynamicWorkflowTools(workspace, workflowsFlag string) error {
 	workflows := utils.FetchWorkflowsMcp(workspace, workflowsFlag)
 	if len(workflows) == 0 {
-		return fmt.Errorf("No workflows present in %s workspace", workspace)
+		return fmt.Errorf("no workflows present in %s workspace", workspace)
 	}
 
-	var patchSchema = json.RawMessage(`{
-		"type": "object",
-		"properties": {
-			"workflow_request_body": {
-				"type": "object",
-				"properties": {
-					"recipients": {
-						"type": "array",
-						"items": {
-							"type": "object",
-							"additionalProperties": true
-						}
-					}
-				},
-				"required": ["recipients"]
-			},
-			"tenant_id": {
-				"type": "string"
-			},
-			"actor": {
-				"type": "object",
-				"properties": {
-					"distinct_id": {
-						"type": "string"
-					},
-					"is_transient": {
-						"type": "boolean"
-					}
-				}
-			}
-		}
-	}`)
+	patchSchema := json.RawMessage(`{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "TenantActorRecipientsSchema",
+  "type": "object",
+  "properties": {
+    "tenant_id": {
+      "type": "string",
+      "default": "default",
+      "description": "Unique identifier for the tenant. Defaults to 'default' if not provided."
+    },
+    "actor": {
+      "type": "object",
+      "description": "Represents the actor who initiated the action, identified by a distinct_id.",
+      "properties": {
+        "distinct_id": {
+          "type": "string",
+          "description": "Unique identifier of the actor (e.g., user ID).",
+          "example": "kfdfdj"
+        }
+      },
+      "required": ["distinct_id"],
+      "additionalProperties": false
+    },
+    "recipients": {
+      "type": "array",
+      "description": "List of recipient distinct_ids. Each item in this array is a string representing a recipient's unique identifier.",
+      "items": {
+        "type": "string",
+        "example": "kfdfdj"
+      },
+      "minItems": 1
+    }
+  },
+  "required": ["recipients"],
+  "additionalProperties": false
+}`)
 
 	for _, workflow := range workflows {
 		slug := workflow.Slug
@@ -125,7 +118,7 @@ func RegisterDynamicWorkflowTools(workspace, workflowsFlag string) error {
 		if err != nil {
 			return fmt.Errorf("failed to marshal schema: %s", err)
 		}
-		mergedSchema, err := schema.MergeAndValidate(string(inputSchema), []byte(patchSchema))
+		mergedSchema, err := schema.MergeUnderDataAndValidate(string(patchSchema), string(inputSchema))
 		if err != nil {
 			log.Errorf("failed to create workflow schema for wf %s: %s", name, err)
 			continue
