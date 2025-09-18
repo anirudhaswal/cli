@@ -28,9 +28,23 @@ func triggerWorkflow(_ context.Context, request mcp.CallToolRequest, workspace, 
 	if tenantId != "" {
 		wfRequestBody["tenant_id"] = tenantId
 	}
-	// if actor.distinct_id is present, add it to the request body
-	if actorDistinctId, ok := wfRequestRaw["actor.distinct_id"]; ok {
-		wfRequestBody["actor.distinct_id"] = actorDistinctId
+	// actor: object { distinct_id: string }
+	if actorVal, ok := wfRequestRaw["actor"]; ok {
+		if actorMap, ok := actorVal.(map[string]any); ok {
+			if _, ok := actorMap["distinct_id"].(string); !ok {
+				return mcp.NewToolResultError("invalid 'actor': 'distinct_id' must be a string"), nil
+			}
+			wfRequestBody["actor"] = actorMap
+		} else {
+			return mcp.NewToolResultError("invalid 'actor': must be an object"), nil
+		}
+	} else if v, ok := wfRequestRaw["actor.distinct_id"]; ok {
+		// Back-compat support for dotted key
+		if s, ok := v.(string); ok {
+			wfRequestBody["actor"] = map[string]any{"distinct_id": s}
+		} else {
+			return mcp.NewToolResultError("invalid 'actor.distinct_id': must be a string"), nil
+		}
 	}
 	// if recipients is present, add it to the request body
 	if recipients, ok := wfRequestRaw["recipients"]; ok {
