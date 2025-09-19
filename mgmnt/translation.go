@@ -142,16 +142,17 @@ func (c *SS_MgmntClient) FinalizeTranslation(workspace, commitMessage string) er
 	client := client.NewHTTPClient()
 	defer client.Close()
 	url := c.mgmnt_base_URL + "v1/" + workspace + "/translation/commit/?commit_message=" + commitMessage
+	fmt.Println(url)
 	res, err := client.R().
 		SetDebug(c.debug).
+		SetHeader("Content-Type", "application/json").
 		SetHeader("Authorization", "ServiceToken "+c.serviceToken).
-		SetBody("{}").
 		Patch(url)
 	if err != nil {
 		return err
 	}
 	if res.IsError() {
-		return fmt.Errorf("Error committing translation: %s", res.Status())
+		return fmt.Errorf("error committing translation: %s", res.String())
 	}
 	return nil
 }
