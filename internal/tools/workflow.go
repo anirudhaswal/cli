@@ -16,46 +16,38 @@ import (
 func triggerWorkflow(_ context.Context, request mcp.CallToolRequest, workspace, slug string) (*mcp.CallToolResult, error) {
 	wfRequestRaw := request.GetArguments()
 	tenantId := request.GetString("tenant_id", "")
+
+	actorDistinctId := request.GetString("actor_distinct_id", "")
+	recipientDistinctId := request.GetString("recipient_distinct_id", "")
+
 	suprsendClient, err := utils.GetSuprSendWorkspaceClient(workspace)
 	if err != nil {
 		log.Error("Error getting workspace client: ", err)
 		return mcp.NewToolResultError(err.Error()), nil
 	}
+
 	// add workflow slug to the request body
 	wfRequestBody := map[string]any{}
 	wfRequestBody["workflow"] = slug
+
 	// if tenant id is present, add it to the request body
 	if tenantId != "" {
 		wfRequestBody["tenant_id"] = tenantId
 	}
-	// actor: object { distinct_id: string }
-	if actorVal, ok := wfRequestRaw["actor"]; ok {
-		if actorMap, ok := actorVal.(map[string]any); ok {
-			if actorDistinctId, ok := actorMap["distinct_id"].(string); !ok {
-				return mcp.NewToolResultError("invalid 'actor': 'distinct_id' must be a string"), nil
-			} else if actorDistinctId != "" {
-				wfRequestBody["actor"] = actorMap
-			}
-		} else {
-			return mcp.NewToolResultError("invalid 'actor': must be an object"), nil
-		}
-	} else if v, ok := wfRequestRaw["actor.distinct_id"]; ok {
-		// Back-compat support for dotted key
-		if s, ok := v.(string); ok {
-			wfRequestBody["actor"] = map[string]any{"distinct_id": s}
-		} else {
-			return mcp.NewToolResultError("invalid 'actor.distinct_id': must be a string"), nil
-		}
+	// if actor distinct id is present, add it to the request body as actor.distinct_id
+	if actorDistinctId != "" {
+		wfRequestBody["actor"] = map[string]any{"distinct_id": actorDistinctId}
 	}
-	// if recipients is present, add it to the request body
-	if recipients, ok := wfRequestRaw["recipients"]; ok {
-		wfRequestBody["recipients"] = recipients
+	// if recipient distinct id is present, add it to the request body as recipients
+	if recipientDistinctId != "" {
+		wfRequestBody["recipients"] = []string{recipientDistinctId}
 	}
 	// Add data to the request body
 	wfRequestBody["data"] = wfRequestRaw["data"]
+	idempotencyKey := utils.GenerateUUID()
 	wf := &suprsend.WorkflowTriggerRequest{
 		Body:           wfRequestBody,
-		IdempotencyKey: utils.GenerateUUID(),
+		IdempotencyKey: idempotencyKey,
 		TenantId:       tenantId,
 	}
 
@@ -63,15 +55,17 @@ func triggerWorkflow(_ context.Context, request mcp.CallToolRequest, workspace, 
 	if err != nil {
 		return mcp.NewToolResultError(err.Error()), nil
 	}
-	responseData := map[string]any{
-		"response": resp,
+
+	responseStruct := map[string]any{
+		"idempotency_key": idempotencyKey,
+		"status":          resp.StatusCode,
+		"success":         resp.Success,
 	}
-	jsonData, err := json.MarshalIndent(responseData, "", "  ")
+	jsonData, err := json.MarshalIndent(responseStruct, "", "  ")
 	if err != nil {
 		return mcp.NewToolResultError(err.Error()), nil
 	}
-
-	return mcp.NewToolResultStructured(responseData, string(jsonData)), nil
+	return mcp.NewToolResultStructured(responseStruct, string(jsonData)), nil
 }
 
 func RegisterDynamicWorkflowTools(workspace, workflowsFlag string) error {
@@ -79,42 +73,32 @@ func RegisterDynamicWorkflowTools(workspace, workflowsFlag string) error {
 	if len(workflows) == 0 {
 		return fmt.Errorf("no workflows present in %s workspace", workspace)
 	}
-	patchSchema := json.RawMessage(`{
-  "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "title": "TenantActorRecipientsSchema",
-  "type": "object",
-  "properties": {
-    "tenant_id": {
-      "type": "string",
-      "default": "default",
-      "description": "Unique identifier for the tenant. Defaults to 'default' if not provided."
-    },
-    "actor": {
-      "type": "object",
-      "description": "Represents the actor who initiated the action, identified by a distinct_id.",
-      "properties": {
-        "distinct_id": {
-          "type": "string",
-          "description": "Unique identifier of the actor (e.g., user ID).",
-          "example": "kfdfdj"
-        }
-      },
-      "required": ["distinct_id"],
-      "additionalProperties": false
-    },
-    "recipients": {
-      "type": "array",
-      "description": "List of recipient distinct_ids. Each item in this array is a string representing a recipient's unique identifier.",
-      "items": {
-        "type": "string",
-        "example": "kfdfdj"
-      },
-      "minItems": 1
-    }
-  },
-  "required": ["recipients"],
-  "additionalProperties": false
-}`)
+	patchSchema := json.RawMessage(`
+		{
+			"$schema": "https://json-schema.org/draft/2020-12/schema",
+			"title": "TenantActorRecipientsSchema",
+			"type": "object",
+			"properties": {
+				"tenant_id": {
+				"type": "string",
+				"default": "default",
+				"description": "Unique identifier for the tenant. Defaults to 'default' if not provided."
+				},
+				"actor_distinct_id": {
+				"type": "string",
+				"default": "",
+				"description": "Unique identifier for the actor. Defaults to '' if not provided."
+				},
+				"recipient_distinct_id": {
+				"type": "string",
+				"description": "Unique identifier for the recipient."
+				}
+			},
+			"required": [
+				"recipient_distinct_id"
+			]
+		}
+	`)
 
 	for _, workflow := range workflows {
 		slug := workflow.Slug
@@ -154,17 +138,17 @@ func RegisterDynamicWorkflowTools(workspace, workflowsFlag string) error {
 			description = fmt.Sprintf("Use this tool to trigger workflow with name: \"%s\" with description:\"%s\"", name, description)
 		}
 		cleanSlug := strings.ReplaceAll(slug, "-", "_")
-        slugLocal := slug
-        wfTool := &Tool{
-            Name:        "trigger_" + cleanSlug + "_workflow",
-            Description: fmt.Sprintf("Trigger workflow: %s - %s", name, description),
-            MCPTool: mcp.NewToolWithRawSchema("trigger_"+cleanSlug+"_workflow",
-                description,
-                mergedSchema,
-            ),
-            Handler: func(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
-                return triggerWorkflow(ctx, request, workspace, slugLocal)
-            },
+		slugLocal := slug
+		wfTool := &Tool{
+			Name:        "trigger_" + cleanSlug + "_workflow",
+			Description: fmt.Sprintf("Trigger workflow: %s - %s", name, description),
+			MCPTool: mcp.NewToolWithRawSchema("trigger_"+cleanSlug+"_workflow",
+				description,
+				mergedSchema,
+			),
+			Handler: func(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+				return triggerWorkflow(ctx, request, workspace, slugLocal)
+			},
 		}
 		RegisterWorkflow(wfTool)
 	}
