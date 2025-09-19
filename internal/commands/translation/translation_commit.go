@@ -27,7 +27,7 @@ var translationCommitCmd = &cobra.Command{
 		}
 		err := mgmntClient.FinalizeTranslation(workspace, commitMessage)
 		if err != nil {
-			log.Errorf("Error committing translation: %s", err)
+			log.Errorf("%s", err)
 			return
 		}
 		if p != nil {

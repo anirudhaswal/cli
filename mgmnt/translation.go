@@ -145,12 +145,13 @@ func (c *SS_MgmntClient) FinalizeTranslation(workspace, commitMessage string) er
 	res, err := client.R().
 		SetDebug(c.debug).
 		SetHeader("Authorization", "ServiceToken "+c.serviceToken).
+		SetBody("{}").
 		Patch(url)
 	if err != nil {
 		return err
 	}
 	if res.IsError() {
-		return fmt.Errorf("error committing translation: %s", res.Status())
+		return fmt.Errorf("Error committing translation: %s", res.Status())
 	}
 	return nil
 }

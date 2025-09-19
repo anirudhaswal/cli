@@ -12,6 +12,7 @@ import (
 	"github.com/suprsend/cli/internal/commands/category"
 	"github.com/suprsend/cli/internal/commands/event"
 	"github.com/suprsend/cli/internal/commands/schema"
+	"github.com/suprsend/cli/internal/commands/translation"
 	"github.com/suprsend/cli/internal/commands/workflow"
 	"github.com/suprsend/cli/internal/utils"
 	"github.com/suprsend/cli/mgmnt"
@@ -34,18 +35,20 @@ var syncCmd = &cobra.Command{
 		var assetsToSync []string
 		switch assets {
 		case "all":
-			assetsToSync = []string{"workflows", "schemas"}
+			assetsToSync = []string{"workflows", "schemas", "categories", "events", "translations"}
 		case "workflows":
 			assetsToSync = []string{"workflows"}
 		case "schemas":
 			assetsToSync = []string{"schemas"}
 		case "categories":
 			assetsToSync = []string{"categories"}
-		default:
-			log.Errorf("Invalid asset type: '%s'. Valid options are: all, workflows, schemas", assets)
-			return
+		case "translations":
+			assetsToSync = []string{"translations"}
 		case "events":
 			assetsToSync = []string{"events"}
+		default:
+			log.Errorf("Invalid asset type: '%s'. Valid options are: all, workflows, schemas, categories, events, translations", assets)
+			return
 		}
 
 		fmt.Printf("Syncing assets from %s to %s ... \n", fromWorkspace, toWorkspace)
@@ -61,6 +64,8 @@ var syncCmd = &cobra.Command{
 				syncSchemas(mgmnt_client, fromWorkspace, toWorkspace, mode)
 			case "categories":
 				syncCategories(mgmnt_client, fromWorkspace, toWorkspace, mode)
+			case "translations":
+				syncTranslations(mgmnt_client, fromWorkspace, toWorkspace, mode)
 			case "events":
 				syncEvents(mgmnt_client, fromWorkspace, toWorkspace)
 			default:
@@ -222,4 +227,58 @@ func syncCategories(mgmnt_client *mgmnt.SS_MgmntClient, fromWorkspace, toWorkspa
 		return
 	}
 	log.Printf("Pushed categories to %s\n", toWorkspace)
+}
+
+func syncTranslations(mgmnt_client *mgmnt.SS_MgmntClient, fromWorkspace, toWorkspace, mode string) {
+	dirPath := filepath.Join(".", "suprsend", "translation")
+
+	fmt.Printf("Pulling translations from %s ... \n", fromWorkspace)
+	translationsResp, err := mgmnt_client.GetTranslations(fromWorkspace, mode)
+	if err != nil {
+		log.WithError(err).Error("Error getting translations")
+		return
+	}
+
+	_, err = translation.WriteTranslationToFiles(*translationsResp, dirPath)
+	if err != nil {
+		log.WithError(err).Error("Error saving translations")
+		return
+	}
+
+	files, err := os.ReadDir(dirPath)
+	if err != nil {
+		log.WithError(err).Errorf("Failed to read local translations directory")
+		return
+	}
+
+	var translations []map[string]any
+	for _, file := range files {
+		if file.IsDir() || !strings.HasSuffix(file.Name(), ".json") {
+			continue
+		}
+
+		path := filepath.Join(dirPath, file.Name())
+		data, err := os.ReadFile(path)
+		if err != nil {
+			log.WithError(err).Errorf("Failed to read file %s", file.Name())
+			return
+		}
+
+		var translation map[string]any
+		if err := json.Unmarshal(data, &translation); err != nil {
+			log.WithError(err).Errorf("Failed to parse JSON for %s", file.Name())
+			return
+		}
+
+		translations = append(translations, translation)
+	}
+
+	fmt.Printf("Pushing translations to %s ... \n", toWorkspace)
+	err = mgmnt_client.PushTranslation(toWorkspace, translations)
+	if err != nil {
+		log.WithError(err).Error("Failed to push translations")
+		return
+	}
+
+	log.Printf("Pushed %d translations to %s\n", len(translations), toWorkspace)
 }

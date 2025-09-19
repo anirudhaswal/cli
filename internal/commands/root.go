@@ -65,7 +65,7 @@ func init() {
 	syncCmd.Flags().StringP("from", "f", "staging", "Source workspace (required)")
 	syncCmd.Flags().StringP("to", "t", "production", "Destination workspace (required)")
 	syncCmd.Flags().StringP("mode", "m", "live", "Mode to sync assets (draft, live)")
-	syncCmd.Flags().StringP("assets", "a", "all", "Assets to sync (all, workflows, schemas, events)")
+	syncCmd.Flags().StringP("assets", "a", "all", "Assets to sync (all, workflows, schemas, events, categories, translation)")
 
 	rootCmd.AddCommand(profiles.ProfileCmd)
 	rootCmd.AddCommand(workflow.WorkflowCmd)
