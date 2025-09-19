@@ -31,6 +31,5 @@ This CLI lets you interact with your SuprSend workspace and do actions like fetc
 * [suprsend start-mcp-server](suprsend_start-mcp-server.md)	 - Starts MCP server for SuprSend
 * [suprsend sync](suprsend_sync.md)	 - Sync all your SuprSend assets locally
 * [suprsend sync](suprsend_sync.md)	 - Sync all your SuprSend assets locally
-* [suprsend version](suprsend_version.md)	 - Print the CLI version
 * [suprsend workflow](suprsend_workflow.md)	 - Manage workflows
 

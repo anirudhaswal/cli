@@ -7,8 +7,86 @@ import (
 	"slices"
 	"strings"
 
+	"github.com/google/uuid"
 	suprsend "github.com/suprsend/suprsend-go"
 )
+
+type WorkflowPayloadSchema struct {
+	Schema string `json:"schema"`
+	// version_no is optional and can be nil
+	Version string `json:"version_no,omitempty"`
+}
+
+type WorkflowInfo struct {
+	Slug          string
+	Name          string
+	Description   string
+	PayloadSchema WorkflowPayloadSchema
+}
+
+func GenerateUUID() string {
+	return uuid.New().String()
+}
+
+func FetchWorkflowsMcp(workspace, workflowsFlag string) []WorkflowInfo {
+	if workflowsFlag == "none" {
+		return nil
+	}
+	var workflowsToBeFetched []string
+	if workflowsFlag != "all" {
+		workflowsToBeFetched = strings.Split(workflowsFlag, ",")
+		for i, workflow := range workflowsToBeFetched {
+			workflowsToBeFetched[i] = strings.TrimSpace(workflow)
+		}
+	}
+
+	if len(workflowsToBeFetched) == 0 && workflowsFlag != "all" {
+		return nil
+	}
+	mgmntClient := GetSuprSendMgmntClient()
+	if mgmntClient == nil {
+		return nil
+	}
+	workflowsResp, err := mgmntClient.GetWorkflows(workspace, "live")
+	if err != nil {
+		return nil
+	}
+
+	var result []WorkflowInfo
+	for _, workflow := range workflowsResp.Results {
+		workflowMap, ok := workflow.(map[string]any)
+		if !ok {
+			continue
+		}
+		workflowInfo := WorkflowInfo{}
+		if slug, ok := workflowMap["slug"].(string); ok {
+			workflowInfo.Slug = slug
+		}
+		if name, ok := workflowMap["name"].(string); ok {
+			workflowInfo.Name = name
+		} else {
+			workflowInfo.Name = ""
+		}
+		if description, ok := workflowMap["description"].(string); ok {
+			workflowInfo.Description = description
+		} else {
+			workflowInfo.Description = ""
+		}
+		if payloadSchema, ok := workflowMap["payload_schema"].(map[string]any); ok {
+			workflowInfo.PayloadSchema.Schema = payloadSchema["schema"].(string)
+			if versionNo, ok := payloadSchema["version_no"].(string); ok {
+				workflowInfo.PayloadSchema.Version = versionNo
+			} else {
+				workflowInfo.PayloadSchema.Version = ""
+			}
+		}
+
+		if workflowsFlag == "all" || slices.Contains(workflowsToBeFetched, workflowInfo.Name) {
+			result = append(result, workflowInfo)
+		}
+	}
+	return result
+}
 
 type EventPayloadSchema struct {
 	Schema string `json:"schema"`
