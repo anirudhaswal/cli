@@ -80,7 +80,7 @@ var generateTypesJavaCmd = &cobra.Command{
 			if err := json.Unmarshal(schemaBytes, &schemaResp); err != nil {
 				continue
 			}
-			if utils.IsEmptySchema(schemaResp.JSONSchema.Properties) {
+			if schemaResp.JSONSchema.Properties == nil {
 				continue
 			}
 			validSchemas = append(validSchemas, &schemaResp)
@@ -242,7 +242,7 @@ func generateTypesForLanguage(targetLang string) func(*cobra.Command, []string) 
 			if err := json.Unmarshal(schemaBytes, &schemaResp); err != nil {
 				continue
 			}
-			if utils.IsEmptySchema(schemaResp.JSONSchema.Properties) {
+			if schemaResp.JSONSchema.Properties == nil || len(schemaResp.JSONSchema.Properties) == 0 {
 				continue
 			}
 

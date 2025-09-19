@@ -82,7 +82,6 @@ func (c *SS_MgmntClient) ListSchema(workspace string, limit, offset int, mode st
 			SetHeader("Content-Type", "application/json").
 			SetResult(&ListSchemaResponse{}).
 			Get(url)
-
 		if err != nil {
 			return nil, fmt.Errorf("request failed: %w", err)
 		}
@@ -115,6 +114,29 @@ func (c *SS_MgmntClient) ListSchema(workspace string, limit, offset int, mode st
 			Offset: offset,
 		},
 	}, nil
+}
+
+func (c *SS_MgmntClient) GetSchema(workspace, slug string, version string) (*SchemaResponse, error) {
+	client := client.NewHTTPClient()
+	defer client.Close()
+	url := fmt.Sprintf("%sv1/%s/schema/%s/?version=%s", c.mgmnt_base_URL, workspace, slug, version)
+
+	res, err := client.R().
+		SetDebug(c.debug).
+		SetHeader("Authorization", "ServiceToken "+c.serviceToken).
+		SetResult(&SchemaResponse{}).
+		Get(url)
+	if err != nil {
+		return nil, fmt.Errorf("request failed: %s", err.Error())
+	}
+	if res.IsError() {
+		return nil, fmt.Errorf("request failed: %s", res.Status())
+	}
+	schema := res.Result().(*SchemaResponse)
+	if schema.JSONSchema.Properties == nil {
+		return nil, fmt.Errorf("schema properties are empty")
+	}
+	return schema, nil
 }
 
 func (c *SS_MgmntClient) GetSchemaBySlug(workspace, slug string) (*map[string]any, error) {
@@ -203,7 +225,6 @@ func (c *SS_MgmntClient) PushSchema(workspace, schemaSlug string, payload map[st
 		SetHeader("Content-Type", "application/json").
 		SetBody(payload).
 		Post(url)
-
 	if err != nil {
 		return fmt.Errorf("request failed: %w", err)
 	}
@@ -240,7 +261,6 @@ func (c *SS_MgmntClient) FinalizeSchema(workspace, slug string, commit bool) err
 		SetHeader("Content-Type", "application/json").
 		SetBody(body).
 		Patch(urlStr)
-
 	if err != nil {
 		return fmt.Errorf("request failed: %w", err)
 	}

@@ -9,6 +9,9 @@ import (
 	"github.com/mark3labs/mcp-go/server"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
+	"github.com/suprsend/cli/internal/commands/profiles"
+	"github.com/suprsend/cli/internal/config"
 	toolset "github.com/suprsend/cli/internal/tools"
 	"github.com/suprsend/cli/internal/utils"
 	"go.szostok.io/version"
@@ -17,9 +20,14 @@ import (
 var (
 	transport string
 	tools     string
+	events    string
+	workflows string
 )
 
 func getSelectedTools(toolsFlag string) ([]*toolset.Tool, error) {
+	if toolsFlag == "none" {
+		return []*toolset.Tool{}, nil
+	}
 	// selected tools
 	selected := []*toolset.Tool{}
 	supportedTools := toolset.GetAllTools()
@@ -56,17 +64,41 @@ var startMcpServerCmd = &cobra.Command{
 	Short: "Starts MCP server for SuprSend",
 	Long: `Starts the MCP server for SuprSend.
 This server will handle all the requests from user about SuprSend capabilities and data.`,
+	PersistentPreRun: func(cmd *cobra.Command, args []string) {
+		conf := config.Cfg
+		workspace := conf.Workspace
+		serviceToken := getServiceTokenWithPriority()
+		conf.ServiceToken = serviceToken
+		utils.InitSDKWithUrls(
+			conf.ServiceToken,
+			profiles.GetResolvedBaseUrl(),
+			profiles.GetResolvedMgmntUrl(),
+			viper.GetBool("debug"),
+		)
+		if err := toolset.RegisterDynamicEventsTools(workspace, events); err != nil {
+			log.Warnf("Failed to register event tools in mcp: %v", err)
+		}
+		if err := toolset.RegisterDynamicWorkflowTools(workspace, workflows); err != nil {
+			log.Warnf("Failed to register workflow tools in mcp: %v", err)
+		}
+	},
 	Run: func(cmd *cobra.Command, args []string) {
 		selectedTools, err := getSelectedTools(tools)
 		if err != nil {
 			log.Fatalf("%v", err)
 		}
+		selectedEvents := toolset.GetAllEvents()
+		selectedWorkflows := toolset.GetAllWorkflows()
+
+		selectedTools = append(selectedTools, selectedEvents...)
+		selectedTools = append(selectedTools, selectedWorkflows...)
+
 		// Print a readable string representation of selectedTools
 		var toolStrs []string
 		for _, t := range selectedTools {
 			toolStrs = append(toolStrs, t.Type+":"+t.Name)
 		}
-		log.Debugf("Selected tools: [%s]", strings.Join(toolStrs, ", "))
+		log.Infof("Selected tools: [%s]", strings.Join(toolStrs, ", "))
 		info := version.Get()
 
 		mcpServer := server.NewMCPServer(
@@ -122,6 +154,12 @@ var listToolsCmd = &cobra.Command{
 		for _, t := range toolset.GetAllTools() {
 			resp = append(resp, toolListResponse{Tool_Type: t.Type, Tool_Name: t.Name, Tool_Description: t.Description})
 		}
+		for _, t := range toolset.GetAllEvents() {
+			resp = append(resp, toolListResponse{Tool_Type: t.Type, Tool_Name: t.Name, Tool_Description: t.Description})
+		}
+		for _, t := range toolset.GetAllWorkflows() {
+			resp = append(resp, toolListResponse{Tool_Type: t.Type, Tool_Name: t.Name, Tool_Description: t.Description})
+		}
 		outputType, _ := cmd.Flags().GetString("output")
 		utils.OutputData(resp, outputType)
 	},
@@ -131,6 +169,8 @@ func init() {
 	startMcpServerCmd.AddCommand(listToolsCmd)
 	rootCmd.AddCommand(startMcpServerCmd)
 
-	startMcpServerCmd.Flags().StringVarP(&transport, "transport", "t", "stdio", "The transport to use for the MCP server. Can be stdio/sse/http.")
-	startMcpServerCmd.Flags().StringVarP(&tools, "tools", "T", "all", "The types of tools to use. Can be either 'all' or comma separated list of tool names.")
+	startMcpServerCmd.PersistentFlags().StringVarP(&transport, "transport", "t", "stdio", "The transport to use for the MCP server. Can be stdio/sse/http.")
+	startMcpServerCmd.PersistentFlags().StringVarP(&tools, "tools", "T", "all", "The types of tools to use. Can be either 'all'/'none' or comma separated list of tool names.")
+	startMcpServerCmd.PersistentFlags().StringVarP(&events, "events", "e", "none", "The types of events to use. Can be either 'all'/'none' or comma separated list of event slugs.")
+	startMcpServerCmd.PersistentFlags().StringVarP(&workflows, "workflows", "W", "none", "The types of workflows to use. Can be either 'all'/'none' or comma separated list of workflow slugs.")
 }

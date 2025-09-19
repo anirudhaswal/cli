@@ -9,6 +9,8 @@ import (
 
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
+	"github.com/suprsend/cli/internal/commands/category"
+	"github.com/suprsend/cli/internal/commands/event"
 	"github.com/suprsend/cli/internal/commands/schema"
 	"github.com/suprsend/cli/internal/commands/workflow"
 	"github.com/suprsend/cli/internal/utils"
@@ -32,11 +34,15 @@ var syncCmd = &cobra.Command{
 		var assetsToSync []string
 		switch assets {
 		case "all":
-			assetsToSync = []string{"workflow", "schema"}
+			assetsToSync = []string{"workflow", "schema", "category", "event"}
 		case "workflow":
 			assetsToSync = []string{"workflow"}
 		case "schema":
 			assetsToSync = []string{"schema"}
+		case "event":
+			assetsToSync = []string{"event"}
+		case "category":
+			assetsToSync = []string{"category"}
 		default:
 			log.Errorf("Invalid asset type: '%s'. Valid options are: all, workflow, schema", assets)
 			return
@@ -57,6 +63,16 @@ var syncCmd = &cobra.Command{
 				}
 			case "schema":
 				err := syncSchemas(mgmnt_client, fromWorkspace, toWorkspace, mode)
+				if err != nil {
+					hasErrors = true
+				}
+			case "event":
+				err := syncEvents(mgmnt_client, fromWorkspace, toWorkspace)
+				if err != nil {
+					hasErrors = true
+				}
+			case "category":
+				err := syncCategories(mgmnt_client, fromWorkspace, toWorkspace, mode)
 				if err != nil {
 					hasErrors = true
 				}
@@ -164,5 +180,51 @@ func syncSchemas(mgmnt_client *mgmnt.SS_MgmntClient, fromWorkspace, toWorkspace,
 
 		log.Infof("Pushed schema: %s\n", slug)
 	}
+	return nil
+}
+
+func syncEvents(mgmnt_client *mgmnt.SS_MgmntClient, fromWorkspace, toWorkspace string) error {
+	dirPath := filepath.Join(".", "suprsend", "event")
+
+	fmt.Printf("Pulling events from %s ... \n", fromWorkspace)
+	events_resp, err := mgmnt_client.GetEvents(fromWorkspace)
+	if err != nil {
+		return err
+	}
+
+	_, err = event.WriteEventsToFiles(events_resp, dirPath)
+	if err != nil {
+		return err
+	}
+
+	fmt.Printf("Pushing events to %s ... \n", toWorkspace)
+	err = mgmnt_client.PushEvents(toWorkspace)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func syncCategories(mgmnt_client *mgmnt.SS_MgmntClient, fromWorkspace, toWorkspace, mode string) error {
+	dirPath := filepath.Join(".", "suprsend", "category")
+	categoriesResp, err := mgmnt_client.ListCategories(fromWorkspace, mode)
+	if err != nil {
+		return err
+	}
+	log.Infof("Pulling categories from %s ... \n", fromWorkspace)
+	err = category.WriteToFile(categoriesResp, "categories_preferences.json")
+	if err != nil {
+		return err
+	}
+	filePath := filepath.Join(dirPath, "categories_preferences.json")
+	categories, err := category.ReadFromFile(filePath)
+	if err != nil {
+		return err
+	}
+	err = mgmnt_client.PushCategories(toWorkspace, categories)
+	if err != nil {
+		return err
+	}
+	log.Printf("Pushed categories to %s\n", toWorkspace)
 	return nil
 }
