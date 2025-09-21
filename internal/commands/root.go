@@ -64,7 +64,7 @@ func init() {
 	syncCmd.Flags().StringP("from", "f", "staging", "Source workspace (required)")
 	syncCmd.Flags().StringP("to", "t", "production", "Destination workspace (required)")
 	syncCmd.Flags().StringP("mode", "m", "live", "Mode to sync assets (draft, live), default: live")
-	syncCmd.Flags().StringP("assets", "a", "all", "Assets to sync (all, workflow, schema)")
+	syncCmd.Flags().StringP("assets", "a", "all", "Assets to sync (all, workflow, schema, event, category)")
 
 	rootCmd.AddCommand(profiles.ProfileCmd)
 	rootCmd.AddCommand(workflow.WorkflowCmd)
@@ -72,7 +72,6 @@ func init() {
 	rootCmd.AddCommand(event.EventCmd)
 	rootCmd.AddCommand(syncCmd)
 	rootCmd.AddCommand(schema.SchemaCmd)
-	rootCmd.AddCommand(syncCmd)
 
 	rootCmd.PersistentPreRunE = func(cmd *cobra.Command, args []string) error {
 		if err := config.SetUpLogs(); err != nil {

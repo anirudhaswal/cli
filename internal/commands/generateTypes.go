@@ -242,7 +242,7 @@ func generateTypesForLanguage(targetLang string) func(*cobra.Command, []string) 
 			if err := json.Unmarshal(schemaBytes, &schemaResp); err != nil {
 				continue
 			}
-			if schemaResp.JSONSchema.Properties == nil || len(schemaResp.JSONSchema.Properties) == 0 {
+			if len(schemaResp.JSONSchema.Properties) == 0 {
 				continue
 			}
 
