@@ -1,6 +1,7 @@
 package mgmnt
 
 import (
+	"encoding/json"
 	"fmt"
 	"time"
 
@@ -37,6 +38,11 @@ type Subcategory struct {
 	DefaultPreference        string   `json:"default_preference"`
 	DefaultMandatoryChannels []string `json:"default_mandatory_channels"`
 	Tags                     []string `json:"tags"`
+}
+
+type ErrorResponse struct {
+	Code    int    `json:"code"`
+	Message string `json:"message"`
 }
 
 func (c *SS_MgmntClient) ListCategories(workspace, mode string) (*PreferenceCategoryResponse, error) {
@@ -101,7 +107,10 @@ func (c *SS_MgmntClient) FinalizeCategories(workspace string, commitMsg string) 
 		return fmt.Errorf("request failed: %w", err)
 	}
 	if resp.IsError() {
-		return fmt.Errorf("error committing categories: %s", resp.String())
+		var errorResp ErrorResponse
+		if err := json.Unmarshal([]byte(resp.String()), &errorResp); err == nil {
+			return fmt.Errorf("request failed with message: %s", errorResp.Message)
+		}
 	}
 	return nil
 }
