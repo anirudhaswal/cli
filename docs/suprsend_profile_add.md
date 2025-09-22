@@ -25,7 +25,6 @@ suprsend profile add [flags]
 ```
       --config string      config file (default: $HOME/.suprsend.yaml)
   -n, --no-color           Disable color output (default: $NO_COLOR)
-  -o, --output string      Output Style (pretty, yaml, json) (default "pretty")
   -v, --verbosity string   Log level (debug, info, warn, error, fatal, panic) (default "info")
 ```
 

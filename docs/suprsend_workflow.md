@@ -22,7 +22,6 @@ suprsend workflow [flags]
 ```
       --config string          config file (default: $HOME/.suprsend.yaml)
   -n, --no-color               Disable color output (default: $NO_COLOR)
-  -o, --output string          Output Style (pretty, yaml, json) (default "pretty")
   -s, --service-token string   Service token (default: $SUPRSEND_SERVICE_TOKEN)
   -v, --verbosity string       Log level (debug, info, warn, error, fatal, panic) (default "info")
 ```
@@ -32,7 +31,9 @@ suprsend workflow [flags]
 * [suprsend](suprsend.md)	 - CLI to interact with SuprSend, a Notification Infrastructure
 * [suprsend workflow disable](suprsend_workflow_disable.md)	 - Disable a workflow
 * [suprsend workflow enable](suprsend_workflow_enable.md)	 - Enables a workflow.
+* [suprsend workflow get](suprsend_workflow_get.md)	 - Get workflow details
 * [suprsend workflow list](suprsend_workflow_list.md)	 - List workflows for a workspace
 * [suprsend workflow pull](suprsend_workflow_pull.md)	 - Pull workflows from workspace to local directory
 * [suprsend workflow push](suprsend_workflow_push.md)	 - push workflows from local to suprsend
+* [suprsend workflow trigger](suprsend_workflow_trigger.md)	 - Trigger a specific workflow
 

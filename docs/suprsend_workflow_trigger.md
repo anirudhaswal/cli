@@ -1,23 +1,21 @@
-## suprsend schema list
+## suprsend workflow trigger
 
-List schemas
+Trigger a specific workflow
 
 ### Synopsis
 
-List schemas in a workspace
+Trigger a specific workflow by passing a slug
 
 ```
-suprsend schema list [flags]
+suprsend workflow trigger [flags]
 ```
 
 ### Options
 
 ```
-  -h, --help            help for list
-  -l, --limit int       Limit the number of schemas to list (default 20)
-  -m, --mode string     Mode of schemas to list (draft, live), default: live (default "live")
-  -f, --offset int      Offset the number of schemas to list (default: 0)
-  -o, --output string   Output Style (pretty, yaml, json) (default "pretty")
+  -h, --help            help for trigger
+      --path string     json body to trigger the wf
+      --tenant string   tenant id to pass in body
 ```
 
 ### Options inherited from parent commands
@@ -32,5 +30,5 @@ suprsend schema list [flags]
 
 ### SEE ALSO
 
-* [suprsend schema](suprsend_schema.md)	 - Manage schema
+* [suprsend workflow](suprsend_workflow.md)	 - Manage workflows
 

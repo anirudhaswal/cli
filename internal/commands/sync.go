@@ -88,6 +88,16 @@ var syncCmd = &cobra.Command{
 	},
 }
 
+func init() {
+	rootCmd.AddCommand(syncCmd)
+
+	// Flags consumed in Run
+	syncCmd.Flags().StringP("from", "f", "staging", "Source workspace (required)")
+	syncCmd.Flags().StringP("to", "t", "production", "Destination workspace (required)")
+	syncCmd.Flags().StringP("mode", "m", "live", "Mode to sync assets (draft, live), default: live")
+	syncCmd.Flags().StringP("assets", "a", "all", "Assets to sync (all, workflow, schema, event, category)")
+}
+
 func syncWorkflows(mgmntClient *mgmnt.SS_MgmntClient, fromWorkspace, toWorkspace, mode string) error {
 	dirPath := filepath.Join(".", "suprsend", "workflow")
 

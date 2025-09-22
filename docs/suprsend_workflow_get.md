@@ -1,23 +1,20 @@
-## suprsend schema list
+## suprsend workflow get
 
-List schemas
+Get workflow details
 
 ### Synopsis
 
-List schemas in a workspace
+Get workfow details of a specific wf
 
 ```
-suprsend schema list [flags]
+suprsend workflow get [flags]
 ```
 
 ### Options
 
 ```
-  -h, --help            help for list
-  -l, --limit int       Limit the number of schemas to list (default 20)
-  -m, --mode string     Mode of schemas to list (draft, live), default: live (default "live")
-  -f, --offset int      Offset the number of schemas to list (default: 0)
-  -o, --output string   Output Style (pretty, yaml, json) (default "pretty")
+  -h, --help          help for get
+      --mode string   mode to fetch worklfow from. (default "live")
 ```
 
 ### Options inherited from parent commands
@@ -32,5 +29,5 @@ suprsend schema list [flags]
 
 ### SEE ALSO
 
-* [suprsend schema](suprsend_schema.md)	 - Manage schema
+* [suprsend workflow](suprsend_workflow.md)	 - Manage workflows
 

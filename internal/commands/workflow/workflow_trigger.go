@@ -70,5 +70,5 @@ func init() {
 	workflowTrigger.PersistentFlags().String("path", "", "json body to trigger the wf")
 	workflowTrigger.MarkFlagRequired("path")
 	workflowTrigger.PersistentFlags().String("tenant", "", "tenant id to pass in body")
-	WorkflowCmd.AddCommand(workflowTrigger)
+	// WorkflowCmd.AddCommand(workflowTrigger)
 }
