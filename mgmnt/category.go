@@ -92,18 +92,16 @@ func (c *SS_MgmntClient) FinalizeCategories(workspace string, commitMsg string) 
 	client := client.NewHTTPClient()
 	defer client.Close()
 	url := fmt.Sprintf("%sv1/%s/preference_category/commit/?commit_message=%s", c.mgmnt_base_URL, workspace, commitMsg)
-
 	resp, err := client.R().
 		SetDebug(c.debug).
+		SetHeader("Content-Type", "application/json").
 		SetHeader("Authorization", "ServiceToken "+c.serviceToken).
 		Patch(url)
 	if err != nil {
 		return fmt.Errorf("request failed: %w", err)
 	}
-
 	if resp.IsError() {
-		return fmt.Errorf("request failed with status: %s", resp.Status())
+		return fmt.Errorf("error committing categories: %s", resp.String())
 	}
-
 	return nil
 }
