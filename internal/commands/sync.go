@@ -244,7 +244,7 @@ func syncCategories(mgmntClient *mgmnt.SS_MgmntClient, fromWorkspace, toWorkspac
 	if err != nil {
 		return fmt.Errorf("error reading categories from file: %w", err)
 	}
-	err = mgmntClient.PushCategories(toWorkspace, categories)
+	err = mgmntClient.PushCategories(toWorkspace, categories, false, "")
 	if err != nil {
 		return fmt.Errorf("error pushing categories: %w", err)
 	}

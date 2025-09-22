@@ -66,10 +66,10 @@ func (c *SS_MgmntClient) ListCategories(workspace, mode string) (*PreferenceCate
 	return result, nil
 }
 
-func (c *SS_MgmntClient) PushCategories(workspace string, categories interface{}) error {
+func (c *SS_MgmntClient) PushCategories(workspace string, categories interface{}, commit bool, commitMessage string) error {
 	client := client.NewHTTPClient()
 	defer client.Close()
-	url := fmt.Sprintf("%sv1/%s/preference_category/", c.mgmnt_base_URL, workspace)
+	url := fmt.Sprintf("%sv1/%s/preference_category/?commit=%t&commit_message=%s", c.mgmnt_base_URL, workspace, commit, commitMessage)
 
 	resp, err := client.R().
 		SetDebug(c.debug).

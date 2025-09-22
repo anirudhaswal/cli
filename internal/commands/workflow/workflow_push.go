@@ -163,7 +163,7 @@ var workflowPushCmd = &cobra.Command{
 
 func init() {
 	workflowPushCmd.PersistentFlags().StringP("path", "p", "", "Output directory for workflows")
-	workflowPushCmd.PersistentFlags().BoolP("commit", "c", false, "Commit the workflows")
+	workflowPushCmd.PersistentFlags().BoolP("commit", "c", true, "Commit the workflows")
 	workflowPushCmd.PersistentFlags().StringP("commit-message", "m", "", "Commit message for the workflows")
 	workflowPushCmd.PersistentFlags().StringP("slug", "g", "", "Slug of the workflow to push")
 	WorkflowCmd.AddCommand(workflowPushCmd)

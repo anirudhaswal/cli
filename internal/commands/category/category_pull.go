@@ -3,6 +3,8 @@ package category
 import (
 	"context"
 	"fmt"
+	"os"
+	"path/filepath"
 
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
@@ -17,7 +19,21 @@ var categoryPullCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		workspace, _ := cmd.Flags().GetString("workspace")
 		mode, _ := cmd.Flags().GetString("mode")
-
+		outputDir, _ := cmd.Flags().GetString("output-dir")
+		if outputDir == "" {
+			outputDir = filepath.Join(".", "suprsend", "category")
+			if _, err := os.Stat(outputDir); os.IsNotExist(err) {
+				outputDir = promptForOutputDirectory()
+			}
+			if outputDir == "" {
+				fmt.Fprintf(os.Stdout, "No output directory specified. Exiting.\n")
+				return
+			}
+		}
+		if err := ensureOutputDirectory(outputDir); err != nil {
+			fmt.Fprintf(os.Stdout, "Error with output directory: %v\n", err)
+			return
+		}
 		var p *pin.Pin
 		if !utils.IsOutputPiped() {
 			p = pin.New("Loading...",
@@ -34,7 +50,7 @@ var categoryPullCmd = &cobra.Command{
 			log.WithError(err).Error("Couldn't fetch categories")
 			return
 		}
-		err = WriteToFile(categories, "categories_preferences.json")
+		err = WriteToFileWithPath(categories, outputDir, "categories_preferences.json")
 		if err != nil {
 			log.WithError(err).Error("Couldn't write categories to file")
 			return
@@ -46,6 +62,7 @@ var categoryPullCmd = &cobra.Command{
 }
 
 func init() {
-	categoryPullCmd.PersistentFlags().String("mode", "live", "Mode to pull categories from")
+	categoryPullCmd.PersistentFlags().StringP("mode", "m", "live", "Mode to pull categories from")
+	categoryPullCmd.PersistentFlags().StringP("output-dir", "d", "", "Output directory for categories")
 	CategoryCmd.AddCommand(categoryPullCmd)
 }
