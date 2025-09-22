@@ -63,9 +63,15 @@ func InitConfig(cfgFile string) {
 
 // setUpLogs set the log output ans the log level
 func SetUpLogs() error {
+	log.SetFormatter(&log.TextFormatter{
+		DisableColors: viper.GetBool("NO_COLOR"),
+		FullTimestamp: true,
+		PadLevelText:  true,
+	})
 	if Cfg.OutputType == "json" {
 		log.SetFormatter(&log.JSONFormatter{})
 	}
+
 	if viper.GetBool("debug") {
 		Cfg.Verbosity = "debug"
 	}

@@ -77,7 +77,7 @@ func init() {
 			return nil
 		}
 
-		if cmd.Name() == "profiles" || (cmd.Parent() != nil && cmd.Parent().Name() == "profiles") {
+		if cmd.Name() == "profile" || (cmd.Parent() != nil && cmd.Parent().Name() == "profile") {
 			return nil
 		}
 

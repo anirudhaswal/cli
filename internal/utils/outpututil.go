@@ -27,6 +27,10 @@ func IsOutputPiped() bool {
 	if err != nil {
 		return false
 	}
+	// return true if --no-color is set to be true
+	if viper.GetBool("NO_COLOR") {
+		return true
+	}
 
 	// If ModeCharDevice is NOT set, it means the output is not a character device (terminal).
 	// This implies it's a pipe or redirection.
