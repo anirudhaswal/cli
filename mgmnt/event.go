@@ -41,7 +41,7 @@ func (c *SS_MgmntClient) ListEvents(workspace string, limit, offset int) (*ListE
 	defer client.Close()
 
 	url := c.mgmnt_base_URL + "v1/" + workspace + "/event/?limit=" + strconv.Itoa(limit) + "&offset=" + strconv.Itoa(offset)
-	log.Debug("Getting Events for workspace: %s, service token: %s", workspace, c.serviceToken)
+	log.Debugf("Getting Events for workspace: %s, service token: %s", workspace, c.serviceToken)
 	res, err := client.R().
 		SetDebug(c.debug).
 		SetHeader("Authorization", "ServiceToken "+c.serviceToken).

@@ -154,7 +154,7 @@ func WriteSchemasToFiles(schemasResp *mgmnt.SchemasResponse, dirPath string) (*S
 		}
 
 		debugLog("Wrote: %s", filename)
-		fmt.Fprintf(os.Stdout, "Wrote schema to %s\n", filename)
+		fmt.Fprintf(os.Stdout, "Wrote schema: %s to %s\n", slug, filename)
 		stats.Success++
 	}
 

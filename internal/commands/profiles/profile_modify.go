@@ -29,7 +29,7 @@ var profilesModifyCmd = &cobra.Command{
 		}
 		if modifyName != "" {
 			if _, exists := cfg.Profiles[modifyName]; !exists {
-				log.Errorf("Profile %s not found", modifyName)
+				log.Infof("Profile %q does not exist. Use the command 'suprsend profile list' to see all profiles.", modifyName)
 				return
 			}
 		}
@@ -62,8 +62,8 @@ var profilesModifyCmd = &cobra.Command{
 
 func init() {
 	profilesModifyCmd.Flags().StringVar(&modifyName, "name", "", "Name of the profile to modify")
-	profilesModifyCmd.Flags().StringVar(&modifyBaseUrl, "base-url", "", "Base URL")
-	profilesModifyCmd.Flags().StringVar(&modifyMgmntUrl, "mgmnt-url", "", "Management URL")
+	profilesModifyCmd.Flags().StringVar(&modifyBaseUrl, "base-url", "", "Base URL (default: https://hub.suprsend.com/)")
+	profilesModifyCmd.Flags().StringVar(&modifyMgmntUrl, "mgmnt-url", "", "Management URL (default: https://api.suprsend.com/)")
 	profilesModifyCmd.Flags().StringVar(&modifyServiceToken, "token", "", "Service Token")
 	ProfileCmd.AddCommand(profilesModifyCmd)
 }
@@ -99,7 +99,7 @@ func runModifyInteractive(cfg *Config, path string) {
 
 	selectedProfile, exists := cfg.Profiles[modifyName]
 	if !exists {
-		log.Errorf("Profile %s not found", modifyName)
+		log.Infof("Profile %q does not exist. Use the command 'suprsend profile list' to see all profiles.", modifyName)
 		return
 	}
 

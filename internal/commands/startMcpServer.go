@@ -61,8 +61,8 @@ func getSelectedTools(toolsFlag string) ([]*toolset.Tool, error) {
 // startMcpServerCmd represents the startMcpServer command
 var startMcpServerCmd = &cobra.Command{
 	Use:   "start-mcp-server",
-	Short: "Starts MCP server for SuprSend",
-	Long: `Starts the MCP server for SuprSend.
+	Short: "Start SuprSend MCP server",
+	Long: `Start SuprSend MCP server.
 This server will handle all the requests from user about SuprSend capabilities and data.`,
 	PersistentPreRun: func(cmd *cobra.Command, args []string) {
 		conf := config.Cfg
@@ -140,7 +140,6 @@ This server will handle all the requests from user about SuprSend capabilities a
 	},
 }
 
-// Add a subcommand to startMcpServerCmd to list all the tools supported by the server
 var listToolsCmd = &cobra.Command{
 	Use:   "list-tools",
 	Short: "List all the tools supported by the server",

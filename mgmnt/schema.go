@@ -139,10 +139,13 @@ func (c *SS_MgmntClient) GetSchema(workspace, slug string, version string) (*Sch
 	return schema, nil
 }
 
-func (c *SS_MgmntClient) GetSchemaBySlug(workspace, slug string) (*map[string]any, error) {
+func (c *SS_MgmntClient) GetSchemaBySlug(workspace, slug, mode string) (*map[string]any, error) {
+	if mode != "live" && mode != "draft" {
+		return nil, fmt.Errorf("invalid mode: %s. Available modes are: live, draft", mode)
+	}
 	client := client.NewHTTPClient()
 	defer client.Close()
-	url := fmt.Sprintf("%sv1/%s/schema/%s/", c.mgmnt_base_URL, workspace, slug)
+	url := fmt.Sprintf("%sv1/%s/schema/%s/?mode=%s", c.mgmnt_base_URL, workspace, slug, mode)
 
 	resp, err := client.R().
 		SetDebug(c.debug).

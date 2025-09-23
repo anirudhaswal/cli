@@ -11,8 +11,8 @@ import (
 
 var listProfilesCmd = &cobra.Command{
 	Use:   "list",
-	Short: "Lists all profiles",
-	Long:  "Lists all profiles from the config",
+	Short: "List all profiles",
+	Long:  "List all profiles from the config",
 	Run: func(cmd *cobra.Command, args []string) {
 		path, err := cmd.Flags().GetString("config")
 		if err != nil {

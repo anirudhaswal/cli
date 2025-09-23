@@ -52,7 +52,7 @@ var schemaPullCmd = &cobra.Command{
 
 		mgmnt_client := utils.GetSuprSendMgmntClient()
 		if slug != "" {
-			schema, err := mgmnt_client.GetSchemaBySlug(workspace, slug)
+			schema, err := mgmnt_client.GetSchemaBySlug(workspace, slug, mode)
 			if err != nil {
 				fmt.Fprintf(os.Stdout, "Error: Failed to get schema: %v\n", err)
 				return
@@ -76,16 +76,11 @@ var schemaPullCmd = &cobra.Command{
 		if p != nil {
 			p.Stop(fmt.Sprintf("Pulled %d schemas", len(schemas.Results)))
 		}
-		stats, err := WriteSchemasToFiles(schemas, outputDir)
+		_, err = WriteSchemasToFiles(schemas, outputDir)
 		if err != nil {
 			fmt.Fprintf(os.Stdout, "Error: Failed to save schemas: %v\n", err)
 			return
 		}
-
-		fmt.Fprintf(os.Stdout, "%d schemas saved\n", stats.Success)
-		fmt.Fprintf(os.Stdout, "%d schemas failed\n", stats.Failed)
-		fmt.Fprintf(os.Stdout, "%d schemas skipped\n", stats.Total-stats.Success-stats.Failed)
-		fmt.Fprintf(os.Stdout, "%d schemas already exist\n", stats.Total-stats.Success-stats.Failed)
 	},
 }
 

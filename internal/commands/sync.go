@@ -19,8 +19,8 @@ import (
 
 var syncCmd = &cobra.Command{
 	Use:   "sync",
-	Short: "Sync all your SuprSend assets locally",
-	Long:  `Sync all your SuprSend assets locally with the server`,
+	Short: "Sync SuprSend assets from one workspace to another",
+	Long:  `Sync SuprSend assets from one workspace to another`,
 	Run: func(cmd *cobra.Command, args []string) {
 		mode, _ := cmd.Flags().GetString("mode")
 		fromWorkspace, _ := cmd.Flags().GetString("from")
@@ -59,21 +59,25 @@ var syncCmd = &cobra.Command{
 			case "workflow":
 				err := syncWorkflows(mgmntClient, fromWorkspace, toWorkspace, mode)
 				if err != nil {
+					log.WithError(err).Errorf("Failed to sync workflows")
 					hasErrors = true
 				}
 			case "schema":
 				err := syncSchemas(mgmntClient, fromWorkspace, toWorkspace, mode)
 				if err != nil {
+					log.WithError(err).Errorf("Failed to sync schemas")
 					hasErrors = true
 				}
 			case "event":
 				err := syncEvents(mgmntClient, fromWorkspace, toWorkspace)
 				if err != nil {
+					log.WithError(err).Errorf("Failed to sync events")
 					hasErrors = true
 				}
 			case "category":
 				err := syncCategories(mgmntClient, fromWorkspace, toWorkspace, mode)
 				if err != nil {
+					log.WithError(err).Errorf("Failed to sync categories")
 					hasErrors = true
 				}
 			default:
@@ -232,7 +236,7 @@ func syncCategories(mgmntClient *mgmnt.SS_MgmntClient, fromWorkspace, toWorkspac
 	dirPath := filepath.Join(".", "suprsend", "category")
 	categoriesResp, err := mgmntClient.ListCategories(fromWorkspace, mode)
 	if err != nil {
-		return fmt.Errorf("error listing categories: %w", err)
+		return fmt.Errorf("error getting categories: %w", err)
 	}
 	log.Infof("Pulling categories from %s ...", fromWorkspace)
 	err = category.WriteToFile(categoriesResp, "categories_preferences.json")

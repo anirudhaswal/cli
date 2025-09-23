@@ -60,20 +60,14 @@ var profilesAddCmd = &cobra.Command{
 
 func init() {
 	profilesAddCmd.Flags().StringVar(&addName, "name", "", "Name of the profile (required)")
-	profilesAddCmd.Flags().StringVar(&addBaseUrl, "base-url", "", "Base URL")
-	profilesAddCmd.Flags().StringVar(&addMgmntUrl, "mgmnt-url", "", "Management URL")
+	profilesAddCmd.Flags().StringVar(&addBaseUrl, "base-url", "", "Base URL (default: https://hub.suprsend.com/)")
+	profilesAddCmd.Flags().StringVar(&addMgmntUrl, "mgmnt-url", "", "Management URL (default: https://api.suprsend.com/)")
 	profilesAddCmd.Flags().StringVar(&addServiceToken, "service-token", "", "Service token (required)")
 	ProfileCmd.AddCommand(profilesAddCmd)
 }
 
 func runAddInteractive(cfg *Config, path string) {
-	addName = ""
-	addServiceToken = ""
-	addBaseUrl = ""
-	addMgmntUrl = ""
-
 	ui := cobra_ui.New()
-
 	var questions []cobra_ui.Question
 
 	if addName == "" {

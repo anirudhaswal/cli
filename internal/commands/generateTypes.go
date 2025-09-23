@@ -19,8 +19,8 @@ import (
 
 var generateTypesCmd = &cobra.Command{
 	Use:   "generate-types",
-	Short: "Generate Types from JSON Schema",
-	Long:  "Generate types from JSON schema for various programming languages",
+	Short: "Generate type definitions from JSON Schema",
+	Long:  "Generate type definitions from JSON schema for various programming languages",
 }
 
 var generateTypesPythonCmd = &cobra.Command{
