@@ -25,7 +25,7 @@ type SchemaWriteStats struct {
 
 type FilteredSchema struct {
 	Slug        string `json:"slug"`
-	Name        string `json:"name"`
+	Title       string `json:"title"`
 	Description string `json:"description"`
 }
 
@@ -99,7 +99,7 @@ func filterSchemaData(schemas []mgmnt.SchemaResponse) []FilteredSchema {
 	for i, schema := range schemas {
 		filtered[i] = FilteredSchema{
 			Slug:        schema.Slug,
-			Name:        schema.Name,
+			Title:       schema.Title,
 			Description: schema.Description,
 		}
 	}

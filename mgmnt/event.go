@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
-	"path/filepath"
 	"strconv"
 
 	log "github.com/sirupsen/logrus"
@@ -94,12 +93,11 @@ func (c *SS_MgmntClient) GetEvents(workspace string) (*EventsResponse, error) {
 	return &EventsResponse{Results: allEvents}, nil
 }
 
-func (c *SS_MgmntClient) PushEvents(workspace string) error {
+func (c *SS_MgmntClient) PushEvents(workspace, dirPath string) error {
 	client := client.NewHTTPClient()
 	defer client.Close()
 
-	filePath := filepath.Join(".", "suprsend", "event", "event_schema_mapping.json")
-	data, err := os.ReadFile(filePath)
+	data, err := os.ReadFile(dirPath)
 	if err != nil {
 		log.Errorf("Error reading event schema mapping file: %s", err)
 		return err
@@ -124,8 +122,12 @@ func (c *SS_MgmntClient) PushEvents(workspace string) error {
 		return err
 	}
 	if res.IsError() {
-		log.Errorf("Error pushing event: %s", res.Status())
-		return fmt.Errorf("error pushing event: %s", res.Status())
+		var errorResponse ErrorResponse
+		if err := json.Unmarshal([]byte(res.String()), &errorResponse); err != nil {
+			log.Errorf("Error parsing error response: %s", err)
+			return fmt.Errorf("error pushing event: %s", res.Status())
+		}
+		return fmt.Errorf("error pushing event: %s", errorResponse.Message)
 	}
 	return nil
 }

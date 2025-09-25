@@ -20,8 +20,16 @@ var eventPullCmd = &cobra.Command{
 	Short: "Pull events from workspace to local directory",
 	Run: func(cmd *cobra.Command, args []string) {
 		workspace, _ := cmd.Flags().GetString("workspace")
-
-		dirPath := filepath.Join(".", "suprsend", "event")
+		dirPath, _ := cmd.Flags().GetString("dir")
+		if dirPath == "" {
+			dirPath = filepath.Join(".", "suprsend", "event")
+			if _, err := os.Stat(dirPath); os.IsNotExist(err) {
+				dirPath = promptForOutputDirectory()
+			}
+			if dirPath == "" {
+				fmt.Fprintf(os.Stdout, "No output directory specified. Exiting \n")
+			}
+		}
 		if _, err := os.Stat(dirPath); os.IsNotExist(err) {
 			if force {
 				err := os.MkdirAll(dirPath, 0755)
@@ -83,5 +91,6 @@ var eventPullCmd = &cobra.Command{
 func init() {
 	eventPullCmd.Flags().StringP("workspace", "w", "staging", "Workspace to pull events from")
 	eventPullCmd.Flags().BoolVarP(&force, "force", "f", false, "Force overwrite existing directory")
+	eventPullCmd.Flags().StringP("dir", "d", "", "Directory to pull events to (default: ./suprsend/event)")
 	EventCmd.AddCommand(eventPullCmd)
 }

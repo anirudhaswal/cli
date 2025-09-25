@@ -95,7 +95,10 @@ var generateTypesJavaCmd = &cobra.Command{
 
 		generatedCount := 0
 		for _, targetSchema := range validSchemas {
-			schemaName := targetSchema.Name + "Data"
+			var schemaName string
+			if targetSchema.Title == "" {
+				schemaName = targetSchema.Slug + "Data"
+			}
 			fileName := filepath.Join(outputDir, schemaName+".java")
 			if _, err := os.Stat(fileName); err == nil {
 				if err := os.WriteFile(fileName, []byte(""), 0o644); err != nil {
@@ -128,7 +131,7 @@ var generateTypesJavaCmd = &cobra.Command{
 			}
 			err = runTypeMorph("java", string(schemaBytes), schemaName, fileName, javaFlags)
 			if err != nil {
-				log.WithError(err).Errorln("Could not generate types for schema: " + targetSchema.Name)
+				log.WithError(err).Errorln("Could not generate types for schema: " + targetSchema.Title)
 			} else {
 				generatedCount++
 			}
@@ -266,7 +269,10 @@ func generateTypesForLanguage(targetLang string) func(*cobra.Command, []string) 
 
 		generatedCount := 0
 		for _, targetSchema := range validSchemas {
-			schemaName := targetSchema.Name + "Data"
+			var schemaName string
+			if targetSchema.Title == "" {
+				schemaName = targetSchema.Slug + "Data"
+			}
 
 			schemaJSON := map[string]interface{}{
 				"type":       targetSchema.JSONSchema.Type,
@@ -285,7 +291,7 @@ func generateTypesForLanguage(targetLang string) func(*cobra.Command, []string) 
 
 			err = runTypeMorph(targetLang, string(schemaBytes), schemaName, fileName, buildFlags)
 			if err != nil {
-				log.WithError(err).Errorln("Could not generate types for schema: " + targetSchema.Name)
+				log.WithError(err).Errorln("Could not generate types for schema: " + targetSchema.Title)
 			} else {
 				generatedCount++
 			}

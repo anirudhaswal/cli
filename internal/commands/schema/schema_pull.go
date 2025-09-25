@@ -17,7 +17,7 @@ var schemaPullCmd = &cobra.Command{
 	Short: "Pull schemas",
 	Long:  `Pull schemas in a workspace`,
 	Run: func(cmd *cobra.Command, args []string) {
-		outputDir, _ := cmd.Flags().GetString("output-dir")
+		outputDir, _ := cmd.Flags().GetString("dir")
 		mode, _ := cmd.Flags().GetString("mode")
 		slug, _ := cmd.Flags().GetString("slug")
 		if outputDir == "" {
@@ -85,7 +85,7 @@ var schemaPullCmd = &cobra.Command{
 }
 
 func init() {
-	schemaPullCmd.PersistentFlags().StringP("output-dir", "d", "", "Output directory for schemas")
+	schemaPullCmd.Flags().StringP("dir", "d", "", "Directory to pull schemas (default: ./suprsend/schema)")
 	schemaPullCmd.PersistentFlags().StringP("mode", "m", "live", "Mode of schemas to pull (draft, live), default: live")
 	schemaPullCmd.PersistentFlags().StringP("slug", "g", "", "Slug of schema to pull")
 	SchemaCmd.AddCommand(schemaPullCmd)

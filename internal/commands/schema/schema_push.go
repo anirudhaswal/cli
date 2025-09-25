@@ -21,6 +21,8 @@ var schemaPushCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		workspace, _ := cmd.Flags().GetString("workspace")
 		slug, _ := cmd.Flags().GetString("slug")
+		commit, _ := cmd.Flags().GetString("commit")
+		commitMessage, _ := cmd.Flags().GetString("commit-message")
 		path, _ := cmd.Flags().GetString("path")
 		if path == "" {
 			path = filepath.Join(".", "suprsend", "schema")
@@ -76,7 +78,7 @@ var schemaPushCmd = &cobra.Command{
 				return
 			}
 
-			err = mgmntClient.PushSchema(workspace, slug, schema)
+			err = mgmntClient.PushSchema(workspace, slug, schema, commit, commitMessage)
 			if err != nil {
 				log.WithError(err).Errorf("Failed to push schema %s", slug)
 				return
@@ -132,7 +134,7 @@ var schemaPushCmd = &cobra.Command{
 				continue
 			}
 
-			err = mgmntClient.PushSchema(workspace, slug, schema)
+			err = mgmntClient.PushSchema(workspace, slug, schema, commit, commitMessage)
 			if err != nil {
 				if p != nil && cancel != nil {
 					p.Stop("")
@@ -159,7 +161,9 @@ var schemaPushCmd = &cobra.Command{
 }
 
 func init() {
-	schemaPushCmd.PersistentFlags().StringP("path", "p", "", "Output directory for schemas")
+	schemaPushCmd.Flags().StringP("dir", "p", "", "Directory for schemas pull to (default: ./suprsend/schema)")
+	schemaPushCmd.Flags().StringP("commit", "c", "true", "Commit the schemas (--commit=true)")
+	schemaPushCmd.Flags().StringP("commit-message", "m", "", "Commit message describing the changes for --commit=true")
 	schemaPushCmd.PersistentFlags().StringP("slug", "g", "", "Slug of schema to push")
 	SchemaCmd.AddCommand(schemaPushCmd)
 }

@@ -26,6 +26,7 @@ var syncCmd = &cobra.Command{
 		fromWorkspace, _ := cmd.Flags().GetString("from")
 		toWorkspace, _ := cmd.Flags().GetString("to")
 		assets, _ := cmd.Flags().GetString("assets")
+		dirPath, _ := cmd.Flags().GetString("dir")
 		if fromWorkspace == toWorkspace {
 			log.Error("Cannot sync within the same workspace. Source and destination workspaces must be different.")
 			return
@@ -57,25 +58,25 @@ var syncCmd = &cobra.Command{
 		for _, assetType := range assetsToSync {
 			switch assetType {
 			case "workflow":
-				err := syncWorkflows(mgmntClient, fromWorkspace, toWorkspace, mode)
+				err := syncWorkflows(mgmntClient, fromWorkspace, toWorkspace, mode, dirPath)
 				if err != nil {
 					log.WithError(err).Errorf("Failed to sync workflows")
 					hasErrors = true
 				}
 			case "schema":
-				err := syncSchemas(mgmntClient, fromWorkspace, toWorkspace, mode)
+				err := syncSchemas(mgmntClient, fromWorkspace, toWorkspace, mode, dirPath)
 				if err != nil {
 					log.WithError(err).Errorf("Failed to sync schemas")
 					hasErrors = true
 				}
 			case "event":
-				err := syncEvents(mgmntClient, fromWorkspace, toWorkspace)
+				err := syncEvents(mgmntClient, fromWorkspace, toWorkspace, dirPath)
 				if err != nil {
 					log.WithError(err).Errorf("Failed to sync events")
 					hasErrors = true
 				}
 			case "category":
-				err := syncCategories(mgmntClient, fromWorkspace, toWorkspace, mode)
+				err := syncCategories(mgmntClient, fromWorkspace, toWorkspace, mode, dirPath)
 				if err != nil {
 					log.WithError(err).Errorf("Failed to sync categories")
 					hasErrors = true
@@ -98,12 +99,15 @@ func init() {
 	// Flags consumed in Run
 	syncCmd.Flags().StringP("from", "f", "staging", "Source workspace (required)")
 	syncCmd.Flags().StringP("to", "t", "production", "Destination workspace (required)")
+	syncCmd.Flags().StringP("dir", "d", "", "Directory to sync assets to")
 	syncCmd.Flags().StringP("mode", "m", "live", "Mode to sync assets (draft, live), default: live")
 	syncCmd.Flags().StringP("assets", "a", "all", "Assets to sync (all, workflow, schema, event, category)")
 }
 
-func syncWorkflows(mgmntClient *mgmnt.SS_MgmntClient, fromWorkspace, toWorkspace, mode string) error {
-	dirPath := filepath.Join(".", "suprsend", "workflow")
+func syncWorkflows(mgmntClient *mgmnt.SS_MgmntClient, fromWorkspace, toWorkspace, mode, dirPath string) error {
+	if dirPath == "" {
+		dirPath = filepath.Join(".", "suprsend", "workflow")
+	}
 
 	workflows_resp, err := mgmntClient.GetWorkflows(fromWorkspace, mode)
 	if err != nil {
@@ -141,7 +145,7 @@ func syncWorkflows(mgmntClient *mgmnt.SS_MgmntClient, fromWorkspace, toWorkspace
 			continue
 		}
 
-		err = mgmntClient.PushWorkflow(toWorkspace, slug, wf, false, "")
+		err = mgmntClient.PushWorkflow(toWorkspace, slug, wf, "false", "")
 		if err != nil {
 			errors = append(errors, fmt.Sprintf("failed to push workflow %s: %v", slug, err))
 			log.WithError(err).Errorf("Failed to push workflow %s", slug)
@@ -156,8 +160,10 @@ func syncWorkflows(mgmntClient *mgmnt.SS_MgmntClient, fromWorkspace, toWorkspace
 	return nil
 }
 
-func syncSchemas(mgmntClient *mgmnt.SS_MgmntClient, fromWorkspace, toWorkspace, mode string) error {
-	dirPath := filepath.Join(".", "suprsend", "schema")
+func syncSchemas(mgmntClient *mgmnt.SS_MgmntClient, fromWorkspace, toWorkspace, mode, dirPath string) error {
+	if dirPath == "" {
+		dirPath = filepath.Join(".", "suprsend", "schema")
+	}
 
 	log.Infof("Pulling schemas from %s ...", fromWorkspace)
 	schemas_resp, err := mgmntClient.GetSchemas(fromWorkspace, mode)
@@ -195,7 +201,7 @@ func syncSchemas(mgmntClient *mgmnt.SS_MgmntClient, fromWorkspace, toWorkspace, 
 			continue
 		}
 
-		err = mgmntClient.PushSchema(toWorkspace, slug, sch)
+		err = mgmntClient.PushSchema(toWorkspace, slug, sch, "false", "")
 		if err != nil {
 			errors = append(errors, fmt.Sprintf("failed to push schema %s: %v", slug, err))
 			log.WithError(err).Errorf("Failed to push schema %s", slug)
@@ -210,8 +216,10 @@ func syncSchemas(mgmntClient *mgmnt.SS_MgmntClient, fromWorkspace, toWorkspace, 
 	return nil
 }
 
-func syncEvents(mgmntClient *mgmnt.SS_MgmntClient, fromWorkspace, toWorkspace string) error {
-	dirPath := filepath.Join(".", "suprsend", "event")
+func syncEvents(mgmntClient *mgmnt.SS_MgmntClient, fromWorkspace, toWorkspace, dirPath string) error {
+	if dirPath == "" {
+		dirPath = filepath.Join(".", "suprsend", "event")
+	}
 
 	log.Infof("Pulling events from %s ...", fromWorkspace)
 	events_resp, err := mgmntClient.GetEvents(fromWorkspace)
@@ -225,15 +233,17 @@ func syncEvents(mgmntClient *mgmnt.SS_MgmntClient, fromWorkspace, toWorkspace st
 	}
 
 	fmt.Printf("Pushing events to %s ...", toWorkspace)
-	err = mgmntClient.PushEvents(toWorkspace)
+	err = mgmntClient.PushEvents(toWorkspace, dirPath)
 	if err != nil {
 		return fmt.Errorf("error pushing events: %w", err)
 	}
 	return nil
 }
 
-func syncCategories(mgmntClient *mgmnt.SS_MgmntClient, fromWorkspace, toWorkspace, mode string) error {
-	dirPath := filepath.Join(".", "suprsend", "category")
+func syncCategories(mgmntClient *mgmnt.SS_MgmntClient, fromWorkspace, toWorkspace, mode, dirPath string) error {
+	if dirPath == "" {
+		dirPath = filepath.Join(".", "suprsend", "category")
+	}
 	categoriesResp, err := mgmntClient.ListCategories(fromWorkspace, mode)
 	if err != nil {
 		return fmt.Errorf("error getting categories: %w", err)
@@ -248,7 +258,7 @@ func syncCategories(mgmntClient *mgmnt.SS_MgmntClient, fromWorkspace, toWorkspac
 	if err != nil {
 		return fmt.Errorf("error reading categories from file: %w", err)
 	}
-	err = mgmntClient.PushCategories(toWorkspace, categories, false, "")
+	err = mgmntClient.PushCategories(toWorkspace, categories, "false", "")
 	if err != nil {
 		return fmt.Errorf("error pushing categories: %w", err)
 	}

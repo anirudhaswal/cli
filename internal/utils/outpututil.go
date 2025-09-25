@@ -235,6 +235,9 @@ func formatValue(v reflect.Value) string {
 	case reflect.Bool:
 		return strconv.FormatBool(v.Bool())
 	case reflect.Map:
+		if v.IsNil() {
+			return ""
+		}
 		// Check if it's map[string]any
 		if v.Type().Key().Kind() == reflect.String && v.Type().Elem().Kind() == reflect.Interface {
 			m := v.Interface()
@@ -244,6 +247,9 @@ func formatValue(v reflect.Value) string {
 		}
 		return fmt.Sprintf("%v", v.Interface())
 	default:
+		if !v.IsValid() || (v.Kind() == reflect.Interface && v.IsNil()) {
+			return ""
+		}
 		return fmt.Sprintf("%v", v.Interface())
 	}
 }

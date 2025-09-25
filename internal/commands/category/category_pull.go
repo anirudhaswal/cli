@@ -19,7 +19,7 @@ var categoryPullCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		workspace, _ := cmd.Flags().GetString("workspace")
 		mode, _ := cmd.Flags().GetString("mode")
-		outputDir, _ := cmd.Flags().GetString("output-dir")
+		outputDir, _ := cmd.Flags().GetString("dir")
 		if outputDir == "" {
 			outputDir = filepath.Join(".", "suprsend", "category")
 			if _, err := os.Stat(outputDir); os.IsNotExist(err) {
@@ -63,6 +63,6 @@ var categoryPullCmd = &cobra.Command{
 
 func init() {
 	categoryPullCmd.PersistentFlags().StringP("mode", "m", "live", "Mode to pull categories from")
-	categoryPullCmd.PersistentFlags().StringP("output-dir", "d", "", "Output directory for categories")
+	categoryPullCmd.Flags().StringP("dir", "d", "", "Output directory for categories (default: ./suprsend/category)")
 	CategoryCmd.AddCommand(categoryPullCmd)
 }

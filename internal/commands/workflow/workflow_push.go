@@ -16,12 +16,12 @@ import (
 
 var workflowPushCmd = &cobra.Command{
 	Use:   "push",
-	Short: "push workflows from local to suprsend",
-	Long:  `push workflows from local to suprsend dashboard`,
+	Short: "Push workflows from local to SuprSend workspace",
+	Long:  `Push workflows from local to SuprSend workspace`,
 	Run: func(cmd *cobra.Command, args []string) {
 		workspace, _ := cmd.Flags().GetString("workspace")
-		path, _ := cmd.Flags().GetString("path")
-		commit, _ := cmd.Flags().GetBool("commit")
+		path, _ := cmd.Flags().GetString("dir")
+		commit, _ := cmd.Flags().GetString("commit")
 		commitMessage, _ := cmd.Flags().GetString("commit-message")
 		slug, _ := cmd.Flags().GetString("slug")
 
@@ -162,9 +162,9 @@ var workflowPushCmd = &cobra.Command{
 }
 
 func init() {
-	workflowPushCmd.PersistentFlags().StringP("path", "p", "", "Output directory for workflows")
-	workflowPushCmd.PersistentFlags().BoolP("commit", "c", true, "Commit the workflows")
-	workflowPushCmd.PersistentFlags().StringP("commit-message", "m", "", "Commit message for the workflows")
+	workflowPushCmd.PersistentFlags().StringP("dir", "d", "", "Output directory for workflows (default: ./suprsend/workflow)")
+	workflowPushCmd.PersistentFlags().StringP("commit", "c", "true", "Commit the workflows (--commit=true)")
+	workflowPushCmd.PersistentFlags().StringP("commit-message", "m", "", "Commit message describing the changes for --commit=true")
 	workflowPushCmd.PersistentFlags().StringP("slug", "g", "", "Slug of the workflow to push")
 	WorkflowCmd.AddCommand(workflowPushCmd)
 }

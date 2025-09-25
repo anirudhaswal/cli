@@ -13,7 +13,7 @@ import (
 var schemaCommitCmd = &cobra.Command{
 	Use:   "commit",
 	Short: "Commit schema from draft to live",
-	Long:  `Commit schema from draft to live in a workspace`,
+	Long:  `Commit schema from draft to live in a workspace. Example: suprsend schema commit <slug>`,
 	Run: func(cmd *cobra.Command, args []string) {
 		if len(args) < 1 {
 			log.Error("Schema slug argument is required. Example: suprsend schema commit <slug>")
@@ -22,6 +22,7 @@ var schemaCommitCmd = &cobra.Command{
 		slug := args[0]
 
 		workspace, _ := cmd.Flags().GetString("workspace")
+		commitMessage, _ := cmd.Flags().GetString("commit-message")
 		mgmnt_client := utils.GetSuprSendMgmntClient()
 		var p *pin.Pin
 
@@ -32,7 +33,7 @@ var schemaCommitCmd = &cobra.Command{
 			)
 		}
 
-		err := mgmnt_client.FinalizeSchema(workspace, slug, true)
+		err := mgmnt_client.FinalizeSchema(workspace, slug, commitMessage)
 		if err != nil {
 			log.Error(err.Error())
 			return
@@ -47,5 +48,6 @@ var schemaCommitCmd = &cobra.Command{
 }
 
 func init() {
+	schemaCommitCmd.Flags().StringP("commit-message", "m", "", "Commit message describing the changes")
 	SchemaCmd.AddCommand(schemaCommitCmd)
 }

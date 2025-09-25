@@ -18,8 +18,8 @@ var categoryPushCmd = &cobra.Command{
 	Short: "Push categories to a workspace",
 	Run: func(cmd *cobra.Command, args []string) {
 		workspace, _ := cmd.Flags().GetString("workspace")
-		path, _ := cmd.Flags().GetString("path")
-		commit, _ := cmd.Flags().GetBool("commit")
+		path, _ := cmd.Flags().GetString("dir")
+		commit, _ := cmd.Flags().GetString("commit")
 		commitMessage, _ := cmd.Flags().GetString("commit-message")
 
 		if path == "" {
@@ -60,8 +60,8 @@ var categoryPushCmd = &cobra.Command{
 }
 
 func init() {
-	categoryPushCmd.PersistentFlags().StringP("path", "p", "", "Output directory for categories")
-	categoryPushCmd.PersistentFlags().BoolP("commit", "c", true, "Commit the categories")
+	categoryPushCmd.Flags().StringP("dir", "d", "", "Output directory for categories (default: ./suprsend/category/)")
+	categoryPushCmd.PersistentFlags().StringP("commit", "c", "true", "Commit the categories ")
 	categoryPushCmd.PersistentFlags().StringP("commit-message", "m", "", "Commit message for the categories")
 	CategoryCmd.AddCommand(categoryPushCmd)
 }

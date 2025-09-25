@@ -65,6 +65,10 @@ func (c *SS_MgmntClient) ListCategories(workspace, mode string) (*PreferenceCate
 	}
 
 	if resp.IsError() {
+		var errorResp ErrorResponse
+		if err := json.Unmarshal([]byte(resp.String()), &errorResp); err == nil {
+			return nil, fmt.Errorf("request failed with message: %s", errorResp.Message)
+		}
 		return nil, fmt.Errorf("request failed with status: %s", resp.Status())
 	}
 
@@ -72,10 +76,10 @@ func (c *SS_MgmntClient) ListCategories(workspace, mode string) (*PreferenceCate
 	return result, nil
 }
 
-func (c *SS_MgmntClient) PushCategories(workspace string, categories interface{}, commit bool, commitMessage string) error {
+func (c *SS_MgmntClient) PushCategories(workspace string, categories interface{}, commit string, commitMessage string) error {
 	client := client.NewHTTPClient()
 	defer client.Close()
-	url := fmt.Sprintf("%sv1/%s/preference_category/?commit=%t&commit_message=%s", c.mgmnt_base_URL, workspace, commit, commitMessage)
+	url := fmt.Sprintf("%sv1/%s/preference_category/?commit=%s&commit_message=%s", c.mgmnt_base_URL, workspace, commit, commitMessage)
 
 	resp, err := client.R().
 		SetDebug(c.debug).
@@ -88,6 +92,10 @@ func (c *SS_MgmntClient) PushCategories(workspace string, categories interface{}
 	}
 
 	if resp.IsError() {
+		var errorResp ErrorResponse
+		if err := json.Unmarshal([]byte(resp.String()), &errorResp); err == nil {
+			return fmt.Errorf("request failed with message: %s", errorResp.Message)
+		}
 		return fmt.Errorf("request failed with status: %s", resp.Status())
 	}
 

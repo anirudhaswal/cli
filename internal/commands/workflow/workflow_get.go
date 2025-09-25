@@ -13,7 +13,7 @@ import (
 var workflowGetCmd = &cobra.Command{
 	Use:   "get",
 	Short: "Get workflow details",
-	Long:  "Get workfow details of a specific wf",
+	Long:  "Get workfow details of a specific wf. Example: suprsend workflow get <slug>",
 	Run: func(cmd *cobra.Command, args []string) {
 		if len(args) < 1 {
 			log.Error("Workflow slug argument is required. Example: suprsend workflow get <slug>")
