@@ -81,7 +81,7 @@ func (c *SS_MgmntClient) PushCategories(workspace string, categories interface{}
 	client := client.NewHTTPClient()
 	defer client.Close()
 	urlEncodedCommitMessage := url.QueryEscape(commitMessage)
-	url := fmt.Sprintf("%sv1/%s/preference_category/?commit=%s&commit_message=%s", c.mgmnt_base_URL, workspace, commit, urlEncodedCommitMessage)
+	urlStr := fmt.Sprintf("%sv1/%s/preference_category/?commit=%s&commit_message=%s", c.mgmnt_base_URL, workspace, commit, urlEncodedCommitMessage)
 
 	resp, err := client.R().
 		SetDebug(c.debug).

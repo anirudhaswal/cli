@@ -35,7 +35,7 @@ var schemaCommitCmd = &cobra.Command{
 		}
 
 		urlEncodedCommitMessage := url.QueryEscape(commitMessage)
-		err := mgmnt_client.FinalizeSchema(workspace, slug, urlEncodedCommitMessage)
+		err := mgmntClient.FinalizeSchema(workspace, slug, urlEncodedCommitMessage)
 		if err != nil {
 			log.Error(err.Error())
 			return

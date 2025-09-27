@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"net/url"
 	"os"
 	"path/filepath"
 	"strings"
@@ -63,33 +62,37 @@ var workflowPushCmd = &cobra.Command{
 
 			if _, err := os.Stat(filePath); err != nil {
 				log.WithError(err).Errorf("Failed to find workflow file %s", filePath)
-				return
-			}
-
-			data, err := os.ReadFile(filePath)
-			if err != nil {
-				log.WithError(err).Errorf("Failed to read workflow file %s", filePath)
-			}
-
-			if !hasError && !utils.IsOutputPiped() {
-				p = pin.New(fmt.Sprintf("Pushing %s...", slug),
-					pin.WithSpinnerColor(pin.ColorCyan),
-					pin.WithTextColor(pin.ColorYellow),
-				)
-				cancel = p.Start(context.Background())
-			}
-			var workflow map[string]any
-			if err := json.Unmarshal(data, &workflow); err != nil {
-				log.WithError(err).Errorf("Failed to parse JSON for %s", filePath)
-				return
-			}
-
-			urlEncodedCommitMessage := url.QueryEscape(commitMessage)
-			err = mgmntClient.PushWorkflow(workspace, slug, workflow, commit, urlEncodedCommitMessage)
-			if err != nil {
-				log.WithError(err).Errorf("Failed to push workflow %s", slug)
-				return
-			}
+				stats.Failed++
+				stats.Errors = append(stats.Errors, fmt.Sprintf("Failed to find workflow file %s: %v", filePath, err))
+			} else {
+				data, err := os.ReadFile(filePath)
+				if err != nil {
+					log.WithError(err).Errorf("Failed to read workflow file %s", filePath)
+					stats.Failed++
+					stats.Errors = append(stats.Errors, fmt.Sprintf("Failed to read workflow file %s: %v", filePath, err))
+				} else {
+					if !hasError && !utils.IsOutputPiped() {
+						p = pin.New(fmt.Sprintf("Pushing %s...", slug),
+							pin.WithSpinnerColor(pin.ColorCyan),
+							pin.WithTextColor(pin.ColorYellow),
+						)
+						cancel = p.Start(context.Background())
+					}
+					var workflow map[string]any
+					if err := json.Unmarshal(data, &workflow); err != nil {
+						log.WithError(err).Errorf("Failed to parse JSON for %s", filePath)
+						stats.Failed++
+						stats.Errors = append(stats.Errors, fmt.Sprintf("Failed to parse JSON for %s: %v", filePath, err))
+					} else {
+						err = mgmntClient.PushWorkflow(workspace, slug, workflow, commit, commitMessage)
+						if err != nil {
+							log.WithError(err).Errorf("Failed to push workflow %s", slug)
+							stats.Failed++
+							stats.Errors = append(stats.Errors, fmt.Sprintf("Failed to push workflow %s: %v", slug, err))
+						} else {
+							stats.Success++
+						}
+					}
 
 					if p != nil && cancel != nil {
 						if stats.Success > 0 {
