@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"path/filepath"
 	"strconv"
 
 	log "github.com/sirupsen/logrus"
@@ -73,7 +74,6 @@ func (c *SS_MgmntClient) GetEvents(workspace string) (*EventsResponse, error) {
 			SetHeader("Authorization", "ServiceToken "+c.serviceToken).
 			SetResult(&EventsResponse{}).
 			Get(c.mgmnt_base_URL + "v1/" + workspace + "/event/?limit=" + strconv.Itoa(limit) + "&offset=" + strconv.Itoa(offset) + "&has_linked_schema=true")
-
 		if err != nil {
 			log.Errorf("Error getting events: %s", err)
 			return nil, err
@@ -97,7 +97,8 @@ func (c *SS_MgmntClient) PushEvents(workspace, dirPath string) error {
 	client := client.NewHTTPClient()
 	defer client.Close()
 
-	data, err := os.ReadFile(dirPath)
+	filename := filepath.Join(dirPath, "event_schema_mapping.json")
+	data, err := os.ReadFile(filename)
 	if err != nil {
 		log.Errorf("Error reading event schema mapping file: %s", err)
 		return err
@@ -116,7 +117,6 @@ func (c *SS_MgmntClient) PushEvents(workspace, dirPath string) error {
 		SetHeader("Content-Type", "application/json").
 		SetBody(events).
 		Post(url)
-
 	if err != nil {
 		log.Errorf("Error pushing event: %s", err)
 		return err

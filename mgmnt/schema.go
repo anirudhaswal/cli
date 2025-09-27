@@ -161,7 +161,6 @@ func (c *SS_MgmntClient) GetSchemaBySlug(workspace, slug, mode string) (*map[str
 		SetHeader("Authorization", "ServiceToken "+c.serviceToken).
 		SetResult(&map[string]any{}).
 		Get(url)
-
 	if err != nil {
 		return nil, fmt.Errorf("request failed: %w", err)
 	}
@@ -264,16 +263,14 @@ func (c *SS_MgmntClient) FinalizeSchema(workspace, slug, commitMessage string) e
 	client := resty.New()
 	defer client.Close()
 
-	urlStr := fmt.Sprintf("%sv1/%s/schema/%s/commit/", c.mgmnt_base_URL, workspace, slug)
-	encodedCommitMessage := url.QueryEscape(commitMessage)
-	urlStr = fmt.Sprintf("%s?commit_message=%s", urlStr, encodedCommitMessage)
+	urlEncodedCommitMessage := url.QueryEscape(commitMessage)
+	urlStr := fmt.Sprintf("%sv1/%s/schema/%s/commit/?commit_message=%s", c.mgmnt_base_URL, workspace, slug, urlEncodedCommitMessage)
 
 	res, err := client.R().
 		SetDebug(c.debug).
 		SetHeader("Authorization", "ServiceToken "+c.serviceToken).
 		SetHeader("Content-Type", "application/json").
 		Patch(urlStr)
-
 	if err != nil {
 		return fmt.Errorf("request failed: %w", err)
 	}

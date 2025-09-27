@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"net/url"
 	"os"
 	"path/filepath"
 	"strings"
@@ -81,17 +82,14 @@ var schemaPushCmd = &cobra.Command{
 					var schema map[string]any
 					if err := json.Unmarshal(data, &schema); err != nil {
 						log.WithError(err).Errorf("Failed to parse JSON for %s", filePath)
-						stats.Failed++
-						stats.Errors = append(stats.Errors, fmt.Sprintf("Failed to parse JSON for %s: %v", filePath, err))
-					} else {
-						err = mgmntClient.PushSchema(workspace, slug, schema, commit, commitMessage)
-						if err != nil {
-							log.WithError(err).Errorf("Failed to push schema %s", slug)
-							stats.Failed++
-							stats.Errors = append(stats.Errors, fmt.Sprintf("Failed to push schema %s: %v", slug, err))
-						} else {
-							stats.Success++
-						}
+						return
+					}
+
+					urlEncodedCommitMessage := url.QueryEscape(commitMessage)
+					err = mgmntClient.PushSchema(workspace, slug, schema, commit, urlEncodedCommitMessage)
+					if err != nil {
+						log.WithError(err).Errorf("Failed to push schema %s", slug)
+						return
 					}
 
 					if p != nil && cancel != nil {

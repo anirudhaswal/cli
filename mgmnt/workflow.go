@@ -225,17 +225,16 @@ func (c *SS_MgmntClient) PushWorkflow(workspace, slug string, workflow map[strin
 	client := client.NewHTTPClient()
 	defer client.Close()
 
-	encodedCommitMessage := url.QueryEscape(commitMessage)
-	urlStr := fmt.Sprintf("%sv1/%s/workflow/%s/?commit=%s&commit_message=%s", c.mgmnt_base_URL, workspace, slug, commit, encodedCommitMessage)
-	log.Debugf("Pushing workflow to: %s", urlStr)
+	urlEncodedCommitMessage := url.QueryEscape(commitMessage)
+	url := fmt.Sprintf("%sv1/%s/workflow/%s/?commit=%s&commit_message=%s", c.mgmnt_base_URL, workspace, slug, commit, urlEncodedCommitMessage)
+	log.Debugf("Pushing workflow to: %s", url)
 
 	res, err := client.R().
 		SetDebug(c.debug).
 		SetHeader("Authorization", "ServiceToken "+c.serviceToken).
 		SetHeader("Content-Type", "application/json").
 		SetBody(workflow).
-		Post(urlStr)
-
+		Post(url)
 	if err != nil {
 		log.Errorf("Error pushing workflow: %s", err)
 		return err
@@ -277,7 +276,6 @@ func (c *SS_MgmntClient) ChangeStatusWorkflow(workspace, slug string, enabled bo
 		SetHeader("Content-Type", "application/json").
 		SetBody(body).
 		Patch(urlStr)
-
 	if err != nil {
 		return fmt.Errorf("network error: %w", err)
 	}
