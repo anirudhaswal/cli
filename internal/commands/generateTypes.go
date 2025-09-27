@@ -15,6 +15,8 @@ import (
 	"github.com/suprsend/cli/internal/utils"
 	"github.com/suprsend/cli/mgmnt"
 	"github.com/yarlson/pin"
+	"golang.org/x/text/cases"
+	"golang.org/x/text/language"
 )
 
 var generateTypesCmd = &cobra.Command{
@@ -221,7 +223,7 @@ func generateTypesForLanguage(targetLang string) func(*cobra.Command, []string) 
 
 		var p *pin.Pin
 		if !utils.IsOutputPiped() {
-			p = pin.New(fmt.Sprintf("Generating %s types...", strings.Title(targetLang)),
+			p = pin.New(fmt.Sprintf("Generating %s types...", cases.Title(language.English).String(targetLang)),
 				pin.WithSpinnerColor(pin.ColorCyan),
 				pin.WithTextColor(pin.ColorYellow),
 			)
