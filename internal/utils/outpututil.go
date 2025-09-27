@@ -72,7 +72,7 @@ func outputJSON(data any) {
 		return
 	}
 
-	if supportsColor() {
+	if supportsColor() || !IsOutputPiped() {
 		fmt.Println(string(pretty.Color(jsonData, nil)))
 	} else {
 		fmt.Println(string(jsonData))

@@ -35,7 +35,7 @@ var syncCmd = &cobra.Command{
 		var assetsToSync []string
 		switch assets {
 		case "all":
-			assetsToSync = []string{"workflow", "schema", "category", "event"}
+			assetsToSync = []string{"category", "schema", "event", "workflow"}
 		case "workflow":
 			assetsToSync = []string{"workflow"}
 		case "schema":

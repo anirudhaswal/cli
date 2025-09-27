@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"net/url"
 	"os"
 	"path/filepath"
 	"strings"
@@ -78,7 +79,8 @@ var workflowPushCmd = &cobra.Command{
 				return
 			}
 
-			err = mgmntClient.PushWorkflow(workspace, slug, workflow, commit, commitMessage)
+			urlEncodedCommitMessage := url.QueryEscape(commitMessage)
+			err = mgmntClient.PushWorkflow(workspace, slug, workflow, commit, urlEncodedCommitMessage)
 			if err != nil {
 				log.WithError(err).Errorf("Failed to push workflow %s", slug)
 				return

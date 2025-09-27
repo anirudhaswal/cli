@@ -2,6 +2,7 @@ package schema
 
 import (
 	"fmt"
+	"net/url"
 	"os"
 
 	log "github.com/sirupsen/logrus"
@@ -33,7 +34,8 @@ var schemaCommitCmd = &cobra.Command{
 			)
 		}
 
-		err := mgmnt_client.FinalizeSchema(workspace, slug, commitMessage)
+		urlEncodedCommitMessage := url.QueryEscape(commitMessage)
+		err := mgmnt_client.FinalizeSchema(workspace, slug, urlEncodedCommitMessage)
 		if err != nil {
 			log.Error(err.Error())
 			return

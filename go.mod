@@ -1,8 +1,8 @@
 module github.com/suprsend/cli
 
-go 1.24.0
+go 1.25.0
 
-toolchain go1.24.2
+toolchain go1.25.1
 
 require (
 	github.com/MakeNowJust/heredoc/v2 v2.0.1

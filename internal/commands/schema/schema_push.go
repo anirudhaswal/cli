@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"net/url"
 	"os"
 	"path/filepath"
 	"strings"
@@ -78,7 +79,8 @@ var schemaPushCmd = &cobra.Command{
 				return
 			}
 
-			err = mgmntClient.PushSchema(workspace, slug, schema, commit, commitMessage)
+			urlEncodedCommitMessage := url.QueryEscape(commitMessage)
+			err = mgmntClient.PushSchema(workspace, slug, schema, commit, urlEncodedCommitMessage)
 			if err != nil {
 				log.WithError(err).Errorf("Failed to push schema %s", slug)
 				return
