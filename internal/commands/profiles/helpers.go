@@ -99,7 +99,7 @@ func SaveConfig(cfg *Config, path string) error {
 	if err != nil {
 		return err
 	}
-	return os.WriteFile(path, data, 0644)
+	return os.WriteFile(path, data, 0o644)
 }
 
 func LoadConfig(path string) (*Config, error) {
@@ -162,12 +162,12 @@ func GetResolvedMgmntUrl() string {
 	// get the value from the active profile
 	configPath := GetConfigFilePath()
 	if configPath == "" {
-		return "https://api.suprsend.com/"
+		return "https://management-api.suprsend.com/"
 	}
 
 	cfg, err := LoadConfig(configPath)
 	if err != nil {
-		return "https://api.suprsend.com/"
+		return "https://management-api.suprsend.com/"
 	}
 
 	activeProfile := cfg.Profiles[cfg.ActiveProfile]
@@ -176,5 +176,5 @@ func GetResolvedMgmntUrl() string {
 	}
 
 	// Default value
-	return "https://api.suprsend.com/"
+	return "https://management-api.suprsend.com/"
 }

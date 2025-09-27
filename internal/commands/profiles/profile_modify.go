@@ -114,7 +114,7 @@ func runModifyInteractive(cfg *Config, path string) {
 	if modifyMgmntUrl == "" {
 		modifyMgmntUrl = selectedProfile.MgmntUrl
 		if modifyMgmntUrl == "" {
-			modifyMgmntUrl = "https://api.suprsend.com/"
+			modifyMgmntUrl = "https://management-api.suprsend.com/"
 		}
 	}
 
