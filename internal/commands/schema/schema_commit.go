@@ -23,7 +23,7 @@ var schemaCommitCmd = &cobra.Command{
 
 		workspace, _ := cmd.Flags().GetString("workspace")
 		commitMessage, _ := cmd.Flags().GetString("commit-message")
-		mgmnt_client := utils.GetSuprSendMgmntClient()
+		mgmntClient := utils.GetSuprSendMgmntClient()
 		var p *pin.Pin
 
 		if !utils.IsOutputPiped() {
@@ -33,7 +33,7 @@ var schemaCommitCmd = &cobra.Command{
 			)
 		}
 
-		err := mgmnt_client.FinalizeSchema(workspace, slug, commitMessage)
+		err := mgmntClient.FinalizeSchema(workspace, slug, commitMessage)
 		if err != nil {
 			log.Error(err.Error())
 			return

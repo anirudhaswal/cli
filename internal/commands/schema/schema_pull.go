@@ -50,9 +50,9 @@ var schemaPullCmd = &cobra.Command{
 			defer cancel()
 		}
 
-		mgmnt_client := utils.GetSuprSendMgmntClient()
+		mgmntClient := utils.GetSuprSendMgmntClient()
 		if slug != "" {
-			schema, err := mgmnt_client.GetSchemaBySlug(workspace, slug, mode)
+			schema, err := mgmntClient.GetSchemaBySlug(workspace, slug, mode)
 			if err != nil {
 				fmt.Fprintf(os.Stdout, "Error: Failed to get schema: %v\n", err)
 				return
@@ -68,18 +68,30 @@ var schemaPullCmd = &cobra.Command{
 			os.WriteFile(filepath.Join(outputDir, slug+".json"), schemaData, 0644)
 			return
 		}
-		schemas, err := mgmnt_client.GetSchemas(workspace, mode)
+		schemas, err := mgmntClient.GetSchemas(workspace, mode)
 		if err != nil {
 			fmt.Fprintf(os.Stdout, "Error: Failed to get schemas: %v\n", err)
 			return
 		}
 		if p != nil {
-			p.Stop(fmt.Sprintf("Pulled %d schemas", len(schemas.Results)))
+			p.Stop(fmt.Sprintf("Pulled %d schemas from %s", len(schemas.Results), workspace))
 		}
-		_, err = WriteSchemasToFiles(schemas, outputDir)
+		stats, err := WriteSchemasToFiles(schemas, outputDir)
 		if err != nil {
 			fmt.Fprintf(os.Stdout, "Error: Failed to save schemas: %v\n", err)
 			return
+		}
+
+		fmt.Fprintf(os.Stdout, "\n=== Schema Pull Summary ===\n")
+		fmt.Fprintf(os.Stdout, "Total schemas processed: %d\n", stats.Total)
+		fmt.Fprintf(os.Stdout, "Successfully updated: %d\n", stats.Success)
+		fmt.Fprintf(os.Stdout, "Failed to pull: %d\n", stats.Failed)
+
+		if stats.Failed > 0 {
+			fmt.Fprintf(os.Stdout, "\nFailed schemas:\n")
+			for _, errorMsg := range stats.Errors {
+				fmt.Fprintf(os.Stdout, "  - %s\n", errorMsg)
+			}
 		}
 	},
 }

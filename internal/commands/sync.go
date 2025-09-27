@@ -35,7 +35,7 @@ var syncCmd = &cobra.Command{
 		var assetsToSync []string
 		switch assets {
 		case "all":
-			assetsToSync = []string{"workflow", "schema", "category", "event"}
+			assetsToSync = []string{"category", "schema", "event", "workflow"}
 		case "workflow":
 			assetsToSync = []string{"workflow"}
 		case "schema":
@@ -107,6 +107,8 @@ func init() {
 func syncWorkflows(mgmntClient *mgmnt.SS_MgmntClient, fromWorkspace, toWorkspace, mode, dirPath string) error {
 	if dirPath == "" {
 		dirPath = filepath.Join(".", "suprsend", "workflow")
+	} else {
+		dirPath = filepath.Join(dirPath, "workflow")
 	}
 
 	workflows_resp, err := mgmntClient.GetWorkflows(fromWorkspace, mode)
@@ -163,6 +165,8 @@ func syncWorkflows(mgmntClient *mgmnt.SS_MgmntClient, fromWorkspace, toWorkspace
 func syncSchemas(mgmntClient *mgmnt.SS_MgmntClient, fromWorkspace, toWorkspace, mode, dirPath string) error {
 	if dirPath == "" {
 		dirPath = filepath.Join(".", "suprsend", "schema")
+	} else {
+		dirPath = filepath.Join(dirPath, "schema")
 	}
 
 	log.Infof("Pulling schemas from %s ...", fromWorkspace)
@@ -219,6 +223,8 @@ func syncSchemas(mgmntClient *mgmnt.SS_MgmntClient, fromWorkspace, toWorkspace, 
 func syncEvents(mgmntClient *mgmnt.SS_MgmntClient, fromWorkspace, toWorkspace, dirPath string) error {
 	if dirPath == "" {
 		dirPath = filepath.Join(".", "suprsend", "event")
+	} else {
+		dirPath = filepath.Join(dirPath, "event")
 	}
 
 	log.Infof("Pulling events from %s ...", fromWorkspace)
@@ -226,14 +232,13 @@ func syncEvents(mgmntClient *mgmnt.SS_MgmntClient, fromWorkspace, toWorkspace, d
 	if err != nil {
 		return fmt.Errorf("error getting events: %w", err)
 	}
-
 	_, err = event.WriteEventsToFiles(events_resp, dirPath)
 	if err != nil {
 		return fmt.Errorf("error writing events to files: %w", err)
 	}
-
-	fmt.Printf("Pushing events to %s ...", toWorkspace)
-	err = mgmntClient.PushEvents(toWorkspace, dirPath)
+	filePath := filepath.Join(dirPath, "event_schema_mapping.json")
+	log.Infof("Pushing events to %s ...", toWorkspace)
+	err = mgmntClient.PushEvents(toWorkspace, filePath)
 	if err != nil {
 		return fmt.Errorf("error pushing events: %w", err)
 	}
@@ -243,17 +248,19 @@ func syncEvents(mgmntClient *mgmnt.SS_MgmntClient, fromWorkspace, toWorkspace, d
 func syncCategories(mgmntClient *mgmnt.SS_MgmntClient, fromWorkspace, toWorkspace, mode, dirPath string) error {
 	if dirPath == "" {
 		dirPath = filepath.Join(".", "suprsend", "category")
+	} else {
+		dirPath = filepath.Join(dirPath, "category")
 	}
 	categoriesResp, err := mgmntClient.ListCategories(fromWorkspace, mode)
 	if err != nil {
 		return fmt.Errorf("error getting categories: %w", err)
 	}
 	log.Infof("Pulling categories from %s ...", fromWorkspace)
-	err = category.WriteToFile(categoriesResp, "categories_preferences.json")
+	filePath := filepath.Join(dirPath, "categories_preferences.json")
+	err = category.WriteToFile(categoriesResp, filePath)
 	if err != nil {
 		return fmt.Errorf("error writing categories to files: %w", err)
 	}
-	filePath := filepath.Join(dirPath, "categories_preferences.json")
 	categories, err := category.ReadFromFile(filePath)
 	if err != nil {
 		return fmt.Errorf("error reading categories from file: %w", err)

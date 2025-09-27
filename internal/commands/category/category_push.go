@@ -24,6 +24,8 @@ var categoryPushCmd = &cobra.Command{
 
 		if path == "" {
 			path = filepath.Join(".", "suprsend", "category", "categories_preferences.json")
+		} else {
+			path = filepath.Join(path, "categories_preferences.json")
 		}
 
 		if _, err := os.Stat(path); os.IsNotExist(err) {
@@ -47,8 +49,8 @@ var categoryPushCmd = &cobra.Command{
 			defer cancel()
 		}
 
-		mgmnt_client := utils.GetSuprSendMgmntClient()
-		err = mgmnt_client.PushCategories(workspace, categories, commit, commitMessage)
+		mgmntClient := utils.GetSuprSendMgmntClient()
+		err = mgmntClient.PushCategories(workspace, categories, commit, commitMessage)
 		if err != nil {
 			log.WithError(err).Error("Couldn't push categories")
 			return

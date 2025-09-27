@@ -3,6 +3,7 @@ package mgmnt
 import (
 	"encoding/json"
 	"fmt"
+	"net/url"
 	"time"
 
 	"github.com/suprsend/cli/internal/client"
@@ -79,14 +80,15 @@ func (c *SS_MgmntClient) ListCategories(workspace, mode string) (*PreferenceCate
 func (c *SS_MgmntClient) PushCategories(workspace string, categories interface{}, commit string, commitMessage string) error {
 	client := client.NewHTTPClient()
 	defer client.Close()
-	url := fmt.Sprintf("%sv1/%s/preference_category/?commit=%s&commit_message=%s", c.mgmnt_base_URL, workspace, commit, commitMessage)
+	encodedCommitMessage := url.QueryEscape(commitMessage)
+	urlStr := fmt.Sprintf("%sv1/%s/preference_category/?commit=%s&commit_message=%s", c.mgmnt_base_URL, workspace, commit, encodedCommitMessage)
 
 	resp, err := client.R().
 		SetDebug(c.debug).
 		SetHeader("Authorization", "ServiceToken "+c.serviceToken).
 		SetHeader("Content-Type", "application/json").
 		SetBody(categories).
-		Post(url)
+		Post(urlStr)
 	if err != nil {
 		return fmt.Errorf("request failed: %w", err)
 	}
@@ -102,15 +104,17 @@ func (c *SS_MgmntClient) PushCategories(workspace string, categories interface{}
 	return nil
 }
 
-func (c *SS_MgmntClient) FinalizeCategories(workspace string, commitMsg string) error {
+func (c *SS_MgmntClient) FinalizeCategories(workspace string, commitMessage string) error {
 	client := client.NewHTTPClient()
 	defer client.Close()
-	url := fmt.Sprintf("%sv1/%s/preference_category/commit/?commit_message=%s", c.mgmnt_base_URL, workspace, commitMsg)
+	encodedCommitMessage := url.QueryEscape(commitMessage)
+
+	urlStr := fmt.Sprintf("%sv1/%s/preference_category/commit/?commit_message=%s", c.mgmnt_base_URL, workspace, encodedCommitMessage)
 	resp, err := client.R().
 		SetDebug(c.debug).
 		SetHeader("Content-Type", "application/json").
 		SetHeader("Authorization", "ServiceToken "+c.serviceToken).
-		Patch(url)
+		Patch(urlStr)
 	if err != nil {
 		return fmt.Errorf("request failed: %w", err)
 	}

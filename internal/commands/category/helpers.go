@@ -23,21 +23,20 @@ func promptForOutputDirectory() string {
 	return input
 }
 
-func WriteToFileWithPath(data interface{}, outputDir, filename string) error {
-	if err := os.MkdirAll(outputDir, 0o755); err != nil {
-		return fmt.Errorf("failed to ensure directory %s: %w", outputDir, err)
+func WriteToFileWithPath(data interface{}, filePath string) error {
+	if err := os.MkdirAll(filepath.Dir(filePath), 0o755); err != nil {
+		return fmt.Errorf("failed to ensure directory %s: %w", filepath.Dir(filePath), err)
 	}
-	fullPath := filepath.Join(outputDir, filename)
 	jsonData, err := json.MarshalIndent(data, "", "  ")
 	if err != nil {
 		return fmt.Errorf("failed to marshal data: %w", err)
 	}
-	return os.WriteFile(fullPath, jsonData, 0644)
+	fmt.Fprintf(os.Stdout, "Successfully wrote categories to %s\n", filePath)
+	return os.WriteFile(filePath, jsonData, 0644)
 }
 
-func WriteToFile(data interface{}, filename string) error {
-	baseDir := filepath.Join(".", "suprsend", "category")
-	return WriteToFileWithPath(data, baseDir, filename)
+func WriteToFile(data interface{}, filePath string) error {
+	return WriteToFileWithPath(data, filePath)
 }
 
 func ReadFromFile(filepath string) (interface{}, error) {

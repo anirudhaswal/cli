@@ -3,6 +3,7 @@ package mgmnt
 import (
 	"encoding/json"
 	"fmt"
+	"net/url"
 	"os"
 	"strconv"
 
@@ -234,7 +235,8 @@ func (c *SS_MgmntClient) GetSchemas(workspace, mode string) (*SchemasResponse, e
 func (c *SS_MgmntClient) PushSchema(workspace, schemaSlug string, payload map[string]any, commit, commitMessage string) error {
 	client := client.NewHTTPClient()
 	defer client.Close()
-	url := fmt.Sprintf("%sv1/%s/schema/%s/", c.mgmnt_base_URL, workspace, schemaSlug)
+	encodedCommitMessage := url.QueryEscape(commitMessage)
+	url := fmt.Sprintf("%sv1/%s/schema/%s/?commit=%s&commit_message=%s", c.mgmnt_base_URL, workspace, schemaSlug, commit, encodedCommitMessage)
 
 	resp, err := client.R().
 		SetDebug(c.debug).
@@ -262,7 +264,9 @@ func (c *SS_MgmntClient) FinalizeSchema(workspace, slug, commitMessage string) e
 	client := resty.New()
 	defer client.Close()
 
-	urlStr := fmt.Sprintf("%sv1/%s/schema/%s/commit/?commit_message=%s", c.mgmnt_base_URL, workspace, slug, commitMessage)
+	urlStr := fmt.Sprintf("%sv1/%s/schema/%s/commit/", c.mgmnt_base_URL, workspace, slug)
+	encodedCommitMessage := url.QueryEscape(commitMessage)
+	urlStr = fmt.Sprintf("%s?commit_message=%s", urlStr, encodedCommitMessage)
 
 	res, err := client.R().
 		SetDebug(c.debug).

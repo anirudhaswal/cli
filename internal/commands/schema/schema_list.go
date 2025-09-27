@@ -30,8 +30,8 @@ var schemaListCmd = &cobra.Command{
 			defer cancel()
 		}
 
-		mgmnt_client := utils.GetSuprSendMgmntClient()
-		schemas, err := mgmnt_client.ListSchema(workspace, limit, offset, mode)
+		mgmntClient := utils.GetSuprSendMgmntClient()
+		schemas, err := mgmntClient.ListSchema(workspace, limit, offset, mode)
 		if err != nil {
 			log.WithError(err).Error("Couldn't fetch schemas")
 			return
@@ -56,6 +56,7 @@ func init() {
 	schemaListCmd.PersistentFlags().StringP("mode", "m", "live", "Mode of schemas to list (draft, live), default: live")
 	schemaListCmd.PersistentFlags().StringP("output", "o", "pretty", "Output Style (pretty, yaml, json)")
 
-	SchemaCmd.Flags().StringP("workspace", "w", "staging", "Workspace to use the schemas from")
+	SchemaCmd.PersistentFlags().StringP("workspace", "w", "staging", "Workspace to use the schemas from")
+	SchemaCmd.PersistentFlags().StringP("service-token", "s", "", "Service token (default: $SUPRSEND_SERVICE_TOKEN)")
 	SchemaCmd.AddCommand(schemaListCmd)
 }

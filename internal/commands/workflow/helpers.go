@@ -20,6 +20,13 @@ type WorkflowWriteStats struct {
 	Errors  []string
 }
 
+type WorkflowPushStats struct {
+	Total   int
+	Success int
+	Failed  int
+	Errors  []string
+}
+
 func isDebugMode() bool {
 	return viper.GetBool("debug")
 }

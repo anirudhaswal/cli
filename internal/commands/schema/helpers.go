@@ -23,6 +23,13 @@ type SchemaWriteStats struct {
 	Errors  []string
 }
 
+type SchemaPushStats struct {
+	Total   int
+	Success int
+	Failed  int
+	Errors  []string
+}
+
 type FilteredSchema struct {
 	Slug        string `json:"slug"`
 	Title       string `json:"title"`

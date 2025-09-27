@@ -28,13 +28,13 @@ var workflowListCmd = &cobra.Command{
 			defer cancel()
 		}
 		workspace, _ := cmd.Flags().GetString("workspace")
-		mgmnt_client := utils.GetSuprSendMgmntClient()
+		mgmntClient := utils.GetSuprSendMgmntClient()
 
 		limit, _ := cmd.Flags().GetInt("limit")
 		offset, _ := cmd.Flags().GetInt("offset")
 		mode, _ := cmd.Flags().GetString("mode")
 
-		workflows, err := mgmnt_client.ListWorkflows(workspace, limit, offset, mode)
+		workflows, err := mgmntClient.ListWorkflows(workspace, limit, offset, mode)
 		if err != nil {
 			log.WithError(err).Error("Couldn't fetch workflows")
 			return
@@ -62,5 +62,7 @@ func init() {
 	workflowListCmd.SetHelpFunc(func(cmd *cobra.Command, args []string) {
 		cmd.Parent().HelpFunc()(cmd, args)
 	})
+	WorkflowCmd.PersistentFlags().StringP("workspace", "w", "staging", "Workspace to list workflows from")
+	WorkflowCmd.PersistentFlags().StringP("service-token", "s", "", "Service token (default: $SUPRSEND_SERVICE_TOKEN)")
 	WorkflowCmd.AddCommand(workflowListCmd)
 }

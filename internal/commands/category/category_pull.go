@@ -44,19 +44,20 @@ var categoryPullCmd = &cobra.Command{
 			defer cancel()
 		}
 
-		mgmnt_client := utils.GetSuprSendMgmntClient()
-		categories, err := mgmnt_client.ListCategories(workspace, mode)
+		mgmntClient := utils.GetSuprSendMgmntClient()
+		categories, err := mgmntClient.ListCategories(workspace, mode)
 		if err != nil {
 			log.WithError(err).Error("Couldn't fetch categories")
 			return
 		}
-		err = WriteToFileWithPath(categories, outputDir, "categories_preferences.json")
+		filePath := filepath.Join(outputDir, "categories_preferences.json")
+		if p != nil {
+			p.Stop(fmt.Sprintf("Pulled categories from %s", workspace))
+		}
+		err = WriteToFileWithPath(categories, filePath)
 		if err != nil {
 			log.WithError(err).Error("Couldn't write categories to file")
 			return
-		}
-		if p != nil {
-			p.Stop(fmt.Sprintf("Pulled categories from %s", workspace))
 		}
 	},
 }

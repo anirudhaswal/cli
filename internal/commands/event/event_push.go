@@ -20,7 +20,9 @@ var eventPushCmd = &cobra.Command{
 		workspace, _ := cmd.Flags().GetString("workspace")
 		path, _ := cmd.Flags().GetString("dir")
 		if path == "" {
-			path = filepath.Join(".", "suprsend", "event")
+			path = filepath.Join(".", "suprsend", "event", "event_schema_mapping.json")
+		} else {
+			path = filepath.Join(path, "event_schema_mapping.json")
 		}
 
 		var p *pin.Pin
@@ -33,8 +35,8 @@ var eventPushCmd = &cobra.Command{
 			defer cancel()
 		}
 
-		mgmnt_client := utils.GetSuprSendMgmntClient()
-		err := mgmnt_client.PushEvents(workspace, path)
+		mgmntClient := utils.GetSuprSendMgmntClient()
+		err := mgmntClient.PushEvents(workspace, path)
 		if err != nil {
 			if p != nil {
 				p.Stop("")
@@ -51,7 +53,6 @@ var eventPushCmd = &cobra.Command{
 }
 
 func init() {
-	eventPushCmd.Flags().StringP("workspace", "w", "staging", "Workspace to push events to")
 	eventPushCmd.Flags().StringP("dir", "d", "", "Directory to push events from (default: ./suprsend/event)")
 	EventCmd.AddCommand(eventPushCmd)
 }

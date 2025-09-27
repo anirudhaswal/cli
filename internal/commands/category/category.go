@@ -9,5 +9,5 @@ var CategoryCmd = &cobra.Command{
 }
 
 func init() {
-	CategoryCmd.PersistentFlags().String("workspace", "staging", "Workspace to push categories to")
+	CategoryCmd.PersistentFlags().StringP("workspace", "w", "staging", "Workspace to push categories to")
 }
