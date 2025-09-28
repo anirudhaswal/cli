@@ -147,7 +147,7 @@ func syncWorkflows(mgmntClient *mgmnt.SS_MgmntClient, fromWorkspace, toWorkspace
 			continue
 		}
 
-		err = mgmntClient.PushWorkflow(toWorkspace, slug, wf, "false", "")
+		err = mgmntClient.PushWorkflow(toWorkspace, slug, wf, "true", "")
 		if err != nil {
 			errors = append(errors, fmt.Sprintf("failed to push workflow %s: %v", slug, err))
 			log.WithError(err).Errorf("Failed to push workflow %s", slug)
@@ -205,7 +205,7 @@ func syncSchemas(mgmntClient *mgmnt.SS_MgmntClient, fromWorkspace, toWorkspace, 
 			continue
 		}
 
-		err = mgmntClient.PushSchema(toWorkspace, slug, sch, "false", "")
+		err = mgmntClient.PushSchema(toWorkspace, slug, sch, "true", "")
 		if err != nil {
 			errors = append(errors, fmt.Sprintf("failed to push schema %s: %v", slug, err))
 			log.WithError(err).Errorf("Failed to push schema %s", slug)
@@ -265,7 +265,7 @@ func syncCategories(mgmntClient *mgmnt.SS_MgmntClient, fromWorkspace, toWorkspac
 	if err != nil {
 		return fmt.Errorf("error reading categories from file: %w", err)
 	}
-	err = mgmntClient.PushCategories(toWorkspace, categories, "false", "")
+	err = mgmntClient.PushCategories(toWorkspace, categories, "true", "")
 	if err != nil {
 		return fmt.Errorf("error pushing categories: %w", err)
 	}

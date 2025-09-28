@@ -21,10 +21,15 @@ var workflowPullCmd = &cobra.Command{
 		mode, _ := cmd.Flags().GetString("mode")
 		outputDir, _ := cmd.Flags().GetString("dir")
 		slug, _ := cmd.Flags().GetString("slug")
+		force, _ := cmd.Flags().GetBool("force")
 		if outputDir == "" {
 			outputDir = filepath.Join(".", "suprsend", "workflow")
 			if _, err := os.Stat(outputDir); os.IsNotExist(err) {
-				outputDir = promptForOutputDirectory()
+				if force {
+					fmt.Fprintf(os.Stdout, "Using default directory: %s\n", outputDir)
+				} else {
+					outputDir = promptForOutputDirectory()
+				}
 			}
 			if outputDir == "" {
 				fmt.Fprintf(os.Stdout, "No output directory specified. Exiting.\n")
@@ -97,5 +102,6 @@ func init() {
 	workflowPullCmd.PersistentFlags().StringP("mode", "m", "live", "Mode of workflows to pull from (draft, live)")
 	workflowPullCmd.PersistentFlags().StringP("dir", "d", "", "Output directory for workflows (default: ./suprsend/workflow)")
 	workflowPullCmd.PersistentFlags().StringP("slug", "g", "", "Slug of the workflow to pull")
+	workflowPullCmd.PersistentFlags().BoolP("force", "f", false, "Force using default directory without prompting")
 	WorkflowCmd.AddCommand(workflowPullCmd)
 }

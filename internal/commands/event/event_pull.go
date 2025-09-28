@@ -17,10 +17,15 @@ var eventPullCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		workspace, _ := cmd.Flags().GetString("workspace")
 		dirPath, _ := cmd.Flags().GetString("dir")
+		force, _ := cmd.Flags().GetBool("force")
 		if dirPath == "" {
 			dirPath = filepath.Join(".", "suprsend", "event")
 			if _, err := os.Stat(dirPath); os.IsNotExist(err) {
-				dirPath = promptForOutputDirectory()
+				if force {
+					fmt.Fprintf(os.Stdout, "Using default directory: %s\n", dirPath)
+				} else {
+					dirPath = promptForOutputDirectory()
+				}
 			}
 			if dirPath == "" {
 				fmt.Fprintf(os.Stdout, "No output directory specified. Exiting \n")
@@ -57,5 +62,6 @@ var eventPullCmd = &cobra.Command{
 
 func init() {
 	eventPullCmd.Flags().StringP("dir", "d", "", "Directory to pull events to (default: ./suprsend/event)")
+	eventPullCmd.PersistentFlags().BoolP("force", "f", false, "Force using default directory without prompting")
 	EventCmd.AddCommand(eventPullCmd)
 }

@@ -19,6 +19,13 @@ type Workflow struct {
 	Tags      []string `json:"tags"`
 }
 
+type WorkflowPushResponse struct {
+	ValidationResult struct {
+		IsValid bool     `json:"is_valid"`
+		Errors  []string `json:"errors"`
+	} `json:"validation_result"`
+}
+
 type WorkflowAPIResponse struct {
 	Results []Workflow `json:"results"`
 	Meta    struct {
@@ -234,6 +241,7 @@ func (c *SS_MgmntClient) PushWorkflow(workspace, slug string, workflow map[strin
 		SetHeader("Authorization", "ServiceToken "+c.serviceToken).
 		SetHeader("Content-Type", "application/json").
 		SetBody(workflow).
+		SetResult(&WorkflowPushResponse{}).
 		Post(url)
 	if err != nil {
 		log.Errorf("Error pushing workflow: %s", err)
@@ -245,6 +253,12 @@ func (c *SS_MgmntClient) PushWorkflow(workspace, slug string, workflow map[strin
 			return fmt.Errorf("request failed with message: %s", errorResp.Message)
 		}
 		return fmt.Errorf("request failed: %s", res.Status())
+	}
+	if commit == "true" {
+		validationResult := res.Result().(*WorkflowPushResponse)
+		if !validationResult.ValidationResult.IsValid {
+			fmt.Fprintf(os.Stdout, "Warning: Workflow %s is not valid: %v\n", slug, validationResult.ValidationResult.Errors)
+		}
 	}
 	return nil
 }

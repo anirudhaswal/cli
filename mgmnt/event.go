@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
-	"path/filepath"
 	"strconv"
 
 	log "github.com/sirupsen/logrus"
@@ -93,12 +92,11 @@ func (c *SS_MgmntClient) GetEvents(workspace string) (*EventsResponse, error) {
 	return &EventsResponse{Results: allEvents}, nil
 }
 
-func (c *SS_MgmntClient) PushEvents(workspace, dirPath string) error {
+func (c *SS_MgmntClient) PushEvents(workspace, filePath string) error {
 	client := client.NewHTTPClient()
 	defer client.Close()
 
-	filename := filepath.Join(dirPath, "event_schema_mapping.json")
-	data, err := os.ReadFile(filename)
+	data, err := os.ReadFile(filePath)
 	if err != nil {
 		log.Errorf("Error reading event schema mapping file: %s", err)
 		return err

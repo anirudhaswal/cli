@@ -1,6 +1,7 @@
 package schema
 
 import (
+	"context"
 	"fmt"
 	"net/url"
 	"os"
@@ -26,12 +27,13 @@ var schemaCommitCmd = &cobra.Command{
 		commitMessage, _ := cmd.Flags().GetString("commit-message")
 		mgmntClient := utils.GetSuprSendMgmntClient()
 		var p *pin.Pin
-
 		if !utils.IsOutputPiped() {
 			p = pin.New("Committing schema...",
 				pin.WithSpinnerColor(pin.ColorCyan),
 				pin.WithTextColor(pin.ColorYellow),
 			)
+			cancel := p.Start(context.Background())
+			defer cancel()
 		}
 
 		urlEncodedCommitMessage := url.QueryEscape(commitMessage)

@@ -24,7 +24,7 @@ var schemaPushCmd = &cobra.Command{
 		slug, _ := cmd.Flags().GetString("slug")
 		commit, _ := cmd.Flags().GetString("commit")
 		commitMessage, _ := cmd.Flags().GetString("commit-message")
-		path, _ := cmd.Flags().GetString("path")
+		path, _ := cmd.Flags().GetString("dir")
 		if path == "" {
 			path = filepath.Join(".", "suprsend", "schema")
 		}

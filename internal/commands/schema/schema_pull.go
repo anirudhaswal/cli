@@ -20,10 +20,16 @@ var schemaPullCmd = &cobra.Command{
 		outputDir, _ := cmd.Flags().GetString("dir")
 		mode, _ := cmd.Flags().GetString("mode")
 		slug, _ := cmd.Flags().GetString("slug")
+		force, _ := cmd.Flags().GetBool("force")
+
 		if outputDir == "" {
 			outputDir = filepath.Join(".", "suprsend", "schema")
 			if _, err := os.Stat(outputDir); os.IsNotExist(err) {
-				outputDir = promptForOutputDirectory()
+				if force {
+					fmt.Fprintf(os.Stdout, "Using default directory: %s\n", outputDir)
+				} else {
+					outputDir = promptForOutputDirectory()
+				}
 			}
 			if outputDir == "" {
 				fmt.Fprintf(os.Stdout, "No output directory specified. Exiting.\n")
@@ -100,5 +106,6 @@ func init() {
 	schemaPullCmd.Flags().StringP("dir", "d", "", "Directory to pull schemas (default: ./suprsend/schema)")
 	schemaPullCmd.PersistentFlags().StringP("mode", "m", "live", "Mode of schemas to pull (draft, live), default: live")
 	schemaPullCmd.PersistentFlags().StringP("slug", "g", "", "Slug of schema to pull")
+	schemaPullCmd.PersistentFlags().BoolP("force", "f", false, "Force using default directory without prompting")
 	SchemaCmd.AddCommand(schemaPullCmd)
 }
