@@ -1,10 +1,10 @@
 ## suprsend workflow push
 
-push workflows from local to suprsend
+Push workflows from local to SuprSend workspace
 
 ### Synopsis
 
-push workflows from local to suprsend dashboard
+Push workflows from local to SuprSend workspace
 
 ```
 suprsend workflow push [flags]
@@ -13,10 +13,10 @@ suprsend workflow push [flags]
 ### Options
 
 ```
-  -c, --commit                  Commit the workflows
-  -m, --commit-message string   Commit message for the workflows
+  -c, --commit string           Commit the workflows (--commit=true) (default "true")
+  -m, --commit-message string   Commit message describing the changes for --commit=true
+  -d, --dir string              Output directory for workflows (default: ./suprsend/workflow)
   -h, --help                    help for push
-  -p, --path string             Output directory for workflows
   -g, --slug string             Slug of the workflow to push
 ```
 
@@ -27,7 +27,7 @@ suprsend workflow push [flags]
   -n, --no-color               Disable color output (default: $NO_COLOR)
   -s, --service-token string   Service token (default: $SUPRSEND_SERVICE_TOKEN)
   -v, --verbosity string       Log level (debug, info, warn, error, fatal, panic) (default "info")
-  -w, --workspace string       Workspace to use (default "staging")
+  -w, --workspace string       Workspace to list workflows from (default "staging")
 ```
 
 ### SEE ALSO

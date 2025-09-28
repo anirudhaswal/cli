@@ -13,20 +13,19 @@ suprsend profile modify [flags]
 ### Options
 
 ```
-      --base-url string    Base URL
-  -h, --help               help for modify
-      --mgmnt-url string   Management URL
-      --name string        Name of the profile to modify
-      --token string       Service Token
+      --base-url string        Base URL (default: https://hub.suprsend.com/)
+  -h, --help                   help for modify
+      --mgmnt-url string       Management URL (default: https://api.suprsend.com/)
+      --name string            Name of the profile to modify
+      --service-token string   Service Token
 ```
 
 ### Options inherited from parent commands
 
 ```
-      --config string          config file (default: $HOME/.suprsend.yaml)
-  -n, --no-color               Disable color output (default: $NO_COLOR)
-  -s, --service-token string   Service token (default: $SUPRSEND_SERVICE_TOKEN)
-  -v, --verbosity string       Log level (debug, info, warn, error, fatal, panic) (default "info")
+      --config string      config file (default: $HOME/.suprsend.yaml)
+  -n, --no-color           Disable color output (default: $NO_COLOR)
+  -v, --verbosity string   Log level (debug, info, warn, error, fatal, panic) (default "info")
 ```
 
 ### SEE ALSO

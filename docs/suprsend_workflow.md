@@ -13,17 +13,17 @@ suprsend workflow [flags]
 ### Options
 
 ```
-  -h, --help               help for workflow
-  -w, --workspace string   Workspace to use (default "staging")
+  -h, --help                   help for workflow
+  -s, --service-token string   Service token (default: $SUPRSEND_SERVICE_TOKEN)
+  -w, --workspace string       Workspace to list workflows from (default "staging")
 ```
 
 ### Options inherited from parent commands
 
 ```
-      --config string          config file (default: $HOME/.suprsend.yaml)
-  -n, --no-color               Disable color output (default: $NO_COLOR)
-  -s, --service-token string   Service token (default: $SUPRSEND_SERVICE_TOKEN)
-  -v, --verbosity string       Log level (debug, info, warn, error, fatal, panic) (default "info")
+      --config string      config file (default: $HOME/.suprsend.yaml)
+  -n, --no-color           Disable color output (default: $NO_COLOR)
+  -v, --verbosity string   Log level (debug, info, warn, error, fatal, panic) (default "info")
 ```
 
 ### SEE ALSO
@@ -33,7 +33,6 @@ suprsend workflow [flags]
 * [suprsend workflow enable](suprsend_workflow_enable.md)	 - Enables a workflow.
 * [suprsend workflow get](suprsend_workflow_get.md)	 - Get workflow details
 * [suprsend workflow list](suprsend_workflow_list.md)	 - List workflows for a workspace
-* [suprsend workflow pull](suprsend_workflow_pull.md)	 - Pull workflows from workspace to local directory
-* [suprsend workflow push](suprsend_workflow_push.md)	 - push workflows from local to suprsend
-* [suprsend workflow trigger](suprsend_workflow_trigger.md)	 - Trigger a specific workflow
+* [suprsend workflow pull](suprsend_workflow_pull.md)	 - Pull workflows from SuprSend workspace to local
+* [suprsend workflow push](suprsend_workflow_push.md)	 - Push workflows from local to SuprSend workspace
 

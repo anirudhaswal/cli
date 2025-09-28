@@ -15,7 +15,6 @@ suprsend category commit [flags]
 ```
       --commit-message string   Commit message
   -h, --help                    help for commit
-      --workspace string        Workspace to commit categories to (default "staging")
 ```
 
 ### Options inherited from parent commands
@@ -25,6 +24,7 @@ suprsend category commit [flags]
   -n, --no-color               Disable color output (default: $NO_COLOR)
   -s, --service-token string   Service token (default: $SUPRSEND_SERVICE_TOKEN)
   -v, --verbosity string       Log level (debug, info, warn, error, fatal, panic) (default "info")
+  -w, --workspace string       Workspace to push categories to (default "staging")
 ```
 
 ### SEE ALSO

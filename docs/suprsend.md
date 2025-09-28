@@ -25,10 +25,10 @@ This CLI lets you interact with your SuprSend workspace and do actions like fetc
 * [suprsend category](suprsend_category.md)	 - Manage preference categories
 * [suprsend completion](suprsend_completion.md)	 - Generate the autocompletion script for the specified shell
 * [suprsend event](suprsend_event.md)	 - Manage events
-* [suprsend generate-types](suprsend_generate-types.md)	 - Generate Types from JSON Schema
+* [suprsend generate-types](suprsend_generate-types.md)	 - Generate type definitions from JSON Schema
 * [suprsend profile](suprsend_profile.md)	 - Manage Profile
-* [suprsend schema](suprsend_schema.md)	 - Manage schema
-* [suprsend start-mcp-server](suprsend_start-mcp-server.md)	 - Starts MCP server for SuprSend
-* [suprsend sync](suprsend_sync.md)	 - Sync all your SuprSend assets locally
+* [suprsend schema](suprsend_schema.md)	 - Manage trigger payload schemas
+* [suprsend start-mcp-server](suprsend_start-mcp-server.md)	 - Start SuprSend MCP server
+* [suprsend sync](suprsend_sync.md)	 - Sync SuprSend assets from one workspace to another
 * [suprsend workflow](suprsend_workflow.md)	 - Manage workflows
 
