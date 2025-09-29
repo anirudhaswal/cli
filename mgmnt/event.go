@@ -40,7 +40,7 @@ func (c *SS_MgmntClient) ListEvents(workspace string, limit, offset int) (*ListE
 	defer client.Close()
 
 	url := c.mgmnt_base_URL + "v1/" + workspace + "/event/?limit=" + strconv.Itoa(limit) + "&offset=" + strconv.Itoa(offset)
-	log.Debugf("Getting Events for workspace: %s, service token: %s", workspace, c.serviceToken)
+	log.Debugf("Getting Events for workspace: %s", workspace)
 	res, err := client.R().
 		SetDebug(c.debug).
 		SetHeader("Authorization", "ServiceToken "+c.serviceToken).
@@ -108,7 +108,7 @@ func (c *SS_MgmntClient) PushEvents(workspace, filePath string) error {
 	}
 
 	url := c.mgmnt_base_URL + "v1/" + workspace + "/bulk/event/"
-	log.Debugf("Pushing events to workspace: %s, service token: %s", workspace, c.serviceToken)
+	log.Debugf("Pushing events to workspace: %s", workspace)
 	res, err := client.R().
 		SetDebug(c.debug).
 		SetHeader("Authorization", "ServiceToken "+c.serviceToken).

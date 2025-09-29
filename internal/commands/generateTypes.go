@@ -347,7 +347,7 @@ func init() {
 	// Dart
 	generateTypesDartCmd.Flags().String("output-file", "suprsend_types.dart", "Output file for generated Dart types")
 	generateTypesCmd.AddCommand(generateTypesDartCmd)
-	rootCmd.AddCommand(generateTypesCmd)
+	// rootCmd.AddCommand(generateTypesCmd)
 }
 
 func runTypeMorph(language, schema, schemaName, fileName, buildFlags string) error {

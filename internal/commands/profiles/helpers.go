@@ -3,6 +3,7 @@ package profiles
 import (
 	"bufio"
 	"fmt"
+	"math"
 	"os"
 	"path/filepath"
 	"strings"
@@ -177,4 +178,17 @@ func GetResolvedMgmntUrl() string {
 
 	// Default value
 	return "https://management-api.suprsend.com/"
+}
+
+// MaskServiceToken masks a service token showing only first 4 and last 4 characters
+func MaskServiceToken(token string) string {
+	if token == "" {
+		return "not set"
+	}
+	length := len(token)
+	if length <= 8 {
+		return "****"
+	}
+	maxCut := int(math.Min(4, float64(length)))
+	return token[:maxCut] + "****" + token[length-4:]
 }

@@ -72,7 +72,7 @@ func (c *SS_MgmntClient) ListWorkflows(workspace string, limit int, offset int, 
 			currentLimit = remainingLimit
 		}
 
-		log.Debugf("Getting workflows for workspace: %s, service token: %s, limit: %d, offset: %d", workspace, c.serviceToken, currentLimit, currentOffset)
+		log.Debugf("Getting workflows for workspace: %s, limit: %d, offset: %d", workspace, currentLimit, currentOffset)
 		res, err := client.R().
 			SetDebug(c.debug).
 			SetHeader("Authorization", "ServiceToken "+c.serviceToken).

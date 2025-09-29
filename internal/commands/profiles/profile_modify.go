@@ -122,11 +122,9 @@ func runModifyInteractive(cfg *Config, path string) {
 
 	if modifyServiceToken == "" {
 		currentToken := selectedProfile.ServiceToken
-		if currentToken == "" {
-			currentToken = "not set"
-		}
+		maskedToken := MaskServiceToken(currentToken)
 		questions = append(questions, cobra_ui.Question{
-			Text: fmt.Sprintf("Service Token (current: %s, press Enter to keep): ", currentToken),
+			Text: fmt.Sprintf("Service Token (current: %s, press Enter to keep): ", maskedToken),
 			Handler: func(s string) error {
 				s = cleanInput(s)
 				if s != "" {
