@@ -13,8 +13,10 @@ suprsend category pull [flags]
 ### Options
 
 ```
+  -d, --dir string    Output directory for categories (default: ./suprsend/category)
+  -f, --force         Force using default directory without prompting
   -h, --help          help for pull
-      --mode string   Mode to pull categories from (default "live")
+  -m, --mode string   Mode to pull categories from (default "live")
 ```
 
 ### Options inherited from parent commands
@@ -24,7 +26,7 @@ suprsend category pull [flags]
   -n, --no-color               Disable color output (default: $NO_COLOR)
   -s, --service-token string   Service token (default: $SUPRSEND_SERVICE_TOKEN)
   -v, --verbosity string       Log level (debug, info, warn, error, fatal, panic) (default "info")
-      --workspace string       Workspace to push categories to (default "staging")
+  -w, --workspace string       Workspace to push categories to (default "staging")
 ```
 
 ### SEE ALSO
