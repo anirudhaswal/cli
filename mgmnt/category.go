@@ -96,7 +96,7 @@ func (c *SS_MgmntClient) PushCategories(workspace string, categories interface{}
 		SetHeader("Authorization", "ServiceToken "+c.serviceToken).
 		SetHeader("Content-Type", "application/json").
 		SetBody(categories).
-		SetResult(CategoryPushResponse{}).
+		SetResult(&CategoryPushResponse{}).
 		Post(urlStr)
 	if err != nil {
 		return fmt.Errorf("request failed: %w", err)
