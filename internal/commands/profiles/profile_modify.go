@@ -63,7 +63,7 @@ var profilesModifyCmd = &cobra.Command{
 func init() {
 	profilesModifyCmd.Flags().StringVar(&modifyName, "name", "", "Name of the profile to modify")
 	profilesModifyCmd.Flags().StringVar(&modifyBaseUrl, "base-url", "", "Base URL (default: https://hub.suprsend.com/)")
-	profilesModifyCmd.Flags().StringVar(&modifyMgmntUrl, "mgmnt-url", "", "Management URL (default: https://api.suprsend.com/)")
+	profilesModifyCmd.Flags().StringVar(&modifyMgmntUrl, "mgmnt-url", "", "Management URL (default: https://management-api.suprsend.com/)")
 	profilesModifyCmd.Flags().StringVar(&modifyServiceToken, "service-token", "", "Service Token")
 	ProfileCmd.AddCommand(profilesModifyCmd)
 }

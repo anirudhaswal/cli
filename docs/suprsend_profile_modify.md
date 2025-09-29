@@ -15,7 +15,7 @@ suprsend profile modify [flags]
 ```
       --base-url string        Base URL (default: https://hub.suprsend.com/)
   -h, --help                   help for modify
-      --mgmnt-url string       Management URL (default: https://api.suprsend.com/)
+      --mgmnt-url string       Management URL (default: https://management-api.suprsend.com/)
       --name string            Name of the profile to modify
       --service-token string   Service Token
 ```
