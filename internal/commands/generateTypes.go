@@ -15,12 +15,14 @@ import (
 	"github.com/suprsend/cli/internal/utils"
 	"github.com/suprsend/cli/mgmnt"
 	"github.com/yarlson/pin"
+	"golang.org/x/text/cases"
+	"golang.org/x/text/language"
 )
 
 var generateTypesCmd = &cobra.Command{
 	Use:   "generate-types",
-	Short: "Generate Types from JSON Schema",
-	Long:  "Generate types from JSON schema for various programming languages",
+	Short: "Generate type definitions from JSON Schema",
+	Long:  "Generate type definitions from JSON schema for various programming languages",
 }
 
 var generateTypesPythonCmd = &cobra.Command{
@@ -95,7 +97,10 @@ var generateTypesJavaCmd = &cobra.Command{
 
 		generatedCount := 0
 		for _, targetSchema := range validSchemas {
-			schemaName := targetSchema.Name + "Data"
+			var schemaName string
+			if targetSchema.Title == "" {
+				schemaName = targetSchema.Slug + "Data"
+			}
 			fileName := filepath.Join(outputDir, schemaName+".java")
 			if _, err := os.Stat(fileName); err == nil {
 				if err := os.WriteFile(fileName, []byte(""), 0o644); err != nil {
@@ -128,7 +133,7 @@ var generateTypesJavaCmd = &cobra.Command{
 			}
 			err = runTypeMorph("java", string(schemaBytes), schemaName, fileName, javaFlags)
 			if err != nil {
-				log.WithError(err).Errorln("Could not generate types for schema: " + targetSchema.Name)
+				log.WithError(err).Errorln("Could not generate types for schema: " + targetSchema.Title)
 			} else {
 				generatedCount++
 			}
@@ -218,7 +223,7 @@ func generateTypesForLanguage(targetLang string) func(*cobra.Command, []string) 
 
 		var p *pin.Pin
 		if !utils.IsOutputPiped() {
-			p = pin.New(fmt.Sprintf("Generating %s types...", strings.Title(targetLang)),
+			p = pin.New(fmt.Sprintf("Generating %s types...", cases.Title(language.English).String(targetLang)),
 				pin.WithSpinnerColor(pin.ColorCyan),
 				pin.WithTextColor(pin.ColorYellow),
 			)
@@ -242,7 +247,7 @@ func generateTypesForLanguage(targetLang string) func(*cobra.Command, []string) 
 			if err := json.Unmarshal(schemaBytes, &schemaResp); err != nil {
 				continue
 			}
-			if schemaResp.JSONSchema.Properties == nil || len(schemaResp.JSONSchema.Properties) == 0 {
+			if len(schemaResp.JSONSchema.Properties) == 0 {
 				continue
 			}
 
@@ -266,7 +271,10 @@ func generateTypesForLanguage(targetLang string) func(*cobra.Command, []string) 
 
 		generatedCount := 0
 		for _, targetSchema := range validSchemas {
-			schemaName := targetSchema.Name + "Data"
+			var schemaName string
+			if targetSchema.Title == "" {
+				schemaName = targetSchema.Slug + "Data"
+			}
 
 			schemaJSON := map[string]interface{}{
 				"type":       targetSchema.JSONSchema.Type,
@@ -285,7 +293,7 @@ func generateTypesForLanguage(targetLang string) func(*cobra.Command, []string) 
 
 			err = runTypeMorph(targetLang, string(schemaBytes), schemaName, fileName, buildFlags)
 			if err != nil {
-				log.WithError(err).Errorln("Could not generate types for schema: " + targetSchema.Name)
+				log.WithError(err).Errorln("Could not generate types for schema: " + targetSchema.Title)
 			} else {
 				generatedCount++
 			}
@@ -309,7 +317,7 @@ func init() {
 
 	for _, cmd := range commonFlags {
 		cmd.Flags().String("workspace", "staging", "Workspace to get schemas from.")
-		cmd.Flags().String("mode", "live", "Mode of schema to fetch.")
+		cmd.Flags().String("mode", "live", "Mode of schema to fetch (draft, live), default: live")
 		cmd.Flags().String("build-flags", "", "Flags to generate types in a certain way.")
 		cmd.Flags().MarkHidden("build-flags")
 	}
@@ -339,7 +347,7 @@ func init() {
 	// Dart
 	generateTypesDartCmd.Flags().String("output-file", "suprsend_types.dart", "Output file for generated Dart types")
 	generateTypesCmd.AddCommand(generateTypesDartCmd)
-	rootCmd.AddCommand(generateTypesCmd)
+	// rootCmd.AddCommand(generateTypesCmd)
 }
 
 func runTypeMorph(language, schema, schemaName, fileName, buildFlags string) error {

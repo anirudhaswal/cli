@@ -13,9 +13,9 @@ suprsend profile add [flags]
 ### Options
 
 ```
-      --base-url string        Base URL
+      --base-url string        Base URL (default: https://hub.suprsend.com/)
   -h, --help                   help for add
-      --mgmnt-url string       Management URL
+      --mgmnt-url string       Management URL (default: https://management-api.suprsend.com/)
       --name string            Name of the profile (required)
       --service-token string   Service token (required)
 ```
@@ -25,7 +25,6 @@ suprsend profile add [flags]
 ```
       --config string      config file (default: $HOME/.suprsend.yaml)
   -n, --no-color           Disable color output (default: $NO_COLOR)
-  -o, --output string      Output Style (pretty, yaml, json) (default "pretty")
   -v, --verbosity string   Log level (debug, info, warn, error, fatal, panic) (default "info")
 ```
 

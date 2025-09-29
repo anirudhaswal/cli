@@ -1,6 +1,7 @@
 package profiles
 
 import (
+	"math"
 	"sort"
 
 	log "github.com/sirupsen/logrus"
@@ -10,8 +11,8 @@ import (
 
 var listProfilesCmd = &cobra.Command{
 	Use:   "list",
-	Short: "Lists all profiles",
-	Long:  "Lists all profiles from the config",
+	Short: "List all profiles",
+	Long:  "List all profiles from the config",
 	Run: func(cmd *cobra.Command, args []string) {
 		path, err := cmd.Flags().GetString("config")
 		if err != nil {
@@ -36,8 +37,6 @@ var listProfilesCmd = &cobra.Command{
 		}
 
 		outputType, _ := cmd.Flags().GetString("output")
-
-		// Check if any profile has BaseUrl, MgmntUrl, or ServiceToken values
 		hasBaseUrl := false
 		hasMgmntUrl := false
 		hasServiceToken := false
@@ -53,6 +52,15 @@ var listProfilesCmd = &cobra.Command{
 			if profile.ServiceToken != "" {
 				hasServiceToken = true
 			}
+		}
+
+		// Cleanup service token so that it is not printed fully, only the first 4 characters and the last 4 characters are printed rested are replaced with *
+		for _, name := range names {
+			profile := cfg.Profiles[name]
+			length := len(profile.ServiceToken)
+			max_cut := int(math.Min(8, float64(length)))
+			profile.ServiceToken = profile.ServiceToken[:max_cut] + "*****************" + profile.ServiceToken[len(profile.ServiceToken)-4:]
+			cfg.Profiles[name] = profile
 		}
 
 		if hasBaseUrl || hasMgmntUrl || hasServiceToken {
@@ -96,5 +104,6 @@ var listProfilesCmd = &cobra.Command{
 }
 
 func init() {
+	listProfilesCmd.Flags().StringP("output", "o", "pretty", "Output type: pretty, json, yaml")
 	ProfileCmd.AddCommand(listProfilesCmd)
 }

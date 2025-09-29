@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"path/filepath"
 
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
@@ -17,6 +18,12 @@ var eventPushCmd = &cobra.Command{
 	Long:  "Push linked events in schemas",
 	Run: func(cmd *cobra.Command, args []string) {
 		workspace, _ := cmd.Flags().GetString("workspace")
+		path, _ := cmd.Flags().GetString("dir")
+		if path == "" {
+			path = filepath.Join(".", "suprsend", "event", "event_schema_mapping.json")
+		} else {
+			path = filepath.Join(path, "event_schema_mapping.json")
+		}
 
 		var p *pin.Pin
 		if !utils.IsOutputPiped() {
@@ -28,8 +35,8 @@ var eventPushCmd = &cobra.Command{
 			defer cancel()
 		}
 
-		mgmnt_client := utils.GetSuprSendMgmntClient()
-		err := mgmnt_client.PushEvents(workspace)
+		mgmntClient := utils.GetSuprSendMgmntClient()
+		err := mgmntClient.PushEvents(workspace, path)
 		if err != nil {
 			if p != nil {
 				p.Stop("")
@@ -46,6 +53,6 @@ var eventPushCmd = &cobra.Command{
 }
 
 func init() {
-	eventPushCmd.Flags().StringP("workspace", "w", "staging", "Workspace to push events to")
+	eventPushCmd.Flags().StringP("dir", "d", "", "Directory to push events from (default: ./suprsend/event)")
 	EventCmd.AddCommand(eventPushCmd)
 }

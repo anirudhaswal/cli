@@ -13,9 +13,11 @@ suprsend schema pull [flags]
 ### Options
 
 ```
-  -h, --help                help for pull
-  -m, --mode string         Mode of schemas to pull (default "live")
-  -d, --output-dir string   Output directory for schemas
+  -d, --dir string    Directory to pull schemas (default: ./suprsend/schema)
+  -f, --force         Force using default directory without prompting
+  -h, --help          help for pull
+  -m, --mode string   Mode of schemas to pull (draft, live), default: live (default "live")
+  -g, --slug string   Slug of schema to pull
 ```
 
 ### Options inherited from parent commands
@@ -23,13 +25,12 @@ suprsend schema pull [flags]
 ```
       --config string          config file (default: $HOME/.suprsend.yaml)
   -n, --no-color               Disable color output (default: $NO_COLOR)
-  -o, --output string          Output Style (pretty, yaml, json) (default "pretty")
   -s, --service-token string   Service token (default: $SUPRSEND_SERVICE_TOKEN)
   -v, --verbosity string       Log level (debug, info, warn, error, fatal, panic) (default "info")
-  -w, --workspace string       Workspace to use (default "staging")
+  -w, --workspace string       Workspace to use the schemas from (default "staging")
 ```
 
 ### SEE ALSO
 
-* [suprsend schema](suprsend_schema.md)	 - Manage schema
+* [suprsend schema](suprsend_schema.md)	 - Manage trigger payload schemas
 

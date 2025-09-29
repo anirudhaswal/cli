@@ -23,9 +23,16 @@ type SchemaWriteStats struct {
 	Errors  []string
 }
 
+type SchemaPushStats struct {
+	Total   int
+	Success int
+	Failed  int
+	Errors  []string
+}
+
 type FilteredSchema struct {
 	Slug        string `json:"slug"`
-	Name        string `json:"name"`
+	Title       string `json:"title"`
 	Description string `json:"description"`
 }
 
@@ -77,12 +84,29 @@ func ensureOutputDirectory(dirPath string) error {
 	return nil
 }
 
+func validateInputDirectory(dirPath string) error {
+	info, err := os.Stat(dirPath)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return fmt.Errorf("directory does not exist: %s", dirPath)
+		}
+		return fmt.Errorf("error checking directory: %w", err)
+	}
+	if !info.IsDir() {
+		return fmt.Errorf("path '%s' exists but is not a directory", dirPath)
+	}
+	if info.Mode().Perm()&0400 == 0 {
+		return fmt.Errorf("directory '%s' is not readable", dirPath)
+	}
+	return nil
+}
+
 func filterSchemaData(schemas []mgmnt.SchemaResponse) []FilteredSchema {
 	filtered := make([]FilteredSchema, len(schemas))
 	for i, schema := range schemas {
 		filtered[i] = FilteredSchema{
 			Slug:        schema.Slug,
-			Name:        schema.Name,
+			Title:       schema.Title,
 			Description: schema.Description,
 		}
 	}
@@ -137,7 +161,7 @@ func WriteSchemasToFiles(schemasResp *mgmnt.SchemasResponse, dirPath string) (*S
 		}
 
 		debugLog("Wrote: %s", filename)
-		fmt.Fprintf(os.Stdout, "Wrote schema to %s\n", filename)
+		fmt.Fprintf(os.Stdout, "Wrote schema: %s to %s\n", slug, filename)
 		stats.Success++
 	}
 

@@ -28,6 +28,13 @@ func InitConfig(cfgFile string) {
 	if cfgFile != "" {
 		// Use config file from the flag.
 		viper.SetConfigFile(cfgFile)
+
+		if _, err := os.Stat(cfgFile); os.IsNotExist(err) {
+			log.Fatalf("Config file does not exist: %s", cfgFile)
+		}
+		if _, err := os.ReadFile(cfgFile); err != nil {
+			log.Fatalf("Config file is not readable: %s - %v", cfgFile, err)
+		}
 	} else {
 		// Find home directory.
 		home, err := os.UserHomeDir()
@@ -49,14 +56,22 @@ func InitConfig(cfgFile string) {
 	// If a config file is found, read it in.
 	if err := viper.ReadInConfig(); err == nil {
 		log.Debug("Using config file:", viper.ConfigFileUsed())
+	} else if cfgFile != "" {
+		log.Fatalf("Failed to read config file: %s - %v", cfgFile, err)
 	}
 }
 
 // setUpLogs set the log output ans the log level
 func SetUpLogs() error {
+	log.SetFormatter(&log.TextFormatter{
+		DisableColors: viper.GetBool("NO_COLOR"),
+		FullTimestamp: true,
+		PadLevelText:  true,
+	})
 	if Cfg.OutputType == "json" {
 		log.SetFormatter(&log.JSONFormatter{})
 	}
+
 	if viper.GetBool("debug") {
 		Cfg.Verbosity = "debug"
 	}

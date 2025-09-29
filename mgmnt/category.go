@@ -1,7 +1,10 @@
 package mgmnt
 
 import (
+	"encoding/json"
 	"fmt"
+	"net/url"
+	"os"
 	"time"
 
 	"github.com/suprsend/cli/internal/client"
@@ -39,6 +42,18 @@ type Subcategory struct {
 	Tags                     []string `json:"tags"`
 }
 
+type CategoryPushResponse struct {
+	ValidationResult struct {
+		IsValid bool     `json:"is_valid"`
+		Errors  []string `json:"errors"`
+	} `json:"validation_result"`
+}
+
+type ErrorResponse struct {
+	Code    int    `json:"code"`
+	Message string `json:"message"`
+}
+
 func (c *SS_MgmntClient) ListCategories(workspace, mode string) (*PreferenceCategoryResponse, error) {
 	if mode != "live" && mode != "draft" {
 		return nil, fmt.Errorf("invalid mode: %s. Available modes are: live, draft", mode)
@@ -59,6 +74,10 @@ func (c *SS_MgmntClient) ListCategories(workspace, mode string) (*PreferenceCate
 	}
 
 	if resp.IsError() {
+		var errorResp ErrorResponse
+		if err := json.Unmarshal([]byte(resp.String()), &errorResp); err == nil {
+			return nil, fmt.Errorf("request failed with message: %s", errorResp.Message)
+		}
 		return nil, fmt.Errorf("request failed with status: %s", resp.Status())
 	}
 
@@ -66,44 +85,57 @@ func (c *SS_MgmntClient) ListCategories(workspace, mode string) (*PreferenceCate
 	return result, nil
 }
 
-func (c *SS_MgmntClient) PushCategories(workspace string, categories interface{}) error {
+func (c *SS_MgmntClient) PushCategories(workspace string, categories interface{}, commit, commitMessage string) error {
 	client := client.NewHTTPClient()
 	defer client.Close()
-	url := fmt.Sprintf("%sv1/%s/preference_category/", c.mgmnt_base_URL, workspace)
+	urlEncodedCommitMessage := url.QueryEscape(commitMessage)
+	urlStr := fmt.Sprintf("%sv1/%s/preference_category/?commit=%s&commit_message=%s", c.mgmnt_base_URL, workspace, commit, urlEncodedCommitMessage)
 
 	resp, err := client.R().
 		SetDebug(c.debug).
 		SetHeader("Authorization", "ServiceToken "+c.serviceToken).
 		SetHeader("Content-Type", "application/json").
 		SetBody(categories).
-		Post(url)
+		SetResult(&CategoryPushResponse{}).
+		Post(urlStr)
 	if err != nil {
 		return fmt.Errorf("request failed: %w", err)
 	}
-
 	if resp.IsError() {
+		var errorResp ErrorResponse
+		if err := json.Unmarshal([]byte(resp.String()), &errorResp); err == nil {
+			return fmt.Errorf("request failed with message: %s", errorResp.Message)
+		}
 		return fmt.Errorf("request failed with status: %s", resp.Status())
 	}
-
+	if commit == "true" {
+		result := resp.Result().(*CategoryPushResponse)
+		if !result.ValidationResult.IsValid {
+			fmt.Fprintf(os.Stdout, "Warning: validation failed: %v\n", result.ValidationResult.Errors)
+		}
+	}
 	return nil
 }
 
-func (c *SS_MgmntClient) FinalizeCategories(workspace string, commitMsg string) error {
+func (c *SS_MgmntClient) FinalizeCategories(workspace string, commitMessage string) error {
 	client := client.NewHTTPClient()
 	defer client.Close()
-	url := fmt.Sprintf("%sv1/%s/preference_category/commit/?commit_message=%s", c.mgmnt_base_URL, workspace, commitMsg)
+	encodedCommitMessage := url.QueryEscape(commitMessage)
 
+	urlStr := fmt.Sprintf("%sv1/%s/preference_category/commit/?commit_message=%s", c.mgmnt_base_URL, workspace, encodedCommitMessage)
 	resp, err := client.R().
 		SetDebug(c.debug).
+		SetHeader("Content-Type", "application/json").
 		SetHeader("Authorization", "ServiceToken "+c.serviceToken).
-		Patch(url)
+		Patch(urlStr)
 	if err != nil {
 		return fmt.Errorf("request failed: %w", err)
 	}
-
 	if resp.IsError() {
-		return fmt.Errorf("request failed with status: %s", resp.Status())
+		var errorResp ErrorResponse
+		if err := json.Unmarshal([]byte(resp.String()), &errorResp); err == nil {
+			return fmt.Errorf("request failed with message: %s", errorResp.Message)
+		}
 	}
-
 	return nil
 }

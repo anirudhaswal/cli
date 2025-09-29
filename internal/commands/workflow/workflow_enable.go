@@ -11,7 +11,7 @@ import (
 var worklowEnableCmd = &cobra.Command{
 	Use:   "enable",
 	Short: "Enables a workflow.",
-	Long:  "Enables a workflow to activate",
+	Long:  "Enables a workflow to activate. Example: suprsend workflow enable <slug>",
 	Run: func(cmd *cobra.Command, args []string) {
 		if len(args) < 1 {
 			log.Error("Category slug is required.")

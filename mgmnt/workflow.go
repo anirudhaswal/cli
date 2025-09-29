@@ -1,7 +1,9 @@
 package mgmnt
 
 import (
+	"encoding/json"
 	"fmt"
+	"net/url"
 	"os"
 	"strconv"
 
@@ -15,6 +17,13 @@ type Workflow struct {
 	Status    string   `json:"status"`
 	Category  string   `json:"category"`
 	Tags      []string `json:"tags"`
+}
+
+type WorkflowPushResponse struct {
+	ValidationResult struct {
+		IsValid bool     `json:"is_valid"`
+		Errors  []string `json:"errors"`
+	} `json:"validation_result"`
 }
 
 type WorkflowAPIResponse struct {
@@ -35,6 +44,16 @@ type WorkflowsResponse struct {
 	} `json:"meta"`
 }
 
+type WorkflowDetailResponse struct {
+	Slug           string `json:"slug"`
+	Name           string `json:"name"`
+	Description    string `json:"description"`
+	Status         string `json:"status"`
+	Category       string `json:"category"`
+	CommitMessage  string `json:"commit_message"`
+	LastExecutedAt string `json:"last_executed_at"`
+}
+
 func (c *SS_MgmntClient) ListWorkflows(workspace string, limit int, offset int, mode string) (*WorkflowAPIResponse, error) {
 	if mode != "live" && mode != "draft" {
 		return nil, fmt.Errorf("invalid mode: %s. Available modes are: live, draft", mode)
@@ -47,14 +66,13 @@ func (c *SS_MgmntClient) ListWorkflows(workspace string, limit int, offset int, 
 	allWorkflows := []Workflow{}
 	currentOffset := offset
 	remainingLimit := limit
-
 	for remainingLimit > 0 {
 		currentLimit := apiLimit
 		if remainingLimit < apiLimit {
 			currentLimit = remainingLimit
 		}
 
-		log.Debugf("Getting workflows for workspace: %s, service token: %s, limit: %d, offset: %d", workspace, c.serviceToken, currentLimit, currentOffset)
+		log.Debugf("Getting workflows for workspace: %s, limit: %d, offset: %d", workspace, currentLimit, currentOffset)
 		res, err := client.R().
 			SetDebug(c.debug).
 			SetHeader("Authorization", "ServiceToken "+c.serviceToken).
@@ -65,8 +83,11 @@ func (c *SS_MgmntClient) ListWorkflows(workspace string, limit int, offset int, 
 			return nil, err
 		}
 		if res.IsError() {
-			log.Errorf("Error getting workflows: %s", res.Status())
-			return nil, fmt.Errorf("error getting workflows: %s", res.Status())
+			var errorResp ErrorResponse
+			if err := json.Unmarshal([]byte(res.String()), &errorResp); err == nil {
+				return nil, fmt.Errorf("request failed with message: %s", errorResp.Message)
+			}
+			return nil, fmt.Errorf("request failed: %s", res.Status())
 		}
 
 		workflows := res.Result().(*WorkflowAPIResponse)
@@ -96,6 +117,56 @@ func (c *SS_MgmntClient) ListWorkflows(workspace string, limit int, offset int, 
 	}, nil
 }
 
+func (c *SS_MgmntClient) GetWorkflowDetailBySlug(workspace, slug, mode string) (*map[string]any, error) {
+	client := client.NewHTTPClient()
+	defer client.Close()
+
+	url := fmt.Sprintf("%sv1/%s/workflow/%s/?mode=%s", c.mgmnt_base_URL, workspace, slug, mode)
+
+	resp, err := client.R().
+		SetDebug(c.debug).
+		SetHeader("Authorization", "ServiceToken "+c.serviceToken).
+		SetResult(&map[string]any{}).
+		Get(url)
+	if err != nil {
+		return nil, err
+	}
+	if resp.IsError() {
+		var errorResp ErrorResponse
+		if err := json.Unmarshal([]byte(resp.String()), &errorResp); err == nil {
+			return nil, fmt.Errorf("request failed with message: %s", errorResp.Message)
+		}
+		return nil, fmt.Errorf("request failed: %s", resp.Status())
+	}
+	return resp.Result().(*map[string]any), nil
+}
+
+func (c *SS_MgmntClient) GetWorkflowDetail(workspace, slug, mode string) (*WorkflowDetailResponse, error) {
+	client := client.NewHTTPClient()
+	defer client.Close()
+
+	url := fmt.Sprintf("%sv1/%s/workflow/%s/?mode=%s", c.mgmnt_base_URL, workspace, slug, mode)
+
+	resp, err := client.R().
+		SetDebug(c.debug).
+		SetHeader("Authorization", "ServiceToken "+c.serviceToken).
+		SetResult(&WorkflowDetailResponse{}).
+		Get(url)
+	if err != nil {
+		return nil, err
+	}
+	if resp.IsError() {
+		var errorResp ErrorResponse
+		if err := json.Unmarshal([]byte(resp.String()), &errorResp); err == nil {
+			return nil, fmt.Errorf("request failed with message: %s", errorResp.Message)
+		}
+		return nil, fmt.Errorf("request failed: %s", resp.Status())
+	}
+
+	workflowResp := resp.Result().(*WorkflowDetailResponse)
+	return workflowResp, nil
+}
+
 func (c *SS_MgmntClient) GetWorkflows(workspace, mode string) (*WorkflowsResponse, error) {
 	if mode != "live" && mode != "draft" {
 		return nil, fmt.Errorf("invalid mode: %s, Available modes are: live, draft", mode)
@@ -121,8 +192,11 @@ func (c *SS_MgmntClient) GetWorkflows(workspace, mode string) (*WorkflowsRespons
 		}
 
 		if res.IsError() {
-			fmt.Fprintf(os.Stdout, "Error: Failed to get workflows: %v\n", res.Status())
-			return nil, fmt.Errorf("error getting workflows: %s", res.Status())
+			var errorResp ErrorResponse
+			if err := json.Unmarshal([]byte(res.String()), &errorResp); err == nil {
+				return nil, fmt.Errorf("request failed with message: %s", errorResp.Message)
+			}
+			return nil, fmt.Errorf("request failed: %s", res.Status())
 		}
 
 		workflows := res.Result().(*WorkflowsResponse)
@@ -150,7 +224,7 @@ func (c *SS_MgmntClient) GetWorkflows(workspace, mode string) (*WorkflowsRespons
 	}, nil
 }
 
-func (c *SS_MgmntClient) PushWorkflow(workspace, slug string, workflow map[string]any) error {
+func (c *SS_MgmntClient) PushWorkflow(workspace, slug string, workflow map[string]any, commit, commitMessage string) error {
 	if slug == "" {
 		return fmt.Errorf("slug cannot be empty")
 	}
@@ -158,7 +232,8 @@ func (c *SS_MgmntClient) PushWorkflow(workspace, slug string, workflow map[strin
 	client := client.NewHTTPClient()
 	defer client.Close()
 
-	url := fmt.Sprintf("%sv1/%s/workflow/%s/", c.mgmnt_base_URL, workspace, slug)
+	urlEncodedCommitMessage := url.QueryEscape(commitMessage)
+	url := fmt.Sprintf("%sv1/%s/workflow/%s/?commit=%s&commit_message=%s", c.mgmnt_base_URL, workspace, slug, commit, urlEncodedCommitMessage)
 	log.Debugf("Pushing workflow to: %s", url)
 
 	res, err := client.R().
@@ -166,15 +241,24 @@ func (c *SS_MgmntClient) PushWorkflow(workspace, slug string, workflow map[strin
 		SetHeader("Authorization", "ServiceToken "+c.serviceToken).
 		SetHeader("Content-Type", "application/json").
 		SetBody(workflow).
+		SetResult(&WorkflowPushResponse{}).
 		Post(url)
-
 	if err != nil {
 		log.Errorf("Error pushing workflow: %s", err)
 		return err
 	}
 	if res.IsError() {
-		log.Errorf("Push failed: %s - %s", res.Status(), res.String())
-		return fmt.Errorf("push failed: %s", res.Status())
+		var errorResp ErrorResponse
+		if err := json.Unmarshal([]byte(res.String()), &errorResp); err == nil {
+			return fmt.Errorf("request failed with message: %s", errorResp.Message)
+		}
+		return fmt.Errorf("request failed: %s", res.Status())
+	}
+	if commit == "true" {
+		validationResult := res.Result().(*WorkflowPushResponse)
+		if !validationResult.ValidationResult.IsValid {
+			fmt.Fprintf(os.Stdout, "Warning: Workflow %s is not valid: %v\n", slug, validationResult.ValidationResult.Errors)
+		}
 	}
 	return nil
 }
@@ -206,7 +290,6 @@ func (c *SS_MgmntClient) ChangeStatusWorkflow(workspace, slug string, enabled bo
 		SetHeader("Content-Type", "application/json").
 		SetBody(body).
 		Patch(urlStr)
-
 	if err != nil {
 		return fmt.Errorf("network error: %w", err)
 	}

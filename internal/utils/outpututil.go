@@ -27,6 +27,10 @@ func IsOutputPiped() bool {
 	if err != nil {
 		return false
 	}
+	// return true if --no-color is set to be true
+	if viper.GetBool("NO_COLOR") {
+		return true
+	}
 
 	// If ModeCharDevice is NOT set, it means the output is not a character device (terminal).
 	// This implies it's a pipe or redirection.
@@ -68,7 +72,7 @@ func outputJSON(data any) {
 		return
 	}
 
-	if supportsColor() {
+	if supportsColor() || !IsOutputPiped() {
 		fmt.Println(string(pretty.Color(jsonData, nil)))
 	} else {
 		fmt.Println(string(jsonData))
@@ -231,6 +235,9 @@ func formatValue(v reflect.Value) string {
 	case reflect.Bool:
 		return strconv.FormatBool(v.Bool())
 	case reflect.Map:
+		if v.IsNil() {
+			return ""
+		}
 		// Check if it's map[string]any
 		if v.Type().Key().Kind() == reflect.String && v.Type().Elem().Kind() == reflect.Interface {
 			m := v.Interface()
@@ -240,6 +247,9 @@ func formatValue(v reflect.Value) string {
 		}
 		return fmt.Sprintf("%v", v.Interface())
 	default:
+		if !v.IsValid() || (v.Kind() == reflect.Interface && v.IsNil()) {
+			return ""
+		}
 		return fmt.Sprintf("%v", v.Interface())
 	}
 }

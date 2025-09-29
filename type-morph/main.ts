@@ -110,7 +110,12 @@ async function main() {
     console.error("Error parsing schema JSON:", err);
     Deno.exit(1);
   }
-  const transformedSchema = transformSchema(schema);
+
+  const wellformattedSchemaName = schemaName
+      .split(/[_-]/)
+      .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+      .join("")+"Data";
+  const transformedSchema = transformSchema({...schema, title: wellformattedSchemaName});
   const transformedText = JSON.stringify(transformedSchema, null, 2);
   let output;
   if (language.toLowerCase() === "java") {

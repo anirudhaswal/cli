@@ -3,6 +3,7 @@ package profiles
 import (
 	"bufio"
 	"fmt"
+	"math"
 	"os"
 	"path/filepath"
 	"strings"
@@ -99,7 +100,7 @@ func SaveConfig(cfg *Config, path string) error {
 	if err != nil {
 		return err
 	}
-	return os.WriteFile(path, data, 0644)
+	return os.WriteFile(path, data, 0o644)
 }
 
 func LoadConfig(path string) (*Config, error) {
@@ -162,12 +163,12 @@ func GetResolvedMgmntUrl() string {
 	// get the value from the active profile
 	configPath := GetConfigFilePath()
 	if configPath == "" {
-		return "https://api.suprsend.com/"
+		return "https://management-api.suprsend.com/"
 	}
 
 	cfg, err := LoadConfig(configPath)
 	if err != nil {
-		return "https://api.suprsend.com/"
+		return "https://management-api.suprsend.com/"
 	}
 
 	activeProfile := cfg.Profiles[cfg.ActiveProfile]
@@ -176,5 +177,18 @@ func GetResolvedMgmntUrl() string {
 	}
 
 	// Default value
-	return "https://api.suprsend.com/"
+	return "https://management-api.suprsend.com/"
+}
+
+// MaskServiceToken masks a service token showing only first 4 and last 4 characters
+func MaskServiceToken(token string) string {
+	if token == "" {
+		return "not set"
+	}
+	length := len(token)
+	if length <= 8 {
+		return "****"
+	}
+	maxCut := int(math.Min(4, float64(length)))
+	return token[:maxCut] + "****" + token[length-4:]
 }

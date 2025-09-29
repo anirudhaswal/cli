@@ -28,13 +28,13 @@ var workflowListCmd = &cobra.Command{
 			defer cancel()
 		}
 		workspace, _ := cmd.Flags().GetString("workspace")
-		mgmnt_client := utils.GetSuprSendMgmntClient()
+		mgmntClient := utils.GetSuprSendMgmntClient()
 
 		limit, _ := cmd.Flags().GetInt("limit")
 		offset, _ := cmd.Flags().GetInt("offset")
 		mode, _ := cmd.Flags().GetString("mode")
 
-		workflows, err := mgmnt_client.ListWorkflows(workspace, limit, offset, mode)
+		workflows, err := mgmntClient.ListWorkflows(workspace, limit, offset, mode)
 		if err != nil {
 			log.WithError(err).Error("Couldn't fetch workflows")
 			return
@@ -57,10 +57,12 @@ var workflowListCmd = &cobra.Command{
 func init() {
 	workflowListCmd.PersistentFlags().IntP("limit", "l", 20, "Limit the number of workflows to list")
 	workflowListCmd.PersistentFlags().IntP("offset", "f", 0, "Offset the number of workflows to list (default: 0)")
-	workflowListCmd.PersistentFlags().StringP("mode", "m", "live", "Mode of workflows to list")
-
+	workflowListCmd.PersistentFlags().StringP("mode", "m", "live", "Mode of workflows to list (draft, live), default: live")
+	workflowListCmd.PersistentFlags().StringP("output", "o", "pretty", "Output Style (pretty, yaml, json)")
 	workflowListCmd.SetHelpFunc(func(cmd *cobra.Command, args []string) {
 		cmd.Parent().HelpFunc()(cmd, args)
 	})
+	WorkflowCmd.PersistentFlags().StringP("workspace", "w", "staging", "Workspace to list workflows from")
+	WorkflowCmd.PersistentFlags().StringP("service-token", "s", "", "Service token (default: $SUPRSEND_SERVICE_TOKEN)")
 	WorkflowCmd.AddCommand(workflowListCmd)
 }

@@ -32,6 +32,13 @@ var profilesAddCmd = &cobra.Command{
 		}
 
 		if addName != "" && addServiceToken != "" {
+			if addBaseUrl == "" {
+				addBaseUrl = "https://hub.suprsend.com/"
+			}
+			if addMgmntUrl == "" {
+				addMgmntUrl = "https://management-api.suprsend.com/"
+			}
+
 			cfg.Profiles[addName] = Profile{
 				BaseUrl:      addBaseUrl,
 				MgmntUrl:     addMgmntUrl,
@@ -53,20 +60,14 @@ var profilesAddCmd = &cobra.Command{
 
 func init() {
 	profilesAddCmd.Flags().StringVar(&addName, "name", "", "Name of the profile (required)")
-	profilesAddCmd.Flags().StringVar(&addBaseUrl, "base-url", "", "Base URL")
-	profilesAddCmd.Flags().StringVar(&addMgmntUrl, "mgmnt-url", "", "Management URL")
+	profilesAddCmd.Flags().StringVar(&addBaseUrl, "base-url", "", "Base URL (default: https://hub.suprsend.com/)")
+	profilesAddCmd.Flags().StringVar(&addMgmntUrl, "mgmnt-url", "", "Management URL (default: https://management-api.suprsend.com/)")
 	profilesAddCmd.Flags().StringVar(&addServiceToken, "service-token", "", "Service token (required)")
 	ProfileCmd.AddCommand(profilesAddCmd)
 }
 
 func runAddInteractive(cfg *Config, path string) {
-	addName = ""
-	addServiceToken = ""
-	addBaseUrl = ""
-	addMgmntUrl = ""
-
 	ui := cobra_ui.New()
-
 	var questions []cobra_ui.Question
 
 	if addName == "" {
@@ -101,33 +102,10 @@ func runAddInteractive(cfg *Config, path string) {
 	}
 
 	if addBaseUrl == "" {
-		questions = append(questions, cobra_ui.Question{
-			Text: "Base URL (optional, press Enter for default): ",
-			Handler: func(s string) error {
-				s = cleanInput(s)
-				if s != "" {
-					addBaseUrl = s
-				} else {
-					addBaseUrl = "https://hub.suprsend.com/"
-				}
-				return nil
-			},
-		})
+		addBaseUrl = "https://hub.suprsend.com/"
 	}
-
 	if addMgmntUrl == "" {
-		questions = append(questions, cobra_ui.Question{
-			Text: "Management URL (optional, press Enter for default): ",
-			Handler: func(s string) error {
-				s = cleanInput(s)
-				if s != "" {
-					addMgmntUrl = s
-				} else {
-					addMgmntUrl = "https://api.suprsend.com/"
-				}
-				return nil
-			},
-		})
+		addMgmntUrl = "https://management-api.suprsend.com/"
 	}
 
 	if len(questions) > 0 {
@@ -144,15 +122,15 @@ func runAddInteractive(cfg *Config, path string) {
 		return
 	}
 
-	fmt.Println("\n📋 Profile Summary:")
+	fmt.Println("\n Profile Summary:")
 	fmt.Printf("   Name: %s\n", addName)
-	fmt.Printf("   Service Token: %s\n", addServiceToken)
+	fmt.Printf("   Service Token: [HIDDEN]\n")
 	fmt.Printf("   Base URL: %s\n", addBaseUrl)
 	fmt.Printf("   Management URL: %s\n", addMgmntUrl)
 
 	reader := bufio.NewReader(os.Stdin)
 	for {
-		fmt.Print("\n🤔 Add this profile? (Y/n): ")
+		fmt.Print("\n Add this profile? (Y/n): ")
 		response, err := reader.ReadString('\n')
 		if err != nil {
 			log.WithError(err).Error("Failed to read input")
@@ -168,7 +146,7 @@ func runAddInteractive(cfg *Config, path string) {
 			return
 		}
 
-		log.Infof("❌ Please enter 'y' for yes or 'n' for no")
+		log.Infof(" Please enter 'y' for yes or 'n' for no")
 	}
 
 	if cfg.ActiveProfile == "" {
@@ -188,5 +166,5 @@ func runAddInteractive(cfg *Config, path string) {
 		return
 	}
 
-	log.Infof("✨Profile %s added successfully!\n", addName)
+	log.Infof("Profile %s added successfully!\n", addName)
 }

@@ -1,15 +1,15 @@
 module github.com/suprsend/cli
 
-go 1.24.0
+go 1.25.0
 
-toolchain go1.24.2
+toolchain go1.25.1
 
 require (
 	github.com/MakeNowJust/heredoc/v2 v2.0.1
 	github.com/fatih/color v1.18.0
 	github.com/google/uuid v1.6.0
-	github.com/mark3labs/mcp-go v0.39.1
-	github.com/olekukonko/tablewriter v1.0.9
+	github.com/mark3labs/mcp-go v0.40.0
+	github.com/olekukonko/tablewriter v1.1.0
 	github.com/pkg/errors v0.9.1
 	github.com/sabouaram/cobra_ui v1.0.2
 	github.com/santhosh-tekuri/jsonschema/v5 v5.3.1
@@ -20,6 +20,7 @@ require (
 	github.com/tidwall/pretty v1.2.1
 	github.com/yarlson/pin v0.9.1
 	go.szostok.io/version v1.2.0
+	golang.org/x/text v0.29.0
 	gopkg.in/yaml.v3 v3.0.1
 	resty.dev/v3 v3.0.0-beta.3
 )
@@ -82,7 +83,6 @@ require (
 	golang.org/x/crypto v0.38.0 // indirect
 	golang.org/x/exp v0.0.0-20250305212735-054e65f0b394 // indirect
 	golang.org/x/net v0.39.0 // indirect
-	golang.org/x/sync v0.16.0 // indirect
+	golang.org/x/sync v0.17.0 // indirect
 	golang.org/x/sys v0.33.0 // indirect
-	golang.org/x/text v0.28.0 // indirect
 )
