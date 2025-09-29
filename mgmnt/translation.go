@@ -3,7 +3,6 @@ package mgmnt
 import (
 	"encoding/json"
 	"fmt"
-	"net/url"
 	"os"
 	"strconv"
 
@@ -123,11 +122,10 @@ func (c *SS_MgmntClient) GetTranslations(workspace, mode string) (*TranslationRe
 	}, nil
 }
 
-func (c *SS_MgmntClient) PushTranslation(workspace string, translations []map[string]any, commit, commitMessage string) error {
+func (c *SS_MgmntClient) PushTranslation(workspace, filename string, translations map[string]any) error {
 	client := client.NewHTTPClient()
 	defer client.Close()
-	urlEncodedCommitMessage := url.QueryEscape(commitMessage)
-	url := fmt.Sprintf("%sv1/%s/translation/?commit=%s&commit_message=%s", c.mgmnt_base_URL, workspace, commit, urlEncodedCommitMessage)
+	url := fmt.Sprintf("%sv1/%s/translation/%s/", c.mgmnt_base_URL, workspace, filename)
 	fmt.Println(url)
 	body := map[string]any{
 		"translations": translations,
@@ -136,7 +134,7 @@ func (c *SS_MgmntClient) PushTranslation(workspace string, translations []map[st
 		SetDebug(c.debug).
 		SetHeader("Authorization", "ServiceToken "+c.serviceToken).
 		SetBody(body).
-		Patch(url)
+		Post(url)
 	if err != nil {
 		log.Errorf("Error pushing translations: %s", err)
 		return err

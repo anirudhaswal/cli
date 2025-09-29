@@ -21,8 +21,6 @@ var translationPushCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		workspace, _ := cmd.Flags().GetString("workspace")
 		outputDir, _ := cmd.Flags().GetString("dir")
-		commit, _ := cmd.Flags().GetString("commit")
-		commitMessage, _ := cmd.Flags().GetString("commit-message")
 
 		if outputDir == "" {
 			outputDir = filepath.Join(".", "suprsend", "translation")
@@ -37,67 +35,99 @@ var translationPushCmd = &cobra.Command{
 		fmt.Printf("Pushing translations to %s\n", workspace)
 		mgmntClient := utils.GetSuprSendMgmntClient()
 
-		var translations []map[string]any
+		hasError := false
+		var p *pin.Pin
+		var cancel context.CancelFunc
+		stats := &TranslationPushStats{
+			Errors: []string{},
+		}
 
 		for _, file := range files {
 			if file.IsDir() || !strings.HasSuffix(file.Name(), ".json") {
 				continue
 			}
 
-			path := filepath.Join(outputDir, file.Name())
-			data, err := os.ReadFile(path)
-			if err != nil {
-				log.WithError(err).Errorf("Failed to read file %s", file.Name())
-				return
-			}
-
-			var translation map[string]any
-			if err := json.Unmarshal(data, &translation); err != nil {
-				log.WithError(err).Errorf("Failed to parse JSON for %s", file.Name())
-				return
-			}
-
-			translations = append(translations, translation)
-		}
-
-		if len(translations) > 0 {
-			var p *pin.Pin
-			var cancel context.CancelFunc
-
-			if !utils.IsOutputPiped() {
-				p = pin.New("Pushing translations...",
+			if !hasError && !utils.IsOutputPiped() {
+				p = pin.New(fmt.Sprintf("Pushing %s...", file.Name()),
 					pin.WithSpinnerColor(pin.ColorCyan),
 					pin.WithTextColor(pin.ColorYellow),
 				)
 				cancel = p.Start(context.Background())
 			}
 
-			err = mgmntClient.PushTranslation(workspace, translations, commit, commitMessage)
-			if p != nil && cancel != nil {
-				if err != nil {
+			path := filepath.Join(outputDir, file.Name())
+			data, err := os.ReadFile(path)
+			if err != nil {
+				if p != nil && cancel != nil {
 					p.Stop("")
 					cancel()
-					log.WithError(err).Errorf("Failed to push translations")
-				} else {
-					p.Stop(fmt.Sprintf("Pushed %d translations", len(translations)))
-					cancel()
+					p = nil
+					cancel = nil
 				}
-			} else {
-				if err != nil {
-					log.WithError(err).Errorf("Failed to push translations")
-				} else {
-					fmt.Fprintf(os.Stdout, "Pushed %d translations\n", len(translations))
-				}
+				hasError = true
+				log.Errorf("Failed to read file %s: %v", file.Name(), err)
+				stats.Failed++
+				stats.Errors = append(stats.Errors, fmt.Sprintf("Failed to read file %s: %v", file.Name(), err))
+				continue
 			}
-		} else {
-			fmt.Printf("No translation files found in %s\n", outputDir)
+
+			var translation map[string]any
+			if err := json.Unmarshal(data, &translation); err != nil {
+				if p != nil && cancel != nil {
+					p.Stop("")
+					cancel()
+					p = nil
+					cancel = nil
+				}
+				hasError = true
+				log.Errorf("Failed to parse JSON for %s: %v", file.Name(), err)
+				stats.Failed++
+				stats.Errors = append(stats.Errors, fmt.Sprintf("Failed to parse JSON for %s: %v", file.Name(), err))
+				continue
+			}
+
+			err = mgmntClient.PushTranslation(workspace, file.Name(), translation)
+			if err != nil {
+				if p != nil && cancel != nil {
+					p.Stop("")
+					cancel()
+					p = nil
+					cancel = nil
+				}
+				hasError = true
+				log.Errorf("Failed to push translation %s: %v", file.Name(), err)
+				stats.Failed++
+				stats.Errors = append(stats.Errors, fmt.Sprintf("Failed to push translation %s: %v", file.Name(), err))
+				continue
+			}
+
+			stats.Success++
+			if p != nil && cancel != nil {
+				p.Stop(fmt.Sprintf("Pushed translation: %s", file.Name()))
+				cancel()
+				p = nil
+				cancel = nil
+			} else {
+				fmt.Fprintf(os.Stdout, "Pushed translation: %s\n", file.Name())
+			}
+			hasError = false
+		}
+
+		fmt.Fprintf(os.Stdout, "\n=== Translation Push Summary ===\n")
+		fmt.Fprintf(os.Stdout, "Total translations processed: %d\n", stats.Total)
+		fmt.Fprintf(os.Stdout, "Successfully pushed: %d\n", stats.Success)
+		fmt.Fprintf(os.Stdout, "Failed to push: %d\n", stats.Failed)
+
+		if stats.Failed > 0 {
+			fmt.Fprintf(os.Stdout, "\nFailed translations:\n")
+			for _, err := range stats.Errors {
+				fmt.Fprintf(os.Stdout, "  - %s\n", err)
+			}
 		}
 	},
 }
 
 func init() {
-	translationPushCmd.Flags().StringP("commit", "c", "true", "Commit the translations (--commit=true)")
-	translationPushCmd.Flags().StringP("commit-message", "m", "", "Commit message")
 	translationPushCmd.Flags().StringP("dir", "d", "", "Directory for translations pull to (default: ./suprsend/translation)")
 	TranslationCmd.AddCommand(translationPushCmd)
 }

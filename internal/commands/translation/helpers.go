@@ -18,6 +18,13 @@ type TranslationWriteStats struct {
 	Errors  []string
 }
 
+type TranslationPushStats struct {
+	Total   int
+	Success int
+	Failed  int
+	Errors  []string
+}
+
 func promptForOutputDirectory() string {
 	reader := bufio.NewReader(os.Stdin)
 	defaultDir := filepath.Join(".", "suprsend", "translation")
