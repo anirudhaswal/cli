@@ -50,7 +50,7 @@ func NewClientWithUrls(serviceToken string, baseURL string, mgmntURL string, deb
 		if envUrl := os.Getenv("SUPRSEND_MGMNT_URL"); envUrl != "" {
 			mgmntURL = envUrl
 		} else {
-			mgmntURL = "https://api.suprsend.com/"
+			mgmntURL = "https://management-api.suprsend.com/"
 		}
 	}
 

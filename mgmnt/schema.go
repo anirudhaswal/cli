@@ -1,11 +1,12 @@
 package mgmnt
 
 import (
+	"encoding/json"
 	"fmt"
+	"net/url"
 	"os"
 	"strconv"
 
-	log "github.com/sirupsen/logrus"
 	"github.com/suprsend/cli/internal/client"
 	"resty.dev/v3"
 )
@@ -30,6 +31,7 @@ type ListSchemaResponse struct {
 
 type SchemaResponse struct {
 	Slug        string     `json:"slug"`
+	Title       string     `json:"title"`
 	Name        string     `json:"name"`
 	Description string     `json:"description"`
 	IsEnabled   bool       `json:"is_enabled"`
@@ -86,7 +88,10 @@ func (c *SS_MgmntClient) ListSchema(workspace string, limit, offset int, mode st
 			return nil, fmt.Errorf("request failed: %w", err)
 		}
 		if resp.IsError() {
-			return nil, fmt.Errorf("request failed: %w", err)
+			var errorResp ErrorResponse
+			if err := json.Unmarshal([]byte(resp.String()), &errorResp); err == nil {
+				return nil, fmt.Errorf("request failed with message: %s", errorResp.Message)
+			}
 		}
 
 		schemas := resp.Result().(*ListSchemaResponse)
@@ -130,6 +135,10 @@ func (c *SS_MgmntClient) GetSchema(workspace, slug string, version string) (*Sch
 		return nil, fmt.Errorf("request failed: %s", err.Error())
 	}
 	if res.IsError() {
+		var errorResp ErrorResponse
+		if err := json.Unmarshal([]byte(res.String()), &errorResp); err == nil {
+			return nil, fmt.Errorf("request failed with message: %s", errorResp.Message)
+		}
 		return nil, fmt.Errorf("request failed: %s", res.Status())
 	}
 	schema := res.Result().(*SchemaResponse)
@@ -137,6 +146,33 @@ func (c *SS_MgmntClient) GetSchema(workspace, slug string, version string) (*Sch
 		return nil, fmt.Errorf("schema properties are empty")
 	}
 	return schema, nil
+}
+
+func (c *SS_MgmntClient) GetSchemaBySlug(workspace, slug, mode string) (*map[string]any, error) {
+	if mode != "live" && mode != "draft" {
+		return nil, fmt.Errorf("invalid mode: %s. Available modes are: live, draft", mode)
+	}
+	client := client.NewHTTPClient()
+	defer client.Close()
+	url := fmt.Sprintf("%sv1/%s/schema/%s/?mode=%s", c.mgmnt_base_URL, workspace, slug, mode)
+
+	resp, err := client.R().
+		SetDebug(c.debug).
+		SetHeader("Authorization", "ServiceToken "+c.serviceToken).
+		SetResult(&map[string]any{}).
+		Get(url)
+	if err != nil {
+		return nil, fmt.Errorf("request failed: %w", err)
+	}
+	if resp.IsError() {
+		var errorResp ErrorResponse
+		if err := json.Unmarshal([]byte(resp.String()), &errorResp); err == nil {
+			return nil, fmt.Errorf("request failed with message: %s", errorResp.Message)
+		}
+		return nil, fmt.Errorf("request failed: %s", resp.Status())
+	}
+
+	return resp.Result().(*map[string]any), nil
 }
 
 func (c *SS_MgmntClient) GetSchemas(workspace, mode string) (*SchemasResponse, error) {
@@ -162,10 +198,12 @@ func (c *SS_MgmntClient) GetSchemas(workspace, mode string) (*SchemasResponse, e
 			fmt.Fprintf(os.Stdout, "Error: Failed to get schemas: %v\n", err)
 			return nil, err
 		}
-
 		if res.IsError() {
-			fmt.Fprintf(os.Stdout, "Error: Failed to get schemas: %v\n", res.Status())
-			return nil, fmt.Errorf("error getting schemas: %s", res.Status())
+			var errorResp ErrorResponse
+			if err := json.Unmarshal([]byte(res.String()), &errorResp); err == nil {
+				return nil, fmt.Errorf("request failed with message: %s", errorResp.Message)
+			}
+			return nil, fmt.Errorf("request failed: %s", res.Status())
 		}
 
 		schemas := res.Result().(*SchemasResponse)
@@ -193,10 +231,11 @@ func (c *SS_MgmntClient) GetSchemas(workspace, mode string) (*SchemasResponse, e
 	}, nil
 }
 
-func (c *SS_MgmntClient) PushSchema(workspace, schemaSlug string, payload map[string]any) error {
+func (c *SS_MgmntClient) PushSchema(workspace, schemaSlug string, payload map[string]any, commit, commitMessage string) error {
 	client := client.NewHTTPClient()
 	defer client.Close()
-	url := fmt.Sprintf("%sv1/%s/schema/%s/", c.mgmnt_base_URL, workspace, schemaSlug)
+	encodedCommitMessage := url.QueryEscape(commitMessage)
+	url := fmt.Sprintf("%sv1/%s/schema/%s/?commit=%s&commit_message=%s", c.mgmnt_base_URL, workspace, schemaSlug, commit, encodedCommitMessage)
 
 	resp, err := client.R().
 		SetDebug(c.debug).
@@ -208,47 +247,39 @@ func (c *SS_MgmntClient) PushSchema(workspace, schemaSlug string, payload map[st
 		return fmt.Errorf("request failed: %w", err)
 	}
 	if resp.IsError() {
-		return fmt.Errorf("error response: %s", resp.Status())
+		var errorResp ErrorResponse
+		if err := json.Unmarshal([]byte(resp.String()), &errorResp); err == nil {
+			return fmt.Errorf("request failed with message: %s", errorResp.Message)
+		}
+		return fmt.Errorf("request failed: %s", resp.Status())
 	}
 	return nil
 }
 
-func (c *SS_MgmntClient) FinalizeSchema(workspace, slug string, commit bool) error {
+func (c *SS_MgmntClient) FinalizeSchema(workspace, slug, commitMessage string) error {
 	if slug == "" {
 		return fmt.Errorf("slug cannot be empty")
 	}
-
 	client := resty.New()
 	defer client.Close()
 
-	urlStr := fmt.Sprintf("%sv1/%s/schema/%s/enable/", c.mgmnt_base_URL, workspace, slug)
-
-	body := map[string]interface{}{
-		"is_enabled": commit,
-	}
-
-	action := "resetting"
-	if commit {
-		action = "committing"
-	}
-
-	log.Debugf("Finalizing schema (slug: %s) by %s", slug, action)
+	urlEncodedCommitMessage := url.QueryEscape(commitMessage)
+	urlStr := fmt.Sprintf("%sv1/%s/schema/%s/commit/?commit_message=%s", c.mgmnt_base_URL, workspace, slug, urlEncodedCommitMessage)
 
 	res, err := client.R().
 		SetDebug(c.debug).
 		SetHeader("Authorization", "ServiceToken "+c.serviceToken).
 		SetHeader("Content-Type", "application/json").
-		SetBody(body).
 		Patch(urlStr)
 	if err != nil {
 		return fmt.Errorf("request failed: %w", err)
 	}
-
 	if res.IsError() {
-		if res.StatusCode() == 404 {
-			return fmt.Errorf("schema not found: %s", slug)
+		var errorResp ErrorResponse
+		if err := json.Unmarshal([]byte(res.String()), &errorResp); err == nil {
+			return fmt.Errorf("request failed with message: %s", errorResp.Message)
 		}
-		return err
+		return fmt.Errorf("request failed: %s", res.Status())
 	}
 	return nil
 }

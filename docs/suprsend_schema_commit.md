@@ -4,7 +4,7 @@ Commit schema from draft to live
 
 ### Synopsis
 
-Commit schema from draft to live in a workspace
+Commit schema from draft to live in a workspace. Example: suprsend schema commit <slug>
 
 ```
 suprsend schema commit [flags]
@@ -13,7 +13,8 @@ suprsend schema commit [flags]
 ### Options
 
 ```
-  -h, --help   help for commit
+  -m, --commit-message string   Commit message describing the changes
+  -h, --help                    help for commit
 ```
 
 ### Options inherited from parent commands
@@ -21,13 +22,12 @@ suprsend schema commit [flags]
 ```
       --config string          config file (default: $HOME/.suprsend.yaml)
   -n, --no-color               Disable color output (default: $NO_COLOR)
-  -o, --output string          Output Style (pretty, yaml, json) (default "pretty")
   -s, --service-token string   Service token (default: $SUPRSEND_SERVICE_TOKEN)
   -v, --verbosity string       Log level (debug, info, warn, error, fatal, panic) (default "info")
-  -w, --workspace string       Workspace to use (default "staging")
+  -w, --workspace string       Workspace to use the schemas from (default "staging")
 ```
 
 ### SEE ALSO
 
-* [suprsend schema](suprsend_schema.md)	 - Manage schema
+* [suprsend schema](suprsend_schema.md)	 - Manage trigger payload schemas
 

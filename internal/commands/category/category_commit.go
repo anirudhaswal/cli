@@ -27,8 +27,8 @@ var categoryCommitCmd = &cobra.Command{
 			defer cancel()
 		}
 
-		mgmnt_client := utils.GetSuprSendMgmntClient()
-		err := mgmnt_client.FinalizeCategories(workspace, commitMsg)
+		mgmntClient := utils.GetSuprSendMgmntClient()
+		err := mgmntClient.FinalizeCategories(workspace, commitMsg)
 		if err != nil {
 			log.WithError(err).Error("Couldn't commit categories")
 			return
@@ -40,7 +40,6 @@ var categoryCommitCmd = &cobra.Command{
 }
 
 func init() {
-	categoryCommitCmd.PersistentFlags().String("workspace", "staging", "Workspace to commit categories to")
 	categoryCommitCmd.PersistentFlags().String("commit-message", "", "Commit message")
 	CategoryCmd.AddCommand(categoryCommitCmd)
 }

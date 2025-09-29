@@ -29,7 +29,7 @@ var profilesModifyCmd = &cobra.Command{
 		}
 		if modifyName != "" {
 			if _, exists := cfg.Profiles[modifyName]; !exists {
-				log.Errorf("Profile %s not found", modifyName)
+				log.Infof("Profile %q does not exist. Use the command 'suprsend profile list' to see all profiles.", modifyName)
 				return
 			}
 		}
@@ -62,9 +62,9 @@ var profilesModifyCmd = &cobra.Command{
 
 func init() {
 	profilesModifyCmd.Flags().StringVar(&modifyName, "name", "", "Name of the profile to modify")
-	profilesModifyCmd.Flags().StringVar(&modifyBaseUrl, "base-url", "", "Base URL")
-	profilesModifyCmd.Flags().StringVar(&modifyMgmntUrl, "mgmnt-url", "", "Management URL")
-	profilesModifyCmd.Flags().StringVar(&modifyServiceToken, "token", "", "Service Token")
+	profilesModifyCmd.Flags().StringVar(&modifyBaseUrl, "base-url", "", "Base URL (default: https://hub.suprsend.com/)")
+	profilesModifyCmd.Flags().StringVar(&modifyMgmntUrl, "mgmnt-url", "", "Management URL (default: https://management-api.suprsend.com/)")
+	profilesModifyCmd.Flags().StringVar(&modifyServiceToken, "service-token", "", "Service Token")
 	ProfileCmd.AddCommand(profilesModifyCmd)
 }
 
@@ -99,60 +99,32 @@ func runModifyInteractive(cfg *Config, path string) {
 
 	selectedProfile, exists := cfg.Profiles[modifyName]
 	if !exists {
-		log.Errorf("Profile %s not found", modifyName)
+		log.Infof("Profile %q does not exist. Use the command 'suprsend profile list' to see all profiles.", modifyName)
 		return
 	}
 
 	ui2 := cobra_ui.New()
 
-	currentBaseURL := selectedProfile.BaseUrl
-	if currentBaseURL == "" {
-		currentBaseURL = "https://hub.suprsend.com"
+	if modifyBaseUrl == "" {
+		modifyBaseUrl = selectedProfile.BaseUrl
+		if modifyBaseUrl == "" {
+			modifyBaseUrl = "https://hub.suprsend.com/"
+		}
 	}
-	currentMgmntURL := selectedProfile.MgmntUrl
-	if currentMgmntURL == "" {
-		currentMgmntURL = "https://api.suprsend.com"
-	}
-	currentToken := selectedProfile.ServiceToken
-	if currentToken == "" {
-		currentToken = "not set"
+	if modifyMgmntUrl == "" {
+		modifyMgmntUrl = selectedProfile.MgmntUrl
+		if modifyMgmntUrl == "" {
+			modifyMgmntUrl = "https://management-api.suprsend.com/"
+		}
 	}
 
 	var questions []cobra_ui.Question
 
-	if modifyBaseUrl == "" {
-		questions = append(questions, cobra_ui.Question{
-			Text: fmt.Sprintf("Base URL (current: %s, press Enter to keep): ", currentBaseURL),
-			Handler: func(s string) error {
-				s = cleanInput(s)
-				if s != "" {
-					modifyBaseUrl = s
-				} else {
-					modifyBaseUrl = selectedProfile.BaseUrl
-				}
-				return nil
-			},
-		})
-	}
-
-	if modifyMgmntUrl == "" {
-		questions = append(questions, cobra_ui.Question{
-			Text: fmt.Sprintf("Management URL (current: %s, press Enter to keep): ", currentMgmntURL),
-			Handler: func(s string) error {
-				s = cleanInput(s)
-				if s != "" {
-					modifyMgmntUrl = s
-				} else {
-					modifyMgmntUrl = selectedProfile.MgmntUrl
-				}
-				return nil
-			},
-		})
-	}
-
 	if modifyServiceToken == "" {
+		currentToken := selectedProfile.ServiceToken
+		maskedToken := MaskServiceToken(currentToken)
 		questions = append(questions, cobra_ui.Question{
-			Text: fmt.Sprintf("Service Token (current: %s, press Enter to keep): ", currentToken),
+			Text: fmt.Sprintf("Service Token (current: %s, press Enter to keep): ", maskedToken),
 			Handler: func(s string) error {
 				s = cleanInput(s)
 				if s != "" {

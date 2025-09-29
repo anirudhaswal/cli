@@ -2,8 +2,10 @@ package schema
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"os"
+	"path/filepath"
 
 	"github.com/spf13/cobra"
 	"github.com/suprsend/cli/internal/utils"
@@ -15,10 +17,20 @@ var schemaPullCmd = &cobra.Command{
 	Short: "Pull schemas",
 	Long:  `Pull schemas in a workspace`,
 	Run: func(cmd *cobra.Command, args []string) {
-		outputDir, _ := cmd.Flags().GetString("output-dir")
+		outputDir, _ := cmd.Flags().GetString("dir")
 		mode, _ := cmd.Flags().GetString("mode")
+		slug, _ := cmd.Flags().GetString("slug")
+		force, _ := cmd.Flags().GetBool("force")
+
 		if outputDir == "" {
-			outputDir = promptForOutputDirectory()
+			outputDir = filepath.Join(".", "suprsend", "schema")
+			if _, err := os.Stat(outputDir); os.IsNotExist(err) {
+				if force {
+					fmt.Fprintf(os.Stdout, "Using default directory: %s\n", outputDir)
+				} else {
+					outputDir = promptForOutputDirectory()
+				}
+			}
 			if outputDir == "" {
 				fmt.Fprintf(os.Stdout, "No output directory specified. Exiting.\n")
 				return
@@ -44,14 +56,31 @@ var schemaPullCmd = &cobra.Command{
 			defer cancel()
 		}
 
-		mgmnt_client := utils.GetSuprSendMgmntClient()
-		schemas, err := mgmnt_client.GetSchemas(workspace, mode)
+		mgmntClient := utils.GetSuprSendMgmntClient()
+		if slug != "" {
+			schema, err := mgmntClient.GetSchemaBySlug(workspace, slug, mode)
+			if err != nil {
+				fmt.Fprintf(os.Stdout, "Error: Failed to get schema: %v\n", err)
+				return
+			}
+			schemaData, err := json.MarshalIndent(schema, "", "  ")
+			if err != nil {
+				fmt.Fprintf(os.Stdout, "Error: Failed to marshal schema: %v\n", err)
+				return
+			}
+			if p != nil {
+				p.Stop(fmt.Sprintf("Pulled %s from %s", slug, workspace))
+			}
+			os.WriteFile(filepath.Join(outputDir, slug+".json"), schemaData, 0644)
+			return
+		}
+		schemas, err := mgmntClient.GetSchemas(workspace, mode)
 		if err != nil {
 			fmt.Fprintf(os.Stdout, "Error: Failed to get schemas: %v\n", err)
 			return
 		}
 		if p != nil {
-			p.Stop(fmt.Sprintf("Pulled %d schemas", len(schemas.Results)))
+			p.Stop(fmt.Sprintf("Pulled %d schemas from %s", len(schemas.Results), workspace))
 		}
 		stats, err := WriteSchemasToFiles(schemas, outputDir)
 		if err != nil {
@@ -59,16 +88,24 @@ var schemaPullCmd = &cobra.Command{
 			return
 		}
 
-		fmt.Fprintf(os.Stdout, "Pulled %d schemas\n", stats.Total)
-		fmt.Fprintf(os.Stdout, "%d schemas saved\n", stats.Success)
-		fmt.Fprintf(os.Stdout, "%d schemas failed\n", stats.Failed)
-		fmt.Fprintf(os.Stdout, "%d schemas skipped\n", stats.Total-stats.Success-stats.Failed)
-		fmt.Fprintf(os.Stdout, "%d schemas already exist\n", stats.Total-stats.Success-stats.Failed)
+		fmt.Fprintf(os.Stdout, "\n=== Schema Pull Summary ===\n")
+		fmt.Fprintf(os.Stdout, "Total schemas processed: %d\n", stats.Total)
+		fmt.Fprintf(os.Stdout, "Successfully updated: %d\n", stats.Success)
+		fmt.Fprintf(os.Stdout, "Failed to pull: %d\n", stats.Failed)
+
+		if stats.Failed > 0 {
+			fmt.Fprintf(os.Stdout, "\nFailed schemas:\n")
+			for _, errorMsg := range stats.Errors {
+				fmt.Fprintf(os.Stdout, "  - %s\n", errorMsg)
+			}
+		}
 	},
 }
 
 func init() {
-	schemaPullCmd.PersistentFlags().StringP("output-dir", "d", "", "Output directory for schemas")
-	schemaPullCmd.PersistentFlags().StringP("mode", "m", "live", "Mode of schemas to pull")
+	schemaPullCmd.Flags().StringP("dir", "d", "", "Directory to pull schemas (default: ./suprsend/schema)")
+	schemaPullCmd.PersistentFlags().StringP("mode", "m", "live", "Mode of schemas to pull (draft, live), default: live")
+	schemaPullCmd.PersistentFlags().StringP("slug", "g", "", "Slug of schema to pull")
+	schemaPullCmd.PersistentFlags().BoolP("force", "f", false, "Force using default directory without prompting")
 	SchemaCmd.AddCommand(schemaPullCmd)
 }

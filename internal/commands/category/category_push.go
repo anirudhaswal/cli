@@ -3,7 +3,9 @@ package category
 import (
 	"context"
 	"fmt"
-	"path"
+	"net/url"
+	"os"
+	"path/filepath"
 
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
@@ -17,11 +19,30 @@ var categoryPushCmd = &cobra.Command{
 	Short: "Push categories to a workspace",
 	Run: func(cmd *cobra.Command, args []string) {
 		workspace, _ := cmd.Flags().GetString("workspace")
-		dirPath := path.Join(".", "suprsend", "category")
-		categories, err := ReadFromFile(path.Join(dirPath, "categories_preferences.json"))
+		path, _ := cmd.Flags().GetString("dir")
+		commit, _ := cmd.Flags().GetString("commit")
+		commitMessage, _ := cmd.Flags().GetString("commit-message")
+
+		if path == "" {
+			path = filepath.Join(".", "suprsend", "category", "categories_preferences.json")
+		} else {
+			path = filepath.Join(path, "categories_preferences.json")
+		}
+
+		if _, err := os.Stat(path); os.IsNotExist(err) {
+			log.Errorf("Directory %s does not exist", path)
+			return
+		}
+
+		categories, err := ReadFromFile(path)
+		if err != nil {
+			log.WithError(err).Error("Couldn't read categories from file")
+			return
+		}
+
 		var p *pin.Pin
 		if !utils.IsOutputPiped() {
-			p = pin.New("Loading...",
+			p = pin.New("Pushing categories...",
 				pin.WithSpinnerColor(pin.ColorCyan),
 				pin.WithTextColor(pin.ColorYellow),
 			)
@@ -29,12 +50,9 @@ var categoryPushCmd = &cobra.Command{
 			defer cancel()
 		}
 
-		if err != nil {
-			log.WithError(err).Error("Couldn't read categories from file")
-			return
-		}
 		mgmnt_client := utils.GetSuprSendMgmntClient()
-		err = mgmnt_client.PushCategories(workspace, categories)
+		urlEncodedCommitMessage := url.QueryEscape(commitMessage)
+		err = mgmnt_client.PushCategories(workspace, categories, commit, urlEncodedCommitMessage)
 		if err != nil {
 			log.WithError(err).Error("Couldn't push categories")
 			return
@@ -46,5 +64,8 @@ var categoryPushCmd = &cobra.Command{
 }
 
 func init() {
+	categoryPushCmd.Flags().StringP("dir", "d", "", "Output directory for categories (default: ./suprsend/category/)")
+	categoryPushCmd.PersistentFlags().StringP("commit", "c", "true", "Commit the categories ")
+	categoryPushCmd.PersistentFlags().StringP("commit-message", "m", "", "Commit message for the categories")
 	CategoryCmd.AddCommand(categoryPushCmd)
 }

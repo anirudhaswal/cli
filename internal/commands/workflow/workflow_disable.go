@@ -11,7 +11,7 @@ import (
 var workflowDisableCmd = &cobra.Command{
 	Use:   "disable",
 	Short: "Disable a workflow",
-	Long:  "Disable a workflow to deactivate.",
+	Long:  "Disable a workflow to deactivate. Example: suprsend workflow disable <slug>",
 	Run: func(cmd *cobra.Command, args []string) {
 		if len(args) < 1 {
 			log.Error("workflow_slug is required.")

@@ -27,8 +27,8 @@ var eventListCmd = &cobra.Command{
 		workspace, _ := cmd.Flags().GetString("workspace")
 		limit, _ := cmd.Flags().GetInt("limit")
 		offset, _ := cmd.Flags().GetInt("offset")
-		mgmnt_client := utils.GetSuprSendMgmntClient()
-		events, err := mgmnt_client.ListEvents(workspace, limit, offset)
+		mgmntClient := utils.GetSuprSendMgmntClient()
+		events, err := mgmntClient.ListEvents(workspace, limit, offset)
 		if err != nil {
 			log.WithError(err).Error("Couldn't fetch events")
 			return
@@ -43,8 +43,10 @@ var eventListCmd = &cobra.Command{
 }
 
 func init() {
-	eventListCmd.PersistentFlags().StringP("workspace", "w", "staging", "Workspace to list events from")
 	eventListCmd.PersistentFlags().IntP("limit", "l", 20, "Limit the number of events to list.")
 	eventListCmd.PersistentFlags().IntP("offset", "f", 0, "Offset into the list of events(default: 0)")
+	eventListCmd.PersistentFlags().StringP("output", "o", "pretty", "Output Style (pretty, yaml, json)")
+	EventCmd.PersistentFlags().StringP("workspace", "w", "staging", "Workspace to list events from")
+	EventCmd.PersistentFlags().StringP("service-token", "s", "", "Service token (default: $SUPRSEND_SERVICE_TOKEN)")
 	EventCmd.AddCommand(eventListCmd)
 }

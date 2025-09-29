@@ -20,10 +20,12 @@ var translationPushCmd = &cobra.Command{
 	Long:  "push workflows from local to suprsend",
 	Run: func(cmd *cobra.Command, args []string) {
 		workspace, _ := cmd.Flags().GetString("workspace")
-		outputDir, _ := cmd.Flags().GetString("output-dir")
+		outputDir, _ := cmd.Flags().GetString("dir")
+		commit, _ := cmd.Flags().GetString("commit")
+		commitMessage, _ := cmd.Flags().GetString("commit-message")
 
 		if outputDir == "" {
-			outputDir = promptForOutputDirectory()
+			outputDir = filepath.Join(".", "suprsend", "translation")
 		}
 
 		files, err := os.ReadDir(outputDir)
@@ -70,8 +72,7 @@ var translationPushCmd = &cobra.Command{
 				cancel = p.Start(context.Background())
 			}
 
-			err = mgmntClient.PushTranslation(workspace, translations)
-
+			err = mgmntClient.PushTranslation(workspace, translations, commit, commitMessage)
 			if p != nil && cancel != nil {
 				if err != nil {
 					p.Stop("")
@@ -95,6 +96,8 @@ var translationPushCmd = &cobra.Command{
 }
 
 func init() {
-	translationPushCmd.Flags().StringP("output-dir", "d", "", "Output directory for translations")
+	translationPushCmd.Flags().StringP("commit", "c", "true", "Commit the translations (--commit=true)")
+	translationPushCmd.Flags().StringP("commit-message", "m", "", "Commit message")
+	translationPushCmd.Flags().StringP("dir", "d", "", "Directory for translations pull to (default: ./suprsend/translation)")
 	TranslationCmd.AddCommand(translationPushCmd)
 }

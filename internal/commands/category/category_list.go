@@ -37,8 +37,8 @@ var categoryListCmd = &cobra.Command{
 			defer cancel()
 		}
 
-		mgmnt_client := utils.GetSuprSendMgmntClient()
-		categories, err := mgmnt_client.ListCategories(workspace, mode)
+		mgmntClient := utils.GetSuprSendMgmntClient()
+		categories, err := mgmntClient.ListCategories(workspace, mode)
 		if err != nil {
 			log.WithError(err).Error("Couldn't fetch categories")
 			return
@@ -74,6 +74,8 @@ var categoryListCmd = &cobra.Command{
 }
 
 func init() {
-	categoryListCmd.PersistentFlags().StringP("mode", "m", "live", "Mode of preferences to list")
+	categoryListCmd.PersistentFlags().StringP("mode", "m", "live", "Mode of preferences to list (draft, live), default: live")
+	categoryListCmd.PersistentFlags().StringP("output", "o", "pretty", "Output type (pretty, yaml, json)")
+	CategoryCmd.PersistentFlags().StringP("service-token", "s", "", "Service token (default: $SUPRSEND_SERVICE_TOKEN)")
 	CategoryCmd.AddCommand(categoryListCmd)
 }

@@ -1,23 +1,42 @@
 package category
 
 import (
+	"bufio"
 	"encoding/json"
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 )
 
-func WriteToFile(data interface{}, filename string) error {
-	baseDir := filepath.Join(".", "suprsend", "category")
-	if err := os.MkdirAll(baseDir, 0o755); err != nil {
-		return fmt.Errorf("failed to ensure directory %s: %w", baseDir, err)
+func promptForOutputDirectory() string {
+	reader := bufio.NewReader(os.Stdin)
+	defaultDir := filepath.Join(".", "suprsend", "category")
+	fmt.Fprintf(os.Stdout, "Where would you like to save the categories?\n")
+	fmt.Fprintf(os.Stdout, "Default: %s\n", defaultDir)
+	fmt.Fprintf(os.Stdout, "Enter directory path (or press Enter for default): ")
+	input, _ := reader.ReadString('\n')
+	input = strings.TrimSpace(input)
+	if input == "" {
+		return defaultDir
 	}
-	filename = filepath.Join(baseDir, filename)
+	return input
+}
+
+func WriteToFileWithPath(data interface{}, filePath string) error {
+	if err := os.MkdirAll(filepath.Dir(filePath), 0o755); err != nil {
+		return fmt.Errorf("failed to ensure directory %s: %w", filepath.Dir(filePath), err)
+	}
 	jsonData, err := json.MarshalIndent(data, "", "  ")
 	if err != nil {
 		return fmt.Errorf("failed to marshal data: %w", err)
 	}
-	return os.WriteFile(filename, jsonData, 0644)
+	fmt.Fprintf(os.Stdout, "Successfully wrote categories to %s\n", filePath)
+	return os.WriteFile(filePath, jsonData, 0644)
+}
+
+func WriteToFile(data interface{}, filePath string) error {
+	return WriteToFileWithPath(data, filePath)
 }
 
 func ReadFromFile(filepath string) (interface{}, error) {
@@ -31,4 +50,11 @@ func ReadFromFile(filepath string) (interface{}, error) {
 		return nil, fmt.Errorf("failed to unmarshal data: %w", err)
 	}
 	return data, nil
+}
+
+func ensureOutputDirectory(path string) error {
+	if err := os.MkdirAll(path, 0755); err != nil {
+		return fmt.Errorf("failed to create output directory: %w", err)
+	}
+	return nil
 }

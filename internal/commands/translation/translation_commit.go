@@ -1,6 +1,7 @@
 package translation
 
 import (
+	"context"
 	"fmt"
 	"os"
 
@@ -24,6 +25,8 @@ var translationCommitCmd = &cobra.Command{
 				pin.WithSpinnerColor(pin.ColorCyan),
 				pin.WithTextColor(pin.ColorYellow),
 			)
+			cancel := p.Start(context.Background())
+			defer cancel()
 		}
 		err := mgmntClient.FinalizeTranslation(workspace, commitMessage)
 		if err != nil {

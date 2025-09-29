@@ -1,10 +1,12 @@
 package event
 
 import (
+	"bufio"
 	"encoding/json"
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
@@ -32,6 +34,20 @@ func debugErrorLog(format string, args ...interface{}) {
 	if isDebugMode() {
 		log.Errorf(format, args...)
 	}
+}
+
+func promptForOutputDirectory() string {
+	reader := bufio.NewReader(os.Stdin)
+	defaultDir := filepath.Join(".", "suprsend", "event")
+	fmt.Fprintf(os.Stdout, "Where would you like to save the events?\n")
+	fmt.Fprintf(os.Stdout, "Default: %s\n", defaultDir)
+	fmt.Fprintf(os.Stdout, "Enter directory path (or press Enter for default): ")
+	input, _ := reader.ReadString('\n')
+	input = strings.TrimSpace(input)
+	if input == "" {
+		return defaultDir
+	}
+	return input
 }
 
 func WriteEventsToFiles(events_resp *mgmnt.EventsResponse, dirPath string) (*EventWriteStats, error) {

@@ -47,6 +47,8 @@ var translationListCmd = &cobra.Command{
 
 func init() {
 	translationListCmd.Flags().StringP("mode", "m", "live", "Mode to list translations for")
+	translationListCmd.Flags().StringP("output", "o", "pretty", "Output type (pretty, yaml, json)")
 	TranslationCmd.PersistentFlags().StringP("workspace", "w", "staging", "Workspace to list translations for")
+	TranslationCmd.PersistentFlags().StringP("service-token", "s", "", "Service token (default: $SUPRSEND_SERVICE_TOKEN)")
 	TranslationCmd.AddCommand(translationListCmd)
 }

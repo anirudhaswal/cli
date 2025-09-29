@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
-	"path/filepath"
 	"strconv"
 
 	log "github.com/sirupsen/logrus"
@@ -41,7 +40,7 @@ func (c *SS_MgmntClient) ListEvents(workspace string, limit, offset int) (*ListE
 	defer client.Close()
 
 	url := c.mgmnt_base_URL + "v1/" + workspace + "/event/?limit=" + strconv.Itoa(limit) + "&offset=" + strconv.Itoa(offset)
-	log.Debug("Getting Events for workspace: %s, service token: %s", workspace, c.serviceToken)
+	log.Debugf("Getting Events for workspace: %s", workspace)
 	res, err := client.R().
 		SetDebug(c.debug).
 		SetHeader("Authorization", "ServiceToken "+c.serviceToken).
@@ -74,7 +73,6 @@ func (c *SS_MgmntClient) GetEvents(workspace string) (*EventsResponse, error) {
 			SetHeader("Authorization", "ServiceToken "+c.serviceToken).
 			SetResult(&EventsResponse{}).
 			Get(c.mgmnt_base_URL + "v1/" + workspace + "/event/?limit=" + strconv.Itoa(limit) + "&offset=" + strconv.Itoa(offset) + "&has_linked_schema=true")
-
 		if err != nil {
 			log.Errorf("Error getting events: %s", err)
 			return nil, err
@@ -94,11 +92,10 @@ func (c *SS_MgmntClient) GetEvents(workspace string) (*EventsResponse, error) {
 	return &EventsResponse{Results: allEvents}, nil
 }
 
-func (c *SS_MgmntClient) PushEvents(workspace string) error {
+func (c *SS_MgmntClient) PushEvents(workspace, filePath string) error {
 	client := client.NewHTTPClient()
 	defer client.Close()
 
-	filePath := filepath.Join(".", "suprsend", "event", "event_schema_mapping.json")
 	data, err := os.ReadFile(filePath)
 	if err != nil {
 		log.Errorf("Error reading event schema mapping file: %s", err)
@@ -111,21 +108,24 @@ func (c *SS_MgmntClient) PushEvents(workspace string) error {
 	}
 
 	url := c.mgmnt_base_URL + "v1/" + workspace + "/bulk/event/"
-	log.Debugf("Pushing events to workspace: %s, service token: %s", workspace, c.serviceToken)
+	log.Debugf("Pushing events to workspace: %s", workspace)
 	res, err := client.R().
 		SetDebug(c.debug).
 		SetHeader("Authorization", "ServiceToken "+c.serviceToken).
 		SetHeader("Content-Type", "application/json").
 		SetBody(events).
 		Post(url)
-
 	if err != nil {
 		log.Errorf("Error pushing event: %s", err)
 		return err
 	}
 	if res.IsError() {
-		log.Errorf("Error pushing event: %s", res.Status())
-		return fmt.Errorf("error pushing event: %s", res.Status())
+		var errorResponse ErrorResponse
+		if err := json.Unmarshal([]byte(res.String()), &errorResponse); err != nil {
+			log.Errorf("Error parsing error response: %s", err)
+			return fmt.Errorf("error pushing event: %s", res.Status())
+		}
+		return fmt.Errorf("error pushing event: %s", errorResponse.Message)
 	}
 	return nil
 }

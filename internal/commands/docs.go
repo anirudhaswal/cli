@@ -12,7 +12,26 @@ var genDocsCmd = &cobra.Command{
 	Args:   cobra.ExactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		dir := args[0]
-		return doc.GenMarkdownTree(rootCmd, dir)
+
+		// Temporarily remove the version command for documentation generation
+		var versionCmd *cobra.Command
+		for _, child := range rootCmd.Commands() {
+			if child.Name() == "version" {
+				versionCmd = child
+				rootCmd.RemoveCommand(child)
+				break
+			}
+		}
+
+		// Generate documentation
+		err := doc.GenMarkdownTree(rootCmd, dir)
+
+		// Restore the version command
+		if versionCmd != nil {
+			rootCmd.AddCommand(versionCmd)
+		}
+
+		return err
 	},
 }
 

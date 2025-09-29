@@ -12,7 +12,6 @@ import (
 	"github.com/suprsend/cli/internal/commands/category"
 	"github.com/suprsend/cli/internal/commands/event"
 	"github.com/suprsend/cli/internal/commands/schema"
-	"github.com/suprsend/cli/internal/commands/translation"
 	"github.com/suprsend/cli/internal/commands/workflow"
 	"github.com/suprsend/cli/internal/utils"
 	"github.com/suprsend/cli/mgmnt"
@@ -20,13 +19,14 @@ import (
 
 var syncCmd = &cobra.Command{
 	Use:   "sync",
-	Short: "Sync all your SuprSend assets locally",
-	Long:  `Sync all your SuprSend assets locally with the server`,
+	Short: "Sync SuprSend assets from one workspace to another",
+	Long:  `Sync SuprSend assets from one workspace to another`,
 	Run: func(cmd *cobra.Command, args []string) {
 		mode, _ := cmd.Flags().GetString("mode")
 		fromWorkspace, _ := cmd.Flags().GetString("from")
 		toWorkspace, _ := cmd.Flags().GetString("to")
 		assets, _ := cmd.Flags().GetString("assets")
+		dirPath, _ := cmd.Flags().GetString("dir")
 		if fromWorkspace == toWorkspace {
 			log.Error("Cannot sync within the same workspace. Source and destination workspaces must be different.")
 			return
@@ -35,71 +35,102 @@ var syncCmd = &cobra.Command{
 		var assetsToSync []string
 		switch assets {
 		case "all":
-			assetsToSync = []string{"workflows", "schemas", "categories", "events", "translations"}
-		case "workflows":
-			assetsToSync = []string{"workflows"}
-		case "schemas":
-			assetsToSync = []string{"schemas"}
-		case "categories":
-			assetsToSync = []string{"categories"}
-		case "translations":
-			assetsToSync = []string{"translations"}
-		case "events":
-			assetsToSync = []string{"events"}
+			assetsToSync = []string{"category", "schema", "event", "workflow", "translation"}
+		case "workflow":
+			assetsToSync = []string{"workflow"}
+		case "schema":
+			assetsToSync = []string{"schema"}
+		case "event":
+			assetsToSync = []string{"event"}
+		case "category":
+			assetsToSync = []string{"category"}
+		case "translation":
+			assetsToSync = []string{"translation"}
 		default:
-			log.Errorf("Invalid asset type: '%s'. Valid options are: all, workflows, schemas, categories, events, translations", assets)
+			log.Errorf("Invalid asset type: '%s'. Valid options are: all, workflow, schema, event, category, translation", assets)
 			return
 		}
 
-		fmt.Printf("Syncing assets from %s to %s ... \n", fromWorkspace, toWorkspace)
-		fmt.Printf("Assets to sync: %v\n", assetsToSync)
+		log.Infof("Syncing assets from %s to %s ...", fromWorkspace, toWorkspace)
+		log.Infof("Assets to sync: %v", assetsToSync)
 
-		mgmnt_client := utils.GetSuprSendMgmntClient()
+		mgmntClient := utils.GetSuprSendMgmntClient()
+		hasErrors := false
 
 		for _, assetType := range assetsToSync {
 			switch assetType {
-			case "workflows":
-				syncWorkflows(fromWorkspace, toWorkspace, mode)
-			case "schemas":
-				syncSchemas(mgmnt_client, fromWorkspace, toWorkspace, mode)
-			case "categories":
-				syncCategories(mgmnt_client, fromWorkspace, toWorkspace, mode)
-			case "translations":
-				syncTranslations(mgmnt_client, fromWorkspace, toWorkspace, mode)
-			case "events":
-				syncEvents(mgmnt_client, fromWorkspace, toWorkspace)
+			case "workflow":
+				err := syncWorkflows(mgmntClient, fromWorkspace, toWorkspace, mode, dirPath)
+				if err != nil {
+					log.WithError(err).Errorf("Failed to sync workflows")
+					hasErrors = true
+				}
+			case "schema":
+				err := syncSchemas(mgmntClient, fromWorkspace, toWorkspace, mode, dirPath)
+				if err != nil {
+					log.WithError(err).Errorf("Failed to sync schemas")
+					hasErrors = true
+				}
+			case "event":
+				err := syncEvents(mgmntClient, fromWorkspace, toWorkspace, dirPath)
+				if err != nil {
+					log.WithError(err).Errorf("Failed to sync events")
+					hasErrors = true
+				}
+			case "category":
+				err := syncCategories(mgmntClient, fromWorkspace, toWorkspace, mode, dirPath)
+				if err != nil {
+					log.WithError(err).Errorf("Failed to sync categories")
+					hasErrors = true
+				}
+			case "translation":
 			default:
 				log.Errorf("Invalid asset type: %s", assetType)
 			}
 		}
-
-		fmt.Println("Sync complete")
+		if hasErrors {
+			log.Error("Sync complete with errors")
+		} else {
+			log.Info("Sync complete")
+		}
 	},
 }
 
-func syncWorkflows(fromWorkspace, toWorkspace, mode string) {
-	dirPath := filepath.Join(".", "suprsend", "workflow")
+func init() {
+	rootCmd.AddCommand(syncCmd)
 
-	mgmnt_client := utils.GetSuprSendMgmntClient()
-	workflows_resp, err := mgmnt_client.GetWorkflows(fromWorkspace, mode)
+	// Flags consumed in Run
+	syncCmd.Flags().StringP("from", "f", "staging", "Source workspace (required)")
+	syncCmd.Flags().StringP("to", "t", "production", "Destination workspace (required)")
+	syncCmd.Flags().StringP("dir", "d", "", "Directory to sync assets to")
+	syncCmd.Flags().StringP("mode", "m", "live", "Mode to sync assets (draft, live), default: live")
+	syncCmd.Flags().StringP("assets", "a", "all", "Assets to sync (all, workflow, schema, event, category)")
+}
+
+func syncWorkflows(mgmntClient *mgmnt.SS_MgmntClient, fromWorkspace, toWorkspace, mode, dirPath string) error {
+	if dirPath == "" {
+		dirPath = filepath.Join(".", "suprsend", "workflow")
+	} else {
+		dirPath = filepath.Join(dirPath, "workflow")
+	}
+
+	workflows_resp, err := mgmntClient.GetWorkflows(fromWorkspace, mode)
 	if err != nil {
-		log.WithError(err).Error("Error getting workflows")
-		return
+		return fmt.Errorf("error getting workflows: %w", err)
 	}
 
 	log.Infof("Pulling workflows from %s ... \n", fromWorkspace)
 	_, err = workflow.WriteWorkflowsToFiles(*workflows_resp, dirPath)
 	if err != nil {
-		log.WithError(err).Error("Error saving workflows")
-		return
+		return fmt.Errorf("error writing workflows to files: %w", err)
 	}
 
 	files, err := os.ReadDir(dirPath)
 	if err != nil {
-		log.WithError(err).Errorf("Failed to read local workflows directory")
-		return
+		return fmt.Errorf("error reading local workflows directory: %w", err)
 	}
 
+	var errors []string
 	for _, file := range files {
 		if file.IsDir() || !strings.HasSuffix(file.Name(), ".json") {
 			continue
@@ -109,48 +140,55 @@ func syncWorkflows(fromWorkspace, toWorkspace, mode string) {
 		path := filepath.Join(dirPath, file.Name())
 		data, err := os.ReadFile(path)
 		if err != nil {
-			log.WithError(err).Errorf("Failed to read file %s", file.Name())
-			return
+			errors = append(errors, fmt.Sprintf("error reading file %s: %v", file.Name(), err))
+			continue
 		}
 
-		var workflow map[string]any
-		if err := json.Unmarshal(data, &workflow); err != nil {
-			log.WithError(err).Errorf("Failed to parse JSON for %s", file.Name())
-			return
+		var wf map[string]any
+		if err := json.Unmarshal(data, &wf); err != nil {
+			errors = append(errors, fmt.Sprintf("error unmarshalling JSON for %s: %v", file.Name(), err))
+			continue
 		}
 
-		err = mgmnt_client.PushWorkflow(toWorkspace, slug, workflow)
+		err = mgmntClient.PushWorkflow(toWorkspace, slug, wf, "true", "")
 		if err != nil {
+			errors = append(errors, fmt.Sprintf("failed to push workflow %s: %v", slug, err))
 			log.WithError(err).Errorf("Failed to push workflow %s", slug)
 			continue
 		}
 
-		log.Printf("Pushed workflow: %s\n", slug)
+		log.Infof("Pushed workflow: %s\n", slug)
 	}
+	if len(errors) > 0 {
+		return fmt.Errorf("one or more workflows failed to sync:\n%s", strings.Join(errors, "\n"))
+	}
+	return nil
 }
 
-func syncSchemas(mgmnt_client *mgmnt.SS_MgmntClient, fromWorkspace, toWorkspace, mode string) {
-	dirPath := filepath.Join(".", "suprsend", "schema")
+func syncSchemas(mgmntClient *mgmnt.SS_MgmntClient, fromWorkspace, toWorkspace, mode, dirPath string) error {
+	if dirPath == "" {
+		dirPath = filepath.Join(".", "suprsend", "schema")
+	} else {
+		dirPath = filepath.Join(dirPath, "schema")
+	}
 
-	fmt.Printf("Pulling schemas from %s ... \n", fromWorkspace)
-	schemas_resp, err := mgmnt_client.GetSchemas(fromWorkspace, mode)
+	log.Infof("Pulling schemas from %s ...", fromWorkspace)
+	schemas_resp, err := mgmntClient.GetSchemas(fromWorkspace, mode)
 	if err != nil {
-		log.WithError(err).Error("Error getting schemas")
-		return
+		return fmt.Errorf("error getting schemas: %w", err)
 	}
 
 	_, err = schema.WriteSchemasToFiles(schemas_resp, dirPath)
 	if err != nil {
-		log.WithError(err).Error("Error saving schemas")
-		return
+		return fmt.Errorf("error writing schemas to files: %w", err)
 	}
 
 	files, err := os.ReadDir(dirPath)
 	if err != nil {
-		log.WithError(err).Errorf("Failed to read local schemas directory")
-		return
+		return fmt.Errorf("error reading local schemas directory: %w", err)
 	}
 
+	var errors []string
 	for _, file := range files {
 		if file.IsDir() || !strings.HasSuffix(file.Name(), ".json") {
 			continue
@@ -160,125 +198,84 @@ func syncSchemas(mgmnt_client *mgmnt.SS_MgmntClient, fromWorkspace, toWorkspace,
 		path := filepath.Join(dirPath, file.Name())
 		data, err := os.ReadFile(path)
 		if err != nil {
-			log.WithError(err).Errorf("Failed to read file %s", file.Name())
-			return
+			errors = append(errors, fmt.Sprintf("error reading file %s: %v", file.Name(), err))
+			continue
 		}
 
-		var schema map[string]any
-		if err := json.Unmarshal(data, &schema); err != nil {
-			log.WithError(err).Errorf("Failed to parse JSON for %s", file.Name())
-			return
+		var sch map[string]any
+		if err := json.Unmarshal(data, &sch); err != nil {
+			errors = append(errors, fmt.Sprintf("error unmarshalling JSON for %s: %v", file.Name(), err))
+			continue
 		}
 
-		err = mgmnt_client.PushSchema(toWorkspace, slug, schema)
+		err = mgmntClient.PushSchema(toWorkspace, slug, sch, "true", "")
 		if err != nil {
+			errors = append(errors, fmt.Sprintf("failed to push schema %s: %v", slug, err))
 			log.WithError(err).Errorf("Failed to push schema %s", slug)
 			continue
 		}
+
+		log.Infof("Pushed schema: %s\n", slug)
 	}
+	if len(errors) > 0 {
+		return fmt.Errorf("one or more schemas failed to sync:\n%s", strings.Join(errors, "\n"))
+	}
+	return nil
 }
 
-func syncEvents(mgmnt_client *mgmnt.SS_MgmntClient, fromWorkspace, toWorkspace string) {
-	dirPath := filepath.Join(".", "suprsend", "event")
-
-	fmt.Printf("Pulling events from %s ... \n", fromWorkspace)
-	events_resp, err := mgmnt_client.GetEvents(fromWorkspace)
-	if err != nil {
-		log.WithError(err).Error("Error getting events")
-		return
+func syncEvents(mgmntClient *mgmnt.SS_MgmntClient, fromWorkspace, toWorkspace, dirPath string) error {
+	if dirPath == "" {
+		dirPath = filepath.Join(".", "suprsend", "event")
+	} else {
+		dirPath = filepath.Join(dirPath, "event")
 	}
 
+	log.Infof("Pulling events from %s ...", fromWorkspace)
+	events_resp, err := mgmntClient.GetEvents(fromWorkspace)
+	if err != nil {
+		return fmt.Errorf("error getting events: %w", err)
+	}
 	_, err = event.WriteEventsToFiles(events_resp, dirPath)
 	if err != nil {
-		log.WithError(err).Error("Error saving events")
-		return
+		return fmt.Errorf("error writing events to files: %w", err)
 	}
-
-	fmt.Printf("Pushing events to %s ... \n", toWorkspace)
-	err = mgmnt_client.PushEvents(toWorkspace)
+	filePath := filepath.Join(dirPath, "event_schema_mapping.json")
+	log.Infof("Pushing events to %s ...", toWorkspace)
+	err = mgmntClient.PushEvents(toWorkspace, filePath)
 	if err != nil {
-		log.WithError(err).Error("Failed to push events")
-		return
+		return fmt.Errorf("error pushing events: %w", err)
 	}
+	return nil
 }
 
-func syncCategories(mgmnt_client *mgmnt.SS_MgmntClient, fromWorkspace, toWorkspace, mode string) {
-	dirPath := filepath.Join(".", "suprsend", "category")
-	categoriesResp, err := mgmnt_client.ListCategories(fromWorkspace, mode)
-	if err != nil {
-		log.WithError(err).Error("Error getting categories")
-		return
+func syncCategories(mgmntClient *mgmnt.SS_MgmntClient, fromWorkspace, toWorkspace, mode, dirPath string) error {
+	if dirPath == "" {
+		dirPath = filepath.Join(".", "suprsend", "category")
+	} else {
+		dirPath = filepath.Join(dirPath, "category")
 	}
-	log.Infof("Pulling categories from %s ... \n", fromWorkspace)
-	err = category.WriteToFile(categoriesResp, "categories_preferences.json")
+	categoriesResp, err := mgmntClient.ListCategories(fromWorkspace, mode)
 	if err != nil {
-		log.WithError(err).Error("Error saving categories")
-		return
+		return fmt.Errorf("error getting categories: %w", err)
 	}
+	log.Infof("Pulling categories from %s ...", fromWorkspace)
 	filePath := filepath.Join(dirPath, "categories_preferences.json")
+	err = category.WriteToFile(categoriesResp, filePath)
+	if err != nil {
+		return fmt.Errorf("error writing categories to files: %w", err)
+	}
 	categories, err := category.ReadFromFile(filePath)
 	if err != nil {
-		log.WithError(err).Error("Error reading categories file")
-		return
+		return fmt.Errorf("error reading categories from file: %w", err)
 	}
-	err = mgmnt_client.PushCategories(toWorkspace, categories)
+	err = mgmntClient.PushCategories(toWorkspace, categories, "true", "")
 	if err != nil {
-		log.WithError(err).Error("Error pushing categories")
-		return
+		return fmt.Errorf("error pushing categories: %w", err)
 	}
-	log.Printf("Pushed categories to %s\n", toWorkspace)
+	log.Printf("Pushed categories to %s", toWorkspace)
+	return nil
 }
 
-func syncTranslations(mgmnt_client *mgmnt.SS_MgmntClient, fromWorkspace, toWorkspace, mode string) {
-	dirPath := filepath.Join(".", "suprsend", "translation")
-
-	fmt.Printf("Pulling translations from %s ... \n", fromWorkspace)
-	translationsResp, err := mgmnt_client.GetTranslations(fromWorkspace, mode)
-	if err != nil {
-		log.WithError(err).Error("Error getting translations")
-		return
-	}
-
-	_, err = translation.WriteTranslationToFiles(*translationsResp, dirPath)
-	if err != nil {
-		log.WithError(err).Error("Error saving translations")
-		return
-	}
-
-	files, err := os.ReadDir(dirPath)
-	if err != nil {
-		log.WithError(err).Errorf("Failed to read local translations directory")
-		return
-	}
-
-	var translations []map[string]any
-	for _, file := range files {
-		if file.IsDir() || !strings.HasSuffix(file.Name(), ".json") {
-			continue
-		}
-
-		path := filepath.Join(dirPath, file.Name())
-		data, err := os.ReadFile(path)
-		if err != nil {
-			log.WithError(err).Errorf("Failed to read file %s", file.Name())
-			return
-		}
-
-		var translation map[string]any
-		if err := json.Unmarshal(data, &translation); err != nil {
-			log.WithError(err).Errorf("Failed to parse JSON for %s", file.Name())
-			return
-		}
-
-		translations = append(translations, translation)
-	}
-
-	fmt.Printf("Pushing translations to %s ... \n", toWorkspace)
-	err = mgmnt_client.PushTranslation(toWorkspace, translations)
-	if err != nil {
-		log.WithError(err).Error("Failed to push translations")
-		return
-	}
-
-	log.Printf("Pushed %d translations to %s\n", len(translations), toWorkspace)
-}
+// func syncTranslation(mgmntClient *mgmnt.SS_MgmntClient, fromWorkspace, toWorkspace, mode, dirPath string) error {
+// 	if dirPath
+// }

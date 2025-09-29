@@ -13,8 +13,11 @@ suprsend schema push [flags]
 ### Options
 
 ```
-  -h, --help                help for push
-  -d, --output-dir string   Output directory for schemas
+  -c, --commit string           Commit the schemas (--commit=true) (default "true")
+  -m, --commit-message string   Commit message describing the changes for --commit=true
+  -d, --dir string              Directory for schemas pull to (default: ./suprsend/schema)
+  -h, --help                    help for push
+  -g, --slug string             Slug of schema to push
 ```
 
 ### Options inherited from parent commands
@@ -22,13 +25,12 @@ suprsend schema push [flags]
 ```
       --config string          config file (default: $HOME/.suprsend.yaml)
   -n, --no-color               Disable color output (default: $NO_COLOR)
-  -o, --output string          Output Style (pretty, yaml, json) (default "pretty")
   -s, --service-token string   Service token (default: $SUPRSEND_SERVICE_TOKEN)
   -v, --verbosity string       Log level (debug, info, warn, error, fatal, panic) (default "info")
-  -w, --workspace string       Workspace to use (default "staging")
+  -w, --workspace string       Workspace to use the schemas from (default "staging")
 ```
 
 ### SEE ALSO
 
-* [suprsend schema](suprsend_schema.md)	 - Manage schema
+* [suprsend schema](suprsend_schema.md)	 - Manage trigger payload schemas
 

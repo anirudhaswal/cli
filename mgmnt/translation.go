@@ -1,7 +1,9 @@
 package mgmnt
 
 import (
+	"encoding/json"
 	"fmt"
+	"net/url"
 	"os"
 	"strconv"
 
@@ -52,8 +54,11 @@ func (c *SS_MgmntClient) ListTranslations(workspace, mode string) (*ListTranslat
 		return nil, err
 	}
 	if res.IsError() {
-		log.Errorf("Error getting Translation: %s", res.Status())
-		return nil, err
+		var errorResp ErrorResponse
+		if err := json.Unmarshal([]byte(res.String()), &errorResp); err == nil {
+			return nil, fmt.Errorf("request failed with message: %s", errorResp.Message)
+		}
+		return nil, fmt.Errorf("request failed with status: %s", res.Status())
 	}
 
 	translations := res.Result().(*ListTranslation)
@@ -86,8 +91,11 @@ func (c *SS_MgmntClient) GetTranslations(workspace, mode string) (*TranslationRe
 		}
 
 		if res.IsError() {
-			fmt.Fprintf(os.Stdout, "Error: Failed to get translations: %v\n", res.Status())
-			return nil, fmt.Errorf("error getting translations: %s", res.Status())
+			var errorResp ErrorResponse
+			if err := json.Unmarshal([]byte(res.String()), &errorResp); err == nil {
+				return nil, fmt.Errorf("request failed with message: %s", errorResp.Message)
+			}
+			return nil, fmt.Errorf("request failed with status: %s", res.Status())
 		}
 
 		translations := res.Result().(*TranslationResponse)
@@ -115,10 +123,12 @@ func (c *SS_MgmntClient) GetTranslations(workspace, mode string) (*TranslationRe
 	}, nil
 }
 
-func (c *SS_MgmntClient) PushTranslation(workspace string, translations []map[string]any) error {
+func (c *SS_MgmntClient) PushTranslation(workspace string, translations []map[string]any, commit, commitMessage string) error {
 	client := client.NewHTTPClient()
 	defer client.Close()
-	url := c.mgmnt_base_URL + "v1/" + workspace + "/translation/"
+	urlEncodedCommitMessage := url.QueryEscape(commitMessage)
+	url := fmt.Sprintf("%sv1/%s/translation/?commit=%s&commit_message=%s", c.mgmnt_base_URL, workspace, commit, urlEncodedCommitMessage)
+	fmt.Println(url)
 	body := map[string]any{
 		"translations": translations,
 	}
@@ -126,14 +136,17 @@ func (c *SS_MgmntClient) PushTranslation(workspace string, translations []map[st
 		SetDebug(c.debug).
 		SetHeader("Authorization", "ServiceToken "+c.serviceToken).
 		SetBody(body).
-		Post(url)
+		Patch(url)
 	if err != nil {
 		log.Errorf("Error pushing translations: %s", err)
 		return err
 	}
 	if res.IsError() {
-		log.Errorf("Error pushing translations: %s", res.Status())
-		return fmt.Errorf("error pushing translations: %s", res.Status())
+		var errorResp ErrorResponse
+		if err := json.Unmarshal([]byte(res.String()), &errorResp); err == nil {
+			return fmt.Errorf("request failed with message: %s", errorResp.Message)
+		}
+		return fmt.Errorf("request failed with status: %s", res.Status())
 	}
 	return nil
 }
@@ -142,7 +155,6 @@ func (c *SS_MgmntClient) FinalizeTranslation(workspace, commitMessage string) er
 	client := client.NewHTTPClient()
 	defer client.Close()
 	url := c.mgmnt_base_URL + "v1/" + workspace + "/translation/commit/?commit_message=" + commitMessage
-	fmt.Println(url)
 	res, err := client.R().
 		SetDebug(c.debug).
 		SetHeader("Content-Type", "application/json").
@@ -152,7 +164,11 @@ func (c *SS_MgmntClient) FinalizeTranslation(workspace, commitMessage string) er
 		return err
 	}
 	if res.IsError() {
-		return fmt.Errorf("error committing translation: %s", res.String())
+		var errorResp ErrorResponse
+		if err := json.Unmarshal([]byte(res.String()), &errorResp); err == nil {
+			return fmt.Errorf("request failed with message: %s", errorResp.Message)
+		}
+		return fmt.Errorf("request failed with status: %s", res.Status())
 	}
 	return nil
 }

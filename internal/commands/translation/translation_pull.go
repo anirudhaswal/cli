@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"path/filepath"
 
 	"github.com/spf13/cobra"
 	"github.com/suprsend/cli/internal/utils"
@@ -17,9 +18,17 @@ var translationPullCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		workspace, _ := cmd.Flags().GetString("workspace")
 		mode, _ := cmd.Flags().GetString("mode")
-		outputDir, _ := cmd.Flags().GetString("output-dir")
+		outputDir, _ := cmd.Flags().GetString("dir")
+		force, _ := cmd.Flags().GetBool("force")
 		if outputDir == "" {
-			outputDir = promptForOutputDirectory()
+			outputDir = filepath.Join(".", "suprsend", "translation")
+			if _, err := os.Stat(outputDir); os.IsNotExist(err) {
+				if force {
+					fmt.Fprintf(os.Stdout, "Using default directory: %s\n", outputDir)
+				} else {
+					outputDir = promptForOutputDirectory()
+				}
+			}
 			if outputDir == "" {
 				fmt.Fprintf(os.Stdout, "No output directory specified. Exiting \n")
 				return
@@ -68,6 +77,7 @@ var translationPullCmd = &cobra.Command{
 
 func init() {
 	translationPullCmd.PersistentFlags().StringP("mode", "m", "live", "Mode of workflows to pull from")
-	translationPullCmd.PersistentFlags().StringP("output-dir", "d", "", "Output directory for workflows")
+	translationPullCmd.PersistentFlags().BoolP("force", "f", false, "Force using default directory without prompting")
+	translationPullCmd.PersistentFlags().StringP("dir", "d", "", "Output directory for workflows")
 	TranslationCmd.AddCommand(translationPullCmd)
 }

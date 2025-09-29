@@ -34,7 +34,7 @@ var profileRemoveCmd = &cobra.Command{
 		}
 
 		if _, exists := cfg.Profiles[removeName]; !exists {
-			log.Infof("Profile %q does not exist. Use the command 'suprsend profiles list' to see all profiles.", removeName)
+			log.Infof("Profile %q does not exist. Use the command 'suprsend profile list' to see all profiles.", removeName)
 			return
 		}
 

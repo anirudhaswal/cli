@@ -20,6 +20,13 @@ type WorkflowWriteStats struct {
 	Errors  []string
 }
 
+type WorkflowPushStats struct {
+	Total   int
+	Success int
+	Failed  int
+	Errors  []string
+}
+
 func isDebugMode() bool {
 	return viper.GetBool("debug")
 }
@@ -43,15 +50,32 @@ func ensureOutputDirectory(dirPath string) error {
 	if err != nil {
 		if os.IsNotExist(err) {
 			fmt.Fprintf(os.Stdout, "Creating directory: %s\n", dirPath)
-			return os.MkdirAll(dirPath, 0755)
+			return os.MkdirAll(dirPath, 0o755)
 		}
 		return fmt.Errorf("error checking directory: %w", err)
 	}
 	if !info.IsDir() {
 		return fmt.Errorf("path '%s' exists but is not a directory", dirPath)
 	}
-	if info.Mode().Perm()&0200 == 0 {
+	if info.Mode().Perm()&0o200 == 0 {
 		return fmt.Errorf("directory '%s' is not writable", dirPath)
+	}
+	return nil
+}
+
+func validateInputDirectory(dirPath string) error {
+	info, err := os.Stat(dirPath)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return fmt.Errorf("directory does not exist: %s", dirPath)
+		}
+		return fmt.Errorf("error checking directory: %w", err)
+	}
+	if !info.IsDir() {
+		return fmt.Errorf("path '%s' exists but is not a directory", dirPath)
+	}
+	if info.Mode().Perm()&0o400 == 0 {
+		return fmt.Errorf("directory '%s' is not readable", dirPath)
 	}
 	return nil
 }
@@ -77,12 +101,11 @@ func WriteWorkflowsToFiles(resp mgmnt.WorkflowsResponse, outputDir string) (*Wor
 	info, err := os.Stat(outputDir)
 	if err != nil {
 		if os.IsNotExist(err) {
-			if err := os.MkdirAll(outputDir, 0755); err != nil {
+			if err := os.MkdirAll(outputDir, 0o755); err != nil {
 				return stats, err
 			}
 		} else {
-			errMsg := fmt.Sprintf("error accessing '%s': %v", outputDir, err)
-			return stats, fmt.Errorf(errMsg)
+			return stats, fmt.Errorf("error accessing '%s': %v", outputDir, err)
 		}
 	} else if !info.IsDir() {
 		return stats, err
@@ -108,7 +131,7 @@ func WriteWorkflowsToFiles(resp mgmnt.WorkflowsResponse, outputDir string) (*Wor
 			continue
 		}
 
-		if err := os.WriteFile(filename, fileData, 0644); err != nil {
+		if err := os.WriteFile(filename, fileData, 0o644); err != nil {
 			debugErrorLog("Error: %s", err)
 			fmt.Fprintf(os.Stdout, "Error: Failed to write file '%s': %v\n", filename, err)
 			stats.Failed++
