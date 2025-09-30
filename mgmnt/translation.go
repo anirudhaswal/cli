@@ -3,6 +3,7 @@ package mgmnt
 import (
 	"encoding/json"
 	"fmt"
+	"net/url"
 	"os"
 	"strconv"
 
@@ -41,7 +42,7 @@ func (c *SS_MgmntClient) ListTranslations(workspace, mode string) (*ListTranslat
 	client := client.NewHTTPClient()
 	defer client.Close()
 
-	url := c.mgmnt_base_URL + "v1/" + workspace + "/translation/?mode=" + mode
+	url := fmt.Sprintf("%sv1/%s/translation/?mode=%s", c.mgmnt_base_URL, workspace, mode)
 	res, err := client.R().
 		SetDebug(c.debug).
 		SetHeader("Authorization", "ServiceToken "+c.serviceToken).
@@ -83,7 +84,7 @@ func (c *SS_MgmntClient) GetTranslations(workspace, mode string) (*TranslationRe
 			SetDebug(c.debug).
 			SetHeader("Authorization", "ServiceToken "+c.serviceToken).
 			SetResult(&TranslationResponse{}).
-			Get(c.mgmnt_base_URL + "v1/" + workspace + "/translation/?limit=" + strconv.Itoa(limit) + "&offset=" + strconv.Itoa(offset) + "&mode=" + mode)
+			Get(c.mgmnt_base_URL + "v1/" + workspace + "/translation/?include_content=true" + "&limit=" + strconv.Itoa(limit) + "&offset=" + strconv.Itoa(offset) + "&mode=" + mode)
 		if err != nil {
 			fmt.Fprintf(os.Stdout, "Error: Failed to get translations: %v\n", err)
 			return nil, err
@@ -122,18 +123,14 @@ func (c *SS_MgmntClient) GetTranslations(workspace, mode string) (*TranslationRe
 	}, nil
 }
 
-func (c *SS_MgmntClient) PushTranslation(workspace, filename string, translations map[string]any) error {
+func (c *SS_MgmntClient) PushTranslation(workspace, filename string, translation map[string]any) error {
 	client := client.NewHTTPClient()
 	defer client.Close()
 	url := fmt.Sprintf("%sv1/%s/translation/%s/", c.mgmnt_base_URL, workspace, filename)
-	fmt.Println(url)
-	body := map[string]any{
-		"translations": translations,
-	}
 	res, err := client.R().
 		SetDebug(c.debug).
 		SetHeader("Authorization", "ServiceToken "+c.serviceToken).
-		SetBody(body).
+		SetBody(translation).
 		Post(url)
 	if err != nil {
 		log.Errorf("Error pushing translations: %s", err)
@@ -152,7 +149,8 @@ func (c *SS_MgmntClient) PushTranslation(workspace, filename string, translation
 func (c *SS_MgmntClient) FinalizeTranslation(workspace, commitMessage string) error {
 	client := client.NewHTTPClient()
 	defer client.Close()
-	url := c.mgmnt_base_URL + "v1/" + workspace + "/translation/commit/?commit_message=" + commitMessage
+	encodedCommitMessage := url.QueryEscape(commitMessage)
+	url := fmt.Sprintf("%sv1/%s/translation/commit/?commit_message=%s", c.mgmnt_base_URL, workspace, encodedCommitMessage)
 	res, err := client.R().
 		SetDebug(c.debug).
 		SetHeader("Content-Type", "application/json").
