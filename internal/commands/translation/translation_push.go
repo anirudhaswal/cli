@@ -21,6 +21,8 @@ var translationPushCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		workspace, _ := cmd.Flags().GetString("workspace")
 		outputDir, _ := cmd.Flags().GetString("dir")
+		commit, _ := cmd.Flags().GetString("commit")
+		commitMessage, _ := cmd.Flags().GetString("commit-message")
 
 		if outputDir == "" {
 			outputDir = filepath.Join(".", "suprsend", "translation")
@@ -124,10 +126,19 @@ var translationPushCmd = &cobra.Command{
 				fmt.Fprintf(os.Stdout, "  - %s\n", err)
 			}
 		}
+		if commit == "true" {
+			err := mgmntClient.FinalizeTranslation(workspace, commitMessage)
+			if err != nil {
+				log.Errorf("Failed to commit translation: %v", err)
+			}
+			fmt.Fprintf(os.Stdout, "Committed translation: %s\n", commitMessage)
+		}
 	},
 }
 
 func init() {
+	translationPushCmd.Flags().StringP("commit", "c", "false", "Commit the translation (--commit=true)")
+	translationPushCmd.Flags().StringP("commit-message", "m", "", "Commit message for the translation")
 	translationPushCmd.Flags().StringP("dir", "d", "", "Directory for translations pull to (default: ./suprsend/translation)")
 	TranslationCmd.AddCommand(translationPushCmd)
 }

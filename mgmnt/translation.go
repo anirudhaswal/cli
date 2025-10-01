@@ -38,11 +38,11 @@ type TranslationResponse struct {
 	} `json:"meta"`
 }
 
-func (c *SS_MgmntClient) ListTranslations(workspace, mode string) (*ListTranslation, error) {
+func (c *SS_MgmntClient) ListTranslations(workspace, mode, includeContent string, limit, offset int) (*ListTranslation, error) {
 	client := client.NewHTTPClient()
 	defer client.Close()
 
-	url := fmt.Sprintf("%sv1/%s/translation/?mode=%s", c.mgmnt_base_URL, workspace, mode)
+	url := fmt.Sprintf("%sv1/%s/translation/?mode=%s&limit=%d&offset=%d&include_content=%s", c.mgmnt_base_URL, workspace, mode, limit, offset, includeContent)
 	res, err := client.R().
 		SetDebug(c.debug).
 		SetHeader("Authorization", "ServiceToken "+c.serviceToken).

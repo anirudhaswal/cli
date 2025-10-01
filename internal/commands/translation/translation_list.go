@@ -26,8 +26,11 @@ var translationListCmd = &cobra.Command{
 		}
 		mode, _ := cmd.Flags().GetString("mode")
 		workspace, _ := cmd.Flags().GetString("workspace")
+		includeContent, _ := cmd.Flags().GetString("include-content")
+		limit, _ := cmd.Flags().GetInt("limit")
+		offset, _ := cmd.Flags().GetInt("offset")
 		mgmntClient := utils.GetSuprSendMgmntClient()
-		translations, err := mgmntClient.ListTranslations(workspace, mode)
+		translations, err := mgmntClient.ListTranslations(workspace, mode, includeContent, limit, offset)
 		if err != nil {
 			log.WithError(err).Error("Couldn't fetch translations")
 			return
@@ -46,6 +49,9 @@ var translationListCmd = &cobra.Command{
 }
 
 func init() {
+	translationListCmd.Flags().StringP("content", "c", "false", "Include content in the output")
+	translationListCmd.Flags().IntP("limit", "l", 20, "Limit the number of translations to list")
+	translationListCmd.Flags().IntP("offset", "f", 0, "Offset the number of translations to list")
 	translationListCmd.Flags().StringP("mode", "m", "live", "Mode to list translations for")
 	translationListCmd.Flags().StringP("output", "o", "pretty", "Output type (pretty, yaml, json)")
 	TranslationCmd.PersistentFlags().StringP("workspace", "w", "staging", "Workspace to list translations for")
