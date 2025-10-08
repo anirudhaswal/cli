@@ -16,21 +16,25 @@ before:
     - make build
 
 builds:
-  - main: ./cmd/suprsend
+  - id: suprsend
+    main: ./cmd/suprsend
+    binary: suprsend
     env:
       - CGO_ENABLED=0
     ldflags:
       - -s -w
       - -X go.szostok.io/version.version={{.Version}}
       - -X go.szostok.io/version.buildDate={{.Date}}
+    goarch: [amd64, arm64]
     goos:
       - linux
       - windows
       - darwin
 
 archives:
-  - formats: [tar.gz]
-    # this name template makes the OS and Arch compatible with the results of `uname`.
+  # existing tar/zip archives
+  - id: tarballs
+    formats: [tar.gz]
     name_template: >-
       {{ .ProjectName }}_
       {{- title .Os }}_
@@ -38,13 +42,26 @@ archives:
       {{- else if eq .Arch "386" }}i386
       {{- else }}{{ .Arch }}{{ end }}
       {{- if .Arm }}v{{ .Arm }}{{ end }}
-    # use zip for windows archives
     format_overrides:
       - goos: windows
         formats: [zip]
 
+  # NEW: emit the raw binary as an artifact too
+  - id: raw-binaries
+    formats: binary
+    # keep the same naming scheme so users can recognize platform/arch
+    name_template: >-
+      {{ .ProjectName }}_
+      {{- title .Os }}_
+      {{- if eq .Arch "amd64" }}x86_64
+      {{- else if eq .Arch "386" }}i386
+      {{- else }}{{ .Arch }}{{ end }}
+      {{- if .Arm }}v{{ .Arm }}{{ end }}
+
 checksum:
   name_template: "checksums.txt"
+  algorithm: sha256
+
 snapshot:
   version_template: "{{ incpatch .Version }}-next"
 
@@ -57,6 +74,8 @@ changelog:
 
 homebrew_casks:
   - name: suprsend
+    ids: [tarballs]
+    binary: suprsend
     directory: Casks
     url:
       verified: github.com/suprsend/cli
@@ -77,3 +96,58 @@ homebrew_casks:
           if OS.mac?
             system_command "/usr/bin/xattr", args: ["-dr", "com.apple.quarantine", "#{staged_path}/suprsend"]
           end
+
+notarize:
+  macos:
+    - # Whether this configuration is enabled or not.
+      #
+      # Default: false.
+      # Templates: allowed.
+      enabled: '{{ isEnvSet "MACOS_SIGN_P12" }}'
+
+      # Before notarizing, we need to sign the binary.
+      # This block defines the configuration for doing so.
+      sign:
+        # The .p12 certificate file path or its base64'd contents.
+        #
+        # Templates: allowed.
+        certificate: "{{.Env.MACOS_SIGN_P12}}"
+
+        # The password to be used to open the certificate.
+        #
+        # Templates: allowed.
+        password: "{{.Env.MACOS_SIGN_PASSWORD}}"
+
+      # Then, we notarize the binaries.
+      #
+      # You can leave this section empty if you only want
+      # to sign the binaries (Since: v2.1).
+      notarize:
+        # The issuer ID.
+        # Its the UUID you see when creating the App Store Connect key.
+        #
+        # Templates: allowed.
+        issuer_id: "{{.Env.MACOS_NOTARY_ISSUER_ID}}"
+
+        # Key ID.
+        # You can see it in the list of App Store Connect Keys.
+        # It will also be in the ApiKey filename.
+        #
+        # Templates: allowed.
+        key_id: "{{.Env.MACOS_NOTARY_KEY_ID}}"
+
+        # The .p8 key file path or its base64'd contents.
+        #
+        # Templates: allowed.
+        key: "{{.Env.MACOS_NOTARY_KEY}}"
+
+        # Whether to wait for the notarization to finish.
+        # Not recommended, as it could take a really long time.
+        wait: true
+
+        # Timeout for the notarization.
+        # Beware of the overall `--timeout` time.
+        # This only has any effect if `wait` is true.
+        #
+        # Default: 10m.
+        timeout: 20m
