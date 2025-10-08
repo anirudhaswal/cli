@@ -116,19 +116,20 @@ async function main() {
   const transformedSchema = transformSchema({
     schema: { ...schema },
     parentTitle: schemaName + "Data",
-    title: schemaName
+    title: schemaName.replace(/(Event|Workflow)$/, "") 
   });
   const transformedText = JSON.stringify(transformedSchema, null, 2);
+  const rootTypeName = transformedSchema.title || schemaName + "Data";
   let output;
   if (language.toLowerCase() === "java") {
-    const schema = await quicktypeJSONSchema(language, schemaName, transformedText, rendererOptions);
+    const schema = await quicktypeJSONSchema(language, rootTypeName, transformedText, rendererOptions);
     for (const [fileName, content] of Object.entries(schema)) {
       output = content.join("\n");
       const directory = outputPath.replace(/[^/\\]+$/, '');
       await writeGeneratedTypes(output, language, directory + fileName, rendererOptions, true);
     }
   } else {
-    const { lines } = await quicktypeJSONSchema(language, schemaName, transformedText, rendererOptions);
+    const { lines } = await quicktypeJSONSchema(language, rootTypeName, transformedText, rendererOptions);
     output = lines.join("\n");
     await writeGeneratedTypes(output, language, outputPath, rendererOptions);
   }
