@@ -1,0 +1,9 @@
+{
+  "name": "suprsend",
+  "version": "0.1.0",
+  "mcpServers": {
+    "suprsend": {
+      "command": "${extensionPath}${/}suprsend"
+    }
+  }
+}
