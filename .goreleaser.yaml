@@ -16,21 +16,42 @@ before:
     - make build
 
 builds:
-  - main: ./cmd/suprsend
+  - id: suprsend
+    main: ./cmd/suprsend
+    binary: suprsend
     env:
       - CGO_ENABLED=0
     ldflags:
       - -s -w
       - -X go.szostok.io/version.version={{.Version}}
       - -X go.szostok.io/version.buildDate={{.Date}}
+    goarch: [amd64, arm64]
     goos:
       - linux
       - windows
       - darwin
+  - id: gemini-cli-extension
+    env:
+      - CGO_ENABLED=0
+    main: ./cmd/suprsend
+    goos:
+      - linux
+      - windows
+      - darwin
+    goarch:
+      - amd64
+      - arm64
+    ldflags:
+      - -s -w
+      - -X go.szostok.io/version.version={{.Version}}
+      - -X go.szostok.io/version.buildDate={{.Date}}
 
 archives:
-  - formats: [tar.gz]
-    # this name template makes the OS and Arch compatible with the results of `uname`.
+  # existing tar/zip archives
+  - id: tarballs
+    ids:
+      - suprsend
+    formats: [tar.gz]
     name_template: >-
       {{ .ProjectName }}_
       {{- title .Os }}_
@@ -38,13 +59,28 @@ archives:
       {{- else if eq .Arch "386" }}i386
       {{- else }}{{ .Arch }}{{ end }}
       {{- if .Arm }}v{{ .Arm }}{{ end }}
-    # use zip for windows archives
     format_overrides:
       - goos: windows
         formats: [zip]
+  - id: gemini-cli-extension
+    ids:
+      - gemini-cli-extension
+    formats: tar.gz
+    files:
+      - gemini-extension.json
+    name_template: >-
+      {{ if eq .Os "windows" }}win32
+      {{- else }}{{ .Os }}{{ end }}.
+      {{- if eq .Arch "amd64" }}x64
+      {{- else }}{{ .Arch }}{{ end }}.suprsend
+    format_overrides:
+      - goos: windows
+        formats: zip
 
 checksum:
   name_template: "checksums.txt"
+  algorithm: sha256
+
 snapshot:
   version_template: "{{ incpatch .Version }}-next"
 
@@ -55,8 +91,13 @@ changelog:
       - "^docs:"
       - "^test:"
 
-brews:
+homebrew_casks:
   - name: suprsend
+    ids: [tarballs]
+    binary: suprsend
+    directory: Casks
+    url:
+      verified: github.com/suprsend/cli
     homepage: https://github.com/suprsend/homebrew-tap
     commit_author:
       name: suprsend_bot
@@ -68,3 +109,64 @@ brews:
       git:
         url: git@github.com:suprsend/homebrew-tap.git
         private_key: "{{ .Env.PRIVATE_KEY_PATH }}"
+    hooks:
+      post:
+        install: |
+          if OS.mac?
+            system_command "/usr/bin/xattr", args: ["-dr", "com.apple.quarantine", "#{staged_path}/suprsend"]
+          end
+
+notarize:
+  macos:
+    - # Whether this configuration is enabled or not.
+      #
+      # Default: false.
+      # Templates: allowed.
+      enabled: '{{ isEnvSet "MACOS_SIGN_P12" }}'
+
+      # Before notarizing, we need to sign the binary.
+      # This block defines the configuration for doing so.
+      sign:
+        # The .p12 certificate file path or its base64'd contents.
+        #
+        # Templates: allowed.
+        certificate: "{{.Env.MACOS_SIGN_P12}}"
+
+        # The password to be used to open the certificate.
+        #
+        # Templates: allowed.
+        password: "{{.Env.MACOS_SIGN_PASSWORD}}"
+
+      # Then, we notarize the binaries.
+      #
+      # You can leave this section empty if you only want
+      # to sign the binaries (Since: v2.1).
+      notarize:
+        # The issuer ID.
+        # Its the UUID you see when creating the App Store Connect key.
+        #
+        # Templates: allowed.
+        issuer_id: "{{.Env.MACOS_NOTARY_ISSUER_ID}}"
+
+        # Key ID.
+        # You can see it in the list of App Store Connect Keys.
+        # It will also be in the ApiKey filename.
+        #
+        # Templates: allowed.
+        key_id: "{{.Env.MACOS_NOTARY_KEY_ID}}"
+
+        # The .p8 key file path or its base64'd contents.
+        #
+        # Templates: allowed.
+        key: "{{.Env.MACOS_NOTARY_KEY}}"
+
+        # Whether to wait for the notarization to finish.
+        # Not recommended, as it could take a really long time.
+        wait: true
+
+        # Timeout for the notarization.
+        # Beware of the overall `--timeout` time.
+        # This only has any effect if `wait` is true.
+        #
+        # Default: 10m.
+        timeout: 20m
