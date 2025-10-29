@@ -76,8 +76,8 @@ var translationPullCmd = &cobra.Command{
 }
 
 func init() {
-	translationPullCmd.PersistentFlags().StringP("mode", "m", "live", "Mode of workflows to pull from")
+	translationPullCmd.PersistentFlags().StringP("mode", "m", "live", "Mode of translations to pull from")
 	translationPullCmd.PersistentFlags().BoolP("force", "f", false, "Force using default directory without prompting")
-	translationPullCmd.PersistentFlags().StringP("dir", "d", "", "Output directory for workflows")
+	translationPullCmd.PersistentFlags().StringP("dir", "d", "", "Output directory for translations")
 	TranslationCmd.AddCommand(translationPullCmd)
 }

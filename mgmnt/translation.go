@@ -12,7 +12,6 @@ import (
 )
 
 type TranslationItem struct {
-	Name      string `json:"name"`
 	Locale    string `json:"locale"`
 	FileName  string `json:"filename"`
 	VersionNo int    `json:"version_no"`
@@ -42,7 +41,7 @@ func (c *SS_MgmntClient) ListTranslations(workspace, mode, includeContent string
 	client := client.NewHTTPClient()
 	defer client.Close()
 
-	url := fmt.Sprintf("%sv1/%s/translation/?mode=%s&limit=%d&offset=%d&include_content=%s", c.mgmnt_base_URL, workspace, mode, limit, offset, includeContent)
+	url := fmt.Sprintf("%sv1/%s/translation/?mode=%s&limit=%d&offset=%d&include_content=%s&include_version_info=true", c.mgmnt_base_URL, workspace, mode, limit, offset, includeContent)
 	res, err := client.R().
 		SetDebug(c.debug).
 		SetHeader("Authorization", "ServiceToken "+c.serviceToken).
@@ -84,7 +83,7 @@ func (c *SS_MgmntClient) GetTranslations(workspace, mode string) (*TranslationRe
 			SetDebug(c.debug).
 			SetHeader("Authorization", "ServiceToken "+c.serviceToken).
 			SetResult(&TranslationResponse{}).
-			Get(c.mgmnt_base_URL + "v1/" + workspace + "/translation/?include_content=true" + "&limit=" + strconv.Itoa(limit) + "&offset=" + strconv.Itoa(offset) + "&mode=" + mode)
+			Get(c.mgmnt_base_URL + "v1/" + workspace + "/translation/?include_content=true&include_version_info=true" + "&limit=" + strconv.Itoa(limit) + "&offset=" + strconv.Itoa(offset) + "&mode=" + mode)
 		if err != nil {
 			fmt.Fprintf(os.Stdout, "Error: Failed to get translations: %v\n", err)
 			return nil, err
@@ -126,7 +125,7 @@ func (c *SS_MgmntClient) GetTranslations(workspace, mode string) (*TranslationRe
 func (c *SS_MgmntClient) PushTranslation(workspace, filename string, translation map[string]any) error {
 	client := client.NewHTTPClient()
 	defer client.Close()
-	url := fmt.Sprintf("%sv1/%s/translation/%s/", c.mgmnt_base_URL, workspace, filename)
+	url := fmt.Sprintf("%sv1/%s/translation/content/%s/", c.mgmnt_base_URL, workspace, filename)
 	res, err := client.R().
 		SetDebug(c.debug).
 		SetHeader("Authorization", "ServiceToken "+c.serviceToken).
