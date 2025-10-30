@@ -12,11 +12,11 @@ import (
 )
 
 type TranslationItem struct {
-	Locale    string `json:"locale"`
-	FileName  string `json:"filename"`
-	VersionNo int    `json:"version_no"`
-	Status    string `json:"status"`
-	Action    string `json:"action"`
+	Locale        string `json:"locale"`
+	FileName      string `json:"filename"`
+	VersionNo     int    `json:"version_no"`
+	VersionStatus string `json:"version_status"`
+	Action        string `json:"action"`
 }
 
 type ListTranslation struct {
