@@ -218,6 +218,9 @@ export function cleanAndHoistImports(source: string, language: Lang): string {
     const parsed: Parsed[] = [];
     const originalOrderModules: string[] = [];
     const cleanedLines: string[] = [];
+    const leadingComments: string[] = [];
+    let firstPackageLine: string | null = null;
+    let inLeadingComments = true;
 
     const pushParsed = (p: Parsed) => {
         if (p.kind === 'none') return false;
@@ -234,8 +237,24 @@ export function cleanAndHoistImports(source: string, language: Lang): string {
     while (i < lines.length) {
         const line = lines[i];
 
+        if (inLeadingComments && /^\s*(\/\/|#|\/\*)/.test(line)) {
+            leadingComments.push(line);
+            i++;
+            continue;
+        }
+
+        if (lang === 'go' && /^\s*package\s+\w+/.test(line)) {
+            inLeadingComments = false;
+            if (!firstPackageLine) {
+                firstPackageLine = line;
+            }
+            i++;
+            continue;
+        }
+
         // Handle Go import blocks
         if (lang === 'go' && /^\s*import\s*\(\s*$/.test(line)) {
+            inLeadingComments = false;
             i++;
             while (i < lines.length && !/^\s*\)\s*$/.test(lines[i])) {
                 const inner = lines[i].trim();
@@ -255,7 +274,11 @@ export function cleanAndHoistImports(source: string, language: Lang): string {
         // Normal single-line import parsing
         const p = parseImportLine(line, language);
         if (!pushParsed(p)) {
+            inLeadingComments = false;
             cleanedLines.push(line);
+        }
+        else {
+            inLeadingComments = false;
         }
         i++;
     }
@@ -448,7 +471,9 @@ export function cleanAndHoistImports(source: string, language: Lang): string {
     }
 
     const finalText =
+        (leadingComments.length ? leadingComments.join('\n') + '\n\n' : '') +
         (headerLines.length ? headerLines.join('\n') + '\n' : '') +
+        ((lang == "go" && firstPackageLine) ? firstPackageLine + '\n\n' : '') +
         hoisted +
         bodyLines.join('\n');
 
