@@ -14,7 +14,7 @@ import (
 type TranslationItem struct {
 	Locale        string `json:"locale"`
 	FileName      string `json:"filename"`
-	VersionNo     int    `json:"version_no"`
+	VersionNo     *int   `json:"version_no"`
 	VersionStatus string `json:"version_status"`
 	Action        string `json:"action"`
 }
