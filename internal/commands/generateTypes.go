@@ -22,7 +22,7 @@ import (
 
 type schemaToBeGeneratedType struct {
 	Slug        string           `json:"slug"`
-	VersionNo   int              `json:"version_no"`
+	VersionNo   *int             `json:"version_no"`
 	Name        string           `json:"name"`
 	Description string           `json:"description"`
 	JSONSchema  mgmnt.JSONSchema `json:"json_schema"`
