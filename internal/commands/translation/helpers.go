@@ -68,7 +68,14 @@ func WriteTranslationToFiles(resp mgmnt.TranslationResponse, outputDir string) (
 		}
 		slug, _ := obj["slug"].(string)
 		filename := filepath.Join(outputDir, obj["filename"].(string))
-		fileData, err := json.MarshalIndent(wf, "", "  ")
+		content, ok := obj["content"]
+		if !ok || content == nil {
+			fmt.Fprintf(os.Stdout, "Warning: No content found for translation '%s', skipping\n", slug)
+			stats.Failed++
+			stats.Errors = append(stats.Errors, fmt.Sprintf("No content found for translation '%s'", slug))
+			continue
+		}
+		fileData, err := json.MarshalIndent(content, "", "  ")
 		if err != nil {
 			fmt.Fprintf(os.Stdout, "Error: Failed to marshal translation '%s': %v\n", slug, err)
 			stats.Failed++

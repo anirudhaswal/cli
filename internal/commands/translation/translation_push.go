@@ -57,6 +57,7 @@ var translationPushCmd = &cobra.Command{
 				cancel = p.Start(context.Background())
 			}
 
+			stats.Total++
 			path := filepath.Join(outputDir, file.Name())
 			data, err := os.ReadFile(path)
 			if err != nil {
@@ -73,8 +74,8 @@ var translationPushCmd = &cobra.Command{
 				continue
 			}
 
-			var translation map[string]any
-			if err := json.Unmarshal(data, &translation); err != nil {
+			var content map[string]any
+			if err := json.Unmarshal(data, &content); err != nil {
 				if p != nil && cancel != nil {
 					p.Stop("")
 					cancel()
@@ -88,7 +89,7 @@ var translationPushCmd = &cobra.Command{
 				continue
 			}
 
-			err = mgmntClient.PushTranslation(workspace, file.Name(), translation)
+			err = mgmntClient.PushTranslation(workspace, file.Name(), map[string]any{"content": content})
 			if err != nil {
 				if p != nil && cancel != nil {
 					p.Stop("")
