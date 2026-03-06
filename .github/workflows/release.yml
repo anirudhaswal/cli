@@ -39,6 +39,12 @@ jobs:
         with:
           cosign-release: 'v2.2.2'
 
+      - name: Export public key
+        run: |
+          cosign public-key \
+            --key "awskms:///${{ secrets.AWS_KMS_KEY_ID }}" \
+            > cosign.pub
+
       - name: Run GoReleaser
         uses: goreleaser/goreleaser-action@v7
         with:
@@ -48,4 +54,11 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           AWS_KMS_KEY_ID: ${{ secrets.AWS_KMS_KEY_ID }}
+
+      - name: Verify signature
+        run: |
+          cosign verify-blob \
+            --key cosign.pub \
+            --signature dist/checksums.txt.sig \
+            dist/checksums.txt
 

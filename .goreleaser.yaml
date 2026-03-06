@@ -104,6 +104,10 @@ changelog:
       - "^docs:"
       - "^test:"
 
+release:
+  extra_files:
+    - glob: ./cosign.pub
+
 #homebrew_casks:
   #- name: suprsend
     #ids: [tarballs]
