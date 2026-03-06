@@ -25,22 +25,22 @@ builds:
       - -s -w
       - -X go.szostok.io/version.version={{.Version}}
       - -X go.szostok.io/version.buildDate={{.Date}}
-    goarch: [amd64, arm64]
+    goarch: [amd64]
     goos:
       - linux
-      - windows
-      - darwin
+      # - windows
+      # - darwin
   - id: gemini-cli-extension
     env:
       - CGO_ENABLED=0
     main: ./cmd/suprsend
     goos:
       - linux
-      - windows
-      - darwin
+      # - windows
+      # - darwin
     goarch:
       - amd64
-      - arm64
+      # - arm64
     ldflags:
       - -s -w
       - -X go.szostok.io/version.version={{.Version}}
@@ -83,8 +83,6 @@ checksum:
 
 signs:
   - cmd: cosign
-    env:
-      - COSIGN_EXPERIMENTAL=0
     artifacts: checksum
     output: true
     args:
