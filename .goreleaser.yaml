@@ -81,6 +81,19 @@ checksum:
   name_template: "checksums.txt"
   algorithm: sha256
 
+signs:
+  - cmd: cosign
+    artifacts: checksum
+    output: true
+    args:
+      - "sign-blob"
+      - "--key"
+      - "awskms:///{{ .Env.AWS_KMS_KEY_ID }}"
+      - "--output-signature"
+      - "${signature}" 
+      - "${artifact}"
+      - "--yes"
+
 snapshot:
   version_template: "{{ incpatch .Version }}-next"
 
