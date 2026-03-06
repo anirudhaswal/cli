@@ -6,8 +6,6 @@ universal_binaries:
   - replace: true
 
 before:
-  ignore_paths:
-    - cosign.pub
   hooks:
     # You may remove this if you don't use go modules.
     - go mod tidy
@@ -27,22 +25,22 @@ builds:
       - -s -w
       - -X go.szostok.io/version.version={{.Version}}
       - -X go.szostok.io/version.buildDate={{.Date}}
-    goarch: [amd64]
+    goarch: [amd64, arm64]
     goos:
       - linux
-      # - windows
-      # - darwin
+      - windows
+      - darwin
   - id: gemini-cli-extension
     env:
       - CGO_ENABLED=0
     main: ./cmd/suprsend
     goos:
       - linux
-      # - windows
-      # - darwin
+      - windows
+      - darwin
     goarch:
       - amd64
-      # - arm64
+      - arm64
     ldflags:
       - -s -w
       - -X go.szostok.io/version.version={{.Version}}
@@ -105,10 +103,6 @@ changelog:
     exclude:
       - "^docs:"
       - "^test:"
-
-release:
-  extra_files:
-    - glob: ./cosign.pub
 
 #homebrew_casks:
   #- name: suprsend
