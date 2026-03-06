@@ -90,6 +90,7 @@ signs:
       - "--key"
       - "awskms:///{{ .Env.AWS_KMS_KEY_ID }}"
       - "${artifact}"
+      - "--yes"
 
 snapshot:
   version_template: "{{ incpatch .Version }}-next"
