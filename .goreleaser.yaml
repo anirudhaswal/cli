@@ -89,6 +89,8 @@ signs:
       - "sign-blob"
       - "--key"
       - "awskms:///{{ .Env.AWS_KMS_KEY_ID }}"
+      - "--output-signature"
+      - "${signature}" 
       - "${artifact}"
       - "--yes"
 
