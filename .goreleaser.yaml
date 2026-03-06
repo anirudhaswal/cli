@@ -6,6 +6,8 @@ universal_binaries:
   - replace: true
 
 before:
+  ignore_paths:
+    - cosign.pub
   hooks:
     # You may remove this if you don't use go modules.
     - go mod tidy
