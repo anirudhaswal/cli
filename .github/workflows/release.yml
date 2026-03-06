@@ -2,8 +2,8 @@ name: Release
 
 on:
   push:
-    branches:
-      - main
+    tags:
+      - '*'
 
 permissions:
   contents: write # Required to create releases and upload artifacts
@@ -25,20 +25,21 @@ jobs:
           role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
           aws-region: ${{ secrets.AWS_REGION }}
 
-      - name: Set up Go 1.25.1
+      - name: Set up Go
         uses: actions/setup-go@v5
         with:
-          go-version: '1.25.1'
+          go-version-file: go.mod
+          cache: true
 
       - name: Set up Deno
-        uses: denoland/setup-deno@v1
+        uses: denoland/setup-deno@v2.0.3
         with:
           deno-version: latest
 
       - name: Install cosign
-        uses: sigstore/cosign-installer@v3
+        uses: sigstore/cosign-installer@v4.0.0
         with:
-          cosign-release: 'v2.2.2'
+          cosign-release: 'v3.0.5'
 
       # Key setup for homebrew tap deployment
       - name: Setup tap deploy key
@@ -63,6 +64,10 @@ jobs:
           MACOS_NOTARY_ISSUER_ID: ${{ secrets.MACOS_NOTARY_ISSUER_ID }}
           MACOS_NOTARY_KEY_ID: ${{ secrets.MACOS_NOTARY_KEY_ID }}
           MACOS_NOTARY_KEY: ${{ secrets.MACOS_NOTARY_KEY }}
+
+      - name: Clean up SSH key
+        if: always()
+        run: rm -f /tmp/tap_key
 
       - name: Verify signature
         run: |
