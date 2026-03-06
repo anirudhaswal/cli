@@ -91,7 +91,7 @@ signs:
       - sign-blob
       - --key
       - awskms://{{ .Env.AWS_KMS_KEY_ID }}
-      - '{{ .ArtifactPath }}'
+      - '{{ .Artifact.Path }}'
 
 snapshot:
   version_template: "{{ incpatch .Version }}-next"
