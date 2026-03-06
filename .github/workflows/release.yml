@@ -6,8 +6,8 @@ on:
       - main
 
 permissions:
-  contents: write
-  id-token: write
+  contents: write # Required to create releases and upload artifacts
+  id-token: write # Required for OIDC authentication to AWS
 
 jobs:
   release:
@@ -18,11 +18,12 @@ jobs:
         with:
           fetch-depth: 0
 
+      # Requests AWS credentials using OIDC to assume the specified role
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
           role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
-          aws-region: ap-south-1
+          aws-region: ${{ secrets.AWS_REGION }}
 
       - name: Set up Go 1.25.1
         uses: actions/setup-go@v5
@@ -39,6 +40,12 @@ jobs:
         with:
           cosign-release: 'v2.2.2'
 
+      # Key setup for homebrew tap deployment
+      - name: Setup tap deploy key
+        run: |
+          echo "${{ secrets.DEPLOY_SSH_KEY }}" > /tmp/tap_key
+          chmod 600 /tmp/tap_key
+
       - name: Run GoReleaser
         uses: goreleaser/goreleaser-action@v7
         with:
@@ -48,6 +55,14 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           AWS_KMS_KEY_ID: ${{ secrets.AWS_KMS_KEY_ID }}
+
+          # Environment variables for Homebrew tap deployment and macOS signing/notarization
+          PRIVATE_KEY_PATH: /tmp/tap_key
+          MACOS_SIGN_P12: ${{ secrets.MACOS_SIGN_P12 }}
+          MACOS_SIGN_PASSWORD: ${{ secrets.MACOS_SIGN_PASSWORD }}
+          MACOS_NOTARY_ISSUER_ID: ${{ secrets.MACOS_NOTARY_ISSUER_ID }}
+          MACOS_NOTARY_KEY_ID: ${{ secrets.MACOS_NOTARY_KEY_ID }}
+          MACOS_NOTARY_KEY: ${{ secrets.MACOS_NOTARY_KEY }}
 
       - name: Verify signature
         run: |
