@@ -73,6 +73,6 @@ jobs:
         run: |
           cosign verify-blob \
             --key "awskms:///${{ secrets.AWS_KMS_KEY_ID }}" \
-            --signature dist/checksums.txt.sig \
+            --bundle dist/checksums.txt.sig \
             dist/checksums.txt
 
