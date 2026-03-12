@@ -4,6 +4,8 @@ on:
   push:
     tags:
       - '*'
+  branches:
+    - feat/workflows
 
 permissions:
   contents: write # Required to create releases and upload artifacts
@@ -52,7 +54,7 @@ jobs:
         with:
           distribution: goreleaser
           version: '~> v2'
-          args: release --clean
+          args: release --clean --snapshot
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           AWS_KMS_KEY_ID: ${{ secrets.AWS_KMS_KEY_ID }}
