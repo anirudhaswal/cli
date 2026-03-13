@@ -94,8 +94,9 @@ signs:
       - "${artifact}"
       - "--yes"
 
-extra_files:
-  - glob: /tmp/public_key.pem
+release:
+  extra_files:
+    - glob: /tmp/public_key.pem
 
 snapshot:
   version_template: "{{ incpatch .Version }}-next"
