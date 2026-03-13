@@ -74,12 +74,14 @@ jobs:
 
       - name: Clean up SSH key
         if: always()
-        run: rm -f /tmp/tap_key
+        run: |
+          rm -f /tmp/tap_key
+          rm -f /tmp/public_key.pem
 
       - name: Verify signature
         run: |
           cosign verify-blob \
-            --key "awskms:///${{ secrets.AWS_KMS_KEY_ID }}" \
+            --key /tmp/public_key.pem \
             --bundle dist/checksums.txt.sig \
             dist/checksums.txt
 
