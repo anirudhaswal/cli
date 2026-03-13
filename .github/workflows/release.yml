@@ -42,11 +42,7 @@ jobs:
           cosign-release: 'v3.0.5'
 
       - name: Store public key for signature verification
-        run: |
-          cd dist
-          cosign public-key \
-            --key "awskms:///${{ secrets.AWS_KMS_KEY_ID }}" \
-            > public_key.pem
+        run: cosign public-key --key "awskms:///${{ secrets.AWS_KMS_KEY_ID }}" > /tmp/public_key.pem
 
       # Key setup for homebrew tap deployment
       - name: Setup tap deploy key
